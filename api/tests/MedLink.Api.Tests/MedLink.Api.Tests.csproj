@@ -29,6 +29,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\MedLink.Api\MedLink.Api.csproj" />
+    <ProjectReference Include="..\..\..\windows\MedLink.Sync\MedLink.Sync.csproj" />
   </ItemGroup>
 
 </Project>
