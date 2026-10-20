@@ -48,6 +48,8 @@ public sealed class ApiClient(HttpClient http)
     public Task<(HttpStatusCode Status, JsonElement Body)> Get(string path) => SendAsync(HttpMethod.Get, path);
     public Task<(HttpStatusCode Status, JsonElement Body)> Post(string path, object body, bool csrf = true) => SendAsync(HttpMethod.Post, path, body, csrf);
     public Task<(HttpStatusCode Status, JsonElement Body)> Patch(string path, object body) => SendAsync(HttpMethod.Patch, path, body);
+    public Task<(HttpStatusCode Status, JsonElement Body)> Put(string path, object body) => SendAsync(HttpMethod.Put, path, body);
+    public Task<(HttpStatusCode Status, JsonElement Body)> Delete(string path) => SendAsync(HttpMethod.Delete, path);
 
     public async Task<(HttpStatusCode Status, JsonElement Body)> LoginAsync(string email, string password, string? totpSecretBase32)
     {
@@ -137,6 +139,17 @@ public sealed class TestApi : IDisposable
         var link = await db.RunAsync(DbScope.System, (cn, t) => auth.IssueLinkAsync(cn, t, id, "setup", null));
         var (password, secret) = await CompleteLinkAsync(CapturingEmailSender.TokenFrom(link.Mail));
         var user = new TestUser(id, email, password, secret);
+        return (await SignInAsync(user), user);
+    }
+
+    /// <summary>A hospital admin invites a staff member; the staff member activates the emailed link and signs in.</summary>
+    public async Task<(ApiClient Client, TestUser User)> StaffAsync(ApiClient hospitalAdmin, string role)
+    {
+        var email = NewEmail(role);
+        var r = await hospitalAdmin.Post("/hospital/users", new { email, role });
+        Assert.Equal(HttpStatusCode.Created, r.Status);
+        var (password, secret) = await CompleteLinkAsync(CapturingEmailSender.TokenFrom(Fx.Email.LastTo(email)));
+        var user = new TestUser(r.Body.GetProperty("id").GetString()!, email, password, secret);
         return (await SignInAsync(user), user);
     }
 

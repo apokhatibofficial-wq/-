@@ -27,7 +27,9 @@ public enum Permission
     ViewReports,
     ViewAuditFull,
     ViewAuditHospitalOnly,
+    ManageTeam,
     // Hospital
+    HospitalRead,
     FormEditPublish,
     HospitalSettings,
     BookingsView,
@@ -41,14 +43,17 @@ public static class PermissionMatrix
     private static readonly Dictionary<string, Permission[]> Map = new()
     {
         [Roles.Owner] = [Permission.HospitalsCreateEdit, Permission.HospitalsSuspend, Permission.RecoverAdminAccess,
-                         Permission.ViewReports, Permission.ViewAuditFull, Permission.ViewAuditHospitalOnly],
+                         Permission.ViewReports, Permission.ViewAuditFull, Permission.ViewAuditHospitalOnly, Permission.ManageTeam],
         [Roles.Support] = [Permission.RecoverAdminAccess, Permission.ViewReports, Permission.ViewAuditHospitalOnly],
         [Roles.Viewer] = [Permission.ViewReports],
-        [Roles.HospAdmin] = [Permission.FormEditPublish, Permission.HospitalSettings, Permission.BookingsView,
+        [Roles.HospAdmin] = [Permission.HospitalRead, Permission.FormEditPublish, Permission.HospitalSettings, Permission.BookingsView,
                              Permission.CheckIn, Permission.AttendanceCorrect, Permission.HospitalUsersManage],
-        [Roles.Reception] = [Permission.BookingsView, Permission.CheckIn, Permission.AttendanceCorrect],
-        [Roles.Scanner] = [Permission.CheckIn],
+        [Roles.Reception] = [Permission.HospitalRead, Permission.BookingsView, Permission.CheckIn, Permission.AttendanceCorrect],
+        [Roles.Scanner] = [Permission.HospitalRead, Permission.CheckIn],
     };
+
+    /// <summary>Permissions that only company users can hold; all others are hospital permissions.</summary>
+    public static bool IsCompanyPermission(Permission p) => p <= Permission.ManageTeam;
 
     public static bool Has(IEnumerable<string> roles, Permission p) =>
         roles.Any(r => Map.TryGetValue(r, out var ps) && ps.Contains(p));

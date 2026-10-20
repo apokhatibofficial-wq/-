@@ -13,7 +13,8 @@ using Npgsql;
 // ---------------------------------------------------------------- CLI commands
 // medlink migrate                        apply SQL migrations (as the DB owner)
 // medlink bootstrap-admin --email <addr> create the first company owner and print a single-use setup link
-if (args.Length > 0 && args[0] is "migrate" or "bootstrap-admin")
+// medlink reset-company-user --email <addr> recovery for a company user who lost access (prints a 1-hour reset link)
+if (args.Length > 0 && args[0] is "migrate" or "bootstrap-admin" or "reset-company-user")
     return await Cli.RunAsync(args);
 
 var builder = WebApplication.CreateBuilder(args);
@@ -68,7 +69,7 @@ public static class Startup
             .WithOrigins(options.CorsOrigins)
             .AllowCredentials()
             .WithHeaders("Content-Type", HttpAuth.CsrfHeader, "Authorization")
-            .WithMethods("GET", "POST", "PATCH")));
+            .WithMethods("GET", "POST", "PATCH", "PUT", "DELETE")));
 
         services.AddRateLimiter(r =>
         {
@@ -136,6 +137,7 @@ public static class Startup
         });
         app.MapAuth();
         app.MapAdmin();
+        app.MapTeam();
         app.MapHospital();
         app.MapPublic();
         return app;
@@ -161,12 +163,20 @@ internal static class Cli
             var email = i >= 0 && i + 1 < args.Length ? args[i + 1].Trim() : null;
             if (string.IsNullOrEmpty(email) || !email.Contains('@') || email.Length > 254)
             {
-                Console.Error.WriteLine("usage: medlink bootstrap-admin --email <owner email>");
+                Console.Error.WriteLine($"usage: medlink {args[0]} --email <address>");
                 return 2;
             }
             var opts = MedLinkOptions.FromConfiguration(config);
             await using var ds = new NpgsqlDataSourceBuilder(opts.AppConnectionString).Build();
             var auth = new AuthService(new Db(ds), new PasswordHasher(), new TotpService(opts), opts, TimeProvider.System);
+            if (args[0] == "reset-company-user")
+            {
+                var reset = await auth.ResetCompanyUserAsync(email);
+                // Give this link to the person only after verifying their identity in person or by a known phone number.
+                Console.WriteLine("All sessions revoked. Single-use link (valid 1 hour; 30 minutes if the account was never set up):");
+                Console.WriteLine(reset);
+                return 0;
+            }
             var url = await auth.BootstrapAdminAsync(email);
             // Printed to this terminal only. It is never written to a log file and expires in 30 minutes.
             Console.WriteLine("Company owner created. Open this single-use setup link within 30 minutes to set a password and 2FA:");

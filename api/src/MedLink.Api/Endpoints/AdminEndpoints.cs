@@ -14,8 +14,8 @@ namespace MedLink.Api.Endpoints;
 /// <summary>Company console API (admin.medlink.website). Every route requires a company-scope permission.</summary>
 public static class AdminEndpoints
 {
-    public sealed record CreateHospitalRequest(string? NameAr, string? NameEn, string? NameTr, string? AdminEmail, string? Slug);
-    public sealed record EditHospitalRequest(string? NameAr, string? NameEn, string? NameTr, string? Slug);
+    public sealed record CreateHospitalRequest(string? NameAr, string? NameEn, string? NameTr, string? AdminEmail, string? Slug, string? Timezone);
+    public sealed record EditHospitalRequest(string? NameAr, string? NameEn, string? NameTr, string? Slug, string? Timezone);
     public sealed record ReasonRequest(string? Reason);
     public sealed record RecoverRequest(bool[]? Checks);
 
@@ -125,6 +125,8 @@ public static class AdminEndpoints
             if (nameAr is null || nameEn is null) return Error("NAME_REQUIRED", 422);
             if (!IsEmail(req.AdminEmail)) return Error("EMAIL_INVALID", 422);
             if (!SlugPolicy.IsValidFormat(req.Slug)) return Error("SLUG_INVALID", 422);
+            var timezone = req.Timezone ?? o.DefaultHospitalTimezone;
+            if (!Timezones.IsValid(timezone)) return Error("TIMEZONE_INVALID", 422);
             var adminEmail = req.AdminEmail!.Trim();
 
             try
@@ -137,7 +139,7 @@ public static class AdminEndpoints
                     var id = Ids.Hospital();
                     await c.ExecuteAsync("""
                         INSERT INTO hospitals (id, name_ar, name_en, name_tr, timezone) VALUES (@id, @nameAr, @nameEn, @nameTr, @tz)
-                        """, new { id, nameAr, nameEn, nameTr, tz = o.DefaultHospitalTimezone }, t);
+                        """, new { id, nameAr, nameEn, nameTr, tz = timezone }, t);
                     await c.ExecuteAsync("INSERT INTO hospital_slugs (slug, hospital_id, is_primary) VALUES (@slug, @id, true)",
                         new { slug = req.Slug, id }, t);
                     var userId = Ids.User();
@@ -165,6 +167,7 @@ public static class AdminEndpoints
             var nameAr = Clean(req.NameAr, 200);
             var nameEn = Clean(req.NameEn, 200);
             if (nameAr is null || nameEn is null) return Error("NAME_REQUIRED", 422);
+            if (req.Timezone is not null && !Timezones.IsValid(req.Timezone)) return Error("TIMEZONE_INVALID", 422);
             try
             {
                 return await db.RunAsync(p.DbScope, async (c, t) =>
@@ -181,11 +184,13 @@ public static class AdminEndpoints
                     }
                     var nameTr = Clean(req.NameTr, 200);
                     await c.ExecuteAsync("""
-                        UPDATE hospitals SET name_ar = @nameAr, name_en = @nameEn, name_tr = @nameTr, updated_at = now() WHERE id = @id
-                        """, new { id, nameAr, nameEn, nameTr }, t);
+                        UPDATE hospitals SET name_ar = @nameAr, name_en = @nameEn, name_tr = @nameTr,
+                               timezone = coalesce(@tz, timezone), updated_at = now() WHERE id = @id
+                        """, new { id, nameAr, nameEn, nameTr, tz = req.Timezone }, t);
                     await AuditLog.WriteAsync(c, t, p.UserId, id, "hospital_edit", id, new
                     {
                         names = nameAr != cur.NameAr || nameEn != cur.NameEn || nameTr != cur.NameTr,
+                        timezone = req.Timezone is not null && req.Timezone != cur.Timezone ? req.Timezone : null,
                         oldSlug = change?.OldSlug,
                         newSlug = change?.OldSlug is null ? null : req.Slug,
                     });

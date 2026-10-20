@@ -70,7 +70,7 @@ public static class HttpAuth
         {
             var p = fctx.HttpContext.GetPrincipal();
             if (p is null) return Results.Json(new { error = "UNAUTHENTICATED" }, statusCode: 401);
-            var companyPermission = permission <= Permission.ViewAuditHospitalOnly;
+            var companyPermission = PermissionMatrix.IsCompanyPermission(permission);
             if (companyPermission != p.IsCompany || !p.Has(permission))
                 return Results.Json(new { error = "FORBIDDEN" }, statusCode: 403);
             return await next(fctx);

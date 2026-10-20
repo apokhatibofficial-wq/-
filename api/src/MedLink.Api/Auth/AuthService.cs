@@ -28,6 +28,8 @@ public sealed class AuthService(Db db, PasswordHasher hasher, TotpService totp, 
     public static readonly TimeSpan LockoutDuration = TimeSpan.FromMinutes(15);
     public static readonly TimeSpan AdminIdle = TimeSpan.FromHours(8);
     public static readonly TimeSpan StaffIdle = TimeSpan.FromHours(12);
+    /// <summary>Hard limit: a session ends 7 days after sign-in however active it is.</summary>
+    public static readonly TimeSpan MaxSessionAge = TimeSpan.FromDays(7);
 
     public static readonly Dictionary<string, TimeSpan> LinkValidity = new()
     {
@@ -129,9 +131,9 @@ public sealed class AuthService(Db db, PasswordHasher hasher, TotpService totp, 
         var token = Tokens.NewToken();
         var id = Ids.Session();
         await conn.ExecuteAsync("""
-            INSERT INTO sessions (id, user_id, token_hash, client, expires_at)
-            VALUES (@id, @userId, @hash, @client, @exp)
-            """, new { id, userId, hash = Tokens.Hash(token), client, exp = (Now + IdleFor(roles)).UtcDateTime }, tx);
+            INSERT INTO sessions (id, user_id, token_hash, client, expires_at, absolute_expires_at)
+            VALUES (@id, @userId, @hash, @client, @exp, @abs)
+            """, new { id, userId, hash = Tokens.Hash(token), client, exp = (Now + IdleFor(roles)).UtcDateTime, abs = (Now + MaxSessionAge).UtcDateTime }, tx);
         return (token, new Principal(id, userId, email, scope, hospitalId, roles, client, client == "web"));
     }
 
@@ -157,12 +159,12 @@ public sealed class AuthService(Db db, PasswordHasher hasher, TotpService totp, 
                 FROM sessions s
                 JOIN users u ON u.id = s.user_id
                 LEFT JOIN hospitals h ON h.id = u.hospital_id
-                WHERE s.token_hash = @hash AND s.revoked_at IS NULL AND s.expires_at > @now
+                WHERE s.token_hash = @hash AND s.revoked_at IS NULL AND s.expires_at > @now AND s.absolute_expires_at > @now
                   AND u.status = 'active' AND (h.id IS NULL OR h.status <> 'suspended')
                 """, new { hash = Tokens.Hash(token), now = Now.UtcDateTime }, tx);
             if (s is null) return null;
             if (Now - new DateTimeOffset(DateTime.SpecifyKind(s.LastSeenAt, DateTimeKind.Utc)) > TimeSpan.FromMinutes(1))
-                await conn.ExecuteAsync("UPDATE sessions SET last_seen_at = @now, expires_at = @exp WHERE id = @id",
+                await conn.ExecuteAsync("UPDATE sessions SET last_seen_at = @now, expires_at = least(@exp, absolute_expires_at) WHERE id = @id",
                     new { id = s.Id, now = Now.UtcDateTime, exp = (Now + IdleFor(s.Roles)).UtcDateTime }, tx);
             return new Principal(s.Id, s.UserId, s.Email, s.Scope, s.HospitalId, s.Roles, s.Client, viaCookie);
         }, ct);
@@ -302,6 +304,23 @@ public sealed class AuthService(Db db, PasswordHasher hasher, TotpService totp, 
             await conn.ExecuteAsync("INSERT INTO user_roles (user_id, role) VALUES (@id, 'owner')", new { id }, tx);
             var link = await IssueLinkAsync(conn, tx, id, "setup", null);
             await AuditLog.WriteAsync(conn, tx, null, null, "bootstrap_admin", id);
+            return link.Url;
+        }, ct);
+
+    /// <summary>
+    /// Server-side recovery for a company user who lost their password or phone (for example the only Owner).
+    /// Run on the VM by someone with SSH access; revokes all sessions and prints a 1-hour reset link.
+    /// </summary>
+    public Task<string> ResetCompanyUserAsync(string email, CancellationToken ct = default) =>
+        db.RunAsync(DbScope.System, async (conn, tx) =>
+        {
+            var u = await conn.QuerySingleOrDefaultAsync<(string Id, string Status)?>(
+                "SELECT id, status FROM users WHERE email = @email AND scope = 'company' FOR UPDATE", new { email }, tx)
+                ?? throw new InvalidOperationException("No company user with that email.");
+            if (u.Status == "disabled") throw new InvalidOperationException("That company user is disabled.");
+            await RevokeUserSessionsAsync(conn, tx, u.Id, "cli_reset");
+            var link = await IssueLinkAsync(conn, tx, u.Id, u.Status == "pending" ? "setup" : "reset", null);
+            await AuditLog.WriteAsync(conn, tx, null, null, "company_user_reset_cli", u.Id);
             return link.Url;
         }, ct);
 }
