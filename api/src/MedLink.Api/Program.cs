@@ -160,6 +160,7 @@ public static class Startup
         app.MapHospitalBookings();
         app.MapHospital();
         app.MapPublic();
+        app.MapSync();
         return app;
     }
 }

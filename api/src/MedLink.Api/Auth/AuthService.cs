@@ -58,7 +58,7 @@ public sealed class AuthService(Db db, PasswordHasher hasher, TotpService totp, 
     }
 
     public static TimeSpan IdleFor(IEnumerable<string> roles) =>
-        roles.Any(r => r is Roles.Reception or Roles.Scanner) && !roles.Any(r => r is Roles.HospAdmin || Roles.Company.Contains(r))
+        roles.Any(r => r is Roles.Reception or Roles.Scanner or Roles.Doctor) && !roles.Any(r => r is Roles.HospAdmin || Roles.Company.Contains(r))
             ? StaffIdle : AdminIdle;
 
     public Task<LoginResult> LoginAsync(string email, string password, string? totpCode, string client, CancellationToken ct = default) =>

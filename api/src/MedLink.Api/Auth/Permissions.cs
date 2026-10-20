@@ -3,10 +3,10 @@ namespace MedLink.Api.Auth;
 public static class Roles
 {
     public const string Owner = "owner", Support = "support", Viewer = "viewer";
-    public const string HospAdmin = "hosp_admin", Reception = "reception", Scanner = "scanner";
+    public const string HospAdmin = "hosp_admin", Reception = "reception", Scanner = "scanner", Doctor = "doctor";
 
     public static readonly string[] Company = [Owner, Support, Viewer];
-    public static readonly string[] Hospital = [HospAdmin, Reception, Scanner];
+    public static readonly string[] Hospital = [HospAdmin, Reception, Scanner, Doctor];
 
     /// <summary>TOTP is mandatory for company users and hospital admins (BACKEND-SPEC §3).</summary>
     public static bool RequiresTotp(IEnumerable<string> roles) =>
@@ -37,6 +37,8 @@ public enum Permission
     CheckIn,
     AttendanceCorrect,
     HospitalUsersManage,
+    /// <summary>Doctor: today's list for their own department(s), without phone numbers (owner's decision).</summary>
+    BookingsViewOwnDepartment,
 }
 
 public static class PermissionMatrix
@@ -51,6 +53,7 @@ public static class PermissionMatrix
                              Permission.CheckIn, Permission.AttendanceCorrect, Permission.HospitalUsersManage],
         [Roles.Reception] = [Permission.HospitalRead, Permission.BookingsView, Permission.CheckIn, Permission.AttendanceCorrect],
         [Roles.Scanner] = [Permission.HospitalRead, Permission.CheckIn],
+        [Roles.Doctor] = [Permission.HospitalRead, Permission.BookingsViewOwnDepartment],
     };
 
     /// <summary>Permissions that only company users can hold; all others are hospital permissions.</summary>

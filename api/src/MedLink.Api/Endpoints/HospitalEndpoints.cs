@@ -1,4 +1,5 @@
 using Dapper;
+using Npgsql;
 using MedLink.Api.Auth;
 using MedLink.Api.Data;
 using MedLink.Api.Hospitals;
@@ -12,15 +13,27 @@ namespace MedLink.Api.Endpoints;
 public static class HospitalEndpoints
 {
     public sealed record SettingsRequest(int? NoShowGraceMin, int? RetentionMonths, string? Timezone, bool? StaffTotpRequired);
-    public sealed record StaffInviteRequest(string? Email, string? Role);
-    public sealed record StaffChangeRequest(string? Role, bool? Disabled);
+    public sealed record StaffInviteRequest(string? Email, string? Role, string[]? DepartmentIds);
+    public sealed record StaffChangeRequest(string? Role, bool? Disabled, string[]? DepartmentIds);
     public sealed record DepartmentRequest(string? NameAr, string? NameEn, string? NameTr, bool? Active, int? Sort);
     public sealed record ScheduleBlock(int Weekday, string? Start, string? End, int SlotMinutes, int Capacity);
     public sealed record SchedulesRequest(ScheduleBlock[]? Blocks);
     public sealed record ClosureRequest(string? Date, string? DepartmentId, string? Reason);
 
     /// <summary>Roles a hospital admin may give. Hospital admins themselves are managed by the company.</summary>
-    private static readonly string[] StaffRoles = [Roles.Reception, Roles.Scanner];
+    private static readonly string[] StaffRoles = [Roles.Reception, Roles.Scanner, Roles.Doctor];
+
+    /// <summary>Doctors need 1–50 of the hospital's own departments; other roles take none.</summary>
+    private static async Task<(string? Error, string[] Ids)> DoctorDepartmentsAsync(NpgsqlConnection c, NpgsqlTransaction t,
+        string hospitalId, string role, string[]? requested)
+    {
+        if (role != Roles.Doctor) return (requested is { Length: > 0 } ? "DEPARTMENTS_NOT_ALLOWED" : null, []);
+        var ids = (requested ?? []).Distinct().ToArray();
+        if (ids.Length is 0 or > 50) return ("DEPARTMENTS_REQUIRED", []);
+        var found = await c.ExecuteScalarAsync<int>("SELECT count(*) FROM departments WHERE hospital_id = @hospitalId AND id = ANY(@ids)",
+            new { hospitalId, ids }, t);
+        return found == ids.Length ? (null, ids) : ("DEPARTMENT_INVALID", []);
+    }
 
     private static IResult Error(string code, int status = 400, object? detail = null) =>
         Results.Json(new Dictionary<string, object?> { ["error"] = code, ["detail"] = detail }, statusCode: status);
@@ -144,8 +157,15 @@ public static class HospitalEndpoints
             if (req.Role is null || !StaffRoles.Contains(req.Role)) return Error("ROLE_INVALID", 422);
             try
             {
-                var r = await db.RunAsync(p.DbScope, (c, t) => UserAdmin.InviteAsync(c, t, auth, p.HospitalId, req.Email!.Trim(), req.Role, p));
-                if (r.Error is not null) return Error(r.Error, 409);
+                var r = await db.RunAsync(p.DbScope, async (c, t) =>
+                {
+                    var (depErr, depIds) = await DoctorDepartmentsAsync(c, t, p.HospitalId!, req.Role, req.DepartmentIds);
+                    if (depErr is not null) return new UserAdmin.InviteResult(depErr);
+                    var r = await UserAdmin.InviteAsync(c, t, auth, p.HospitalId, req.Email!.Trim(), req.Role, p);
+                    if (r.Error is null && depIds.Length > 0) await UserAdmin.SetDoctorDepartmentsAsync(c, t, r.UserId!, p.HospitalId!, depIds, p);
+                    return r;
+                });
+                if (r.Error is not null) return Error(r.Error, r.Error.StartsWith("DEPARTMENT") ? 422 : 409);
                 return Results.Json(new { id = r.UserId, emailSent = await UserAdmin.TrySendAsync(email, r.Mail!, log) }, statusCode: 201);
             }
             catch (Npgsql.PostgresException e) when (e.IsUniqueViolation()) { return Error("EMAIL_TAKEN", 409); }
@@ -161,7 +181,18 @@ public static class HospitalEndpoints
                 var u = await UserAdmin.GetAsync(c, t, id, p.HospitalId);
                 if (u is null) return Error("NOT_FOUND", 404);
                 if (u.Roles.Contains(Roles.HospAdmin)) return Error("ADMIN_MANAGED_BY_COMPANY", 409);
+                var role = req.Role ?? u.Roles.FirstOrDefault() ?? "";
+                var roleChanges = req.Role is not null && !(u.Roles.Length == 1 && u.Roles[0] == req.Role);
+                string[] depIds = [];
+                if (role == Roles.Doctor && (roleChanges || req.DepartmentIds is not null))
+                {
+                    var (depErr, ids) = await DoctorDepartmentsAsync(c, t, p.HospitalId!, role, req.DepartmentIds);
+                    if (depErr is not null) return Error(depErr, 422);
+                    depIds = ids;
+                }
+                else if (req.DepartmentIds is { Length: > 0 }) return Error("DEPARTMENTS_NOT_ALLOWED", 422);
                 await UserAdmin.ChangeAsync(c, t, u, req.Role, req.Disabled, p.HospitalId, p);
+                if (depIds.Length > 0) await UserAdmin.SetDoctorDepartmentsAsync(c, t, u.Id, p.HospitalId!, depIds, p);
                 return Results.Json(new { status = "ok" });
             });
         }).Require(Permission.HospitalUsersManage).RequireJson();

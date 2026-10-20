@@ -88,11 +88,14 @@ public static class BookingEndpoints
         public int? FormVersion { get; set; }
         public DateTime CreatedAt { get; set; }
         public string? CancelReason { get; set; }
+        public DateTime? ArrivedAt { get; set; }
+        public bool NeedsReview { get; set; }
     }
 
     private const string BookingSelect = """
         SELECT b.id, b.ref, b.slot_start, b.department_id, d.name_ar AS dep_name_ar, d.name_en AS dep_name_en, d.name_tr AS dep_name_tr,
-               b.patient_name, b.phone, b.status, v.version AS form_version, b.created_at, b.cancel_reason
+               b.patient_name, b.phone, b.status, v.version AS form_version, b.created_at, b.cancel_reason,
+               b.arrived_at, b.needs_review
         FROM bookings b JOIN departments d ON d.id = b.department_id LEFT JOIN form_versions v ON v.id = b.form_version_id
         """;
 
@@ -105,6 +108,7 @@ public static class BookingEndpoints
             localDate = local.ToString("yyyy-MM-dd"), localTime = local.ToString("HH:mm"),
             department = new { id = b.DepartmentId, ar = b.DepNameAr, en = b.DepNameEn, tr = b.DepNameTr },
             patientName = b.PatientName, phone = b.Phone, status = b.Status, formVersion = b.FormVersion,
+            arrivedAt = b.ArrivedAt is { } a ? DateTime.SpecifyKind(a, DateTimeKind.Utc) : (DateTime?)null, needsReview = b.NeedsReview,
             createdAt = DateTime.SpecifyKind(b.CreatedAt, DateTimeKind.Utc), cancelReason = b.CancelReason,
         };
     }

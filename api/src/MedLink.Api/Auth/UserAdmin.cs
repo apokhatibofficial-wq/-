@@ -19,6 +19,7 @@ public static class UserAdmin
         public string Email { get; set; } = "";
         public string Status { get; set; } = "";
         public string[] Roles { get; set; } = [];
+        public string[] DepartmentIds { get; set; } = [];
         public bool Has2fa { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? LastSeenAt { get; set; }
@@ -26,7 +27,7 @@ public static class UserAdmin
 
     public static object Dto(UserRow u) => new
     {
-        id = u.Id, email = u.Email, status = u.Status, roles = u.Roles, has2fa = u.Has2fa,
+        id = u.Id, email = u.Email, status = u.Status, roles = u.Roles, departmentIds = u.DepartmentIds, has2fa = u.Has2fa,
         createdAt = DateTime.SpecifyKind(u.CreatedAt, DateTimeKind.Utc),
         lastSeenAt = u.LastSeenAt is { } l ? DateTime.SpecifyKind(l, DateTimeKind.Utc) : (DateTime?)null,
     };
@@ -34,6 +35,7 @@ public static class UserAdmin
     private const string Select = """
         SELECT u.id, u.email::text AS email, u.status, u.totp_secret_enc IS NOT NULL AS has2fa, u.created_at,
                array(SELECT role FROM user_roles r WHERE r.user_id = u.id ORDER BY role) AS roles,
+               array(SELECT department_id FROM doctor_departments d WHERE d.user_id = u.id ORDER BY department_id) AS department_ids,
                (SELECT max(s.last_seen_at) FROM sessions s WHERE s.user_id = u.id) AS last_seen_at
         FROM users u
         """;
@@ -80,6 +82,8 @@ public static class UserAdmin
         {
             await c.ExecuteAsync("DELETE FROM user_roles WHERE user_id = @id", new { id = u.Id }, t);
             await c.ExecuteAsync("INSERT INTO user_roles (user_id, role) VALUES (@id, @newRole)", new { id = u.Id, newRole }, t);
+            if (u.Roles.Contains(MedLink.Api.Auth.Roles.Doctor))
+                await c.ExecuteAsync("DELETE FROM doctor_departments WHERE user_id = @id", new { id = u.Id }, t);
             await AuthService.RevokeUserSessionsAsync(c, t, u.Id, "role_changed");
             await AuditLog.WriteAsync(c, t, actor.UserId, hospitalId, "user_role", u.Id, new { from = string.Join(",", u.Roles), to = newRole });
         }
@@ -93,6 +97,17 @@ public static class UserAdmin
             if (d) await AuthService.RevokeUserSessionsAsync(c, t, u.Id, "user_disabled");
             await AuditLog.WriteAsync(c, t, actor.UserId, hospitalId, d ? "user_disable" : "user_enable", u.Id);
         }
+    }
+
+    /// <summary>A doctor sees only the bookings of these departments (owner's decision). Replaces the whole set.</summary>
+    public static async Task SetDoctorDepartmentsAsync(NpgsqlConnection c, NpgsqlTransaction t, string userId, string hospitalId,
+        IReadOnlyCollection<string> departmentIds, Principal actor)
+    {
+        await c.ExecuteAsync("DELETE FROM doctor_departments WHERE user_id = @userId", new { userId }, t);
+        foreach (var d in departmentIds)
+            await c.ExecuteAsync("INSERT INTO doctor_departments (user_id, department_id, hospital_id) VALUES (@userId, @d, @hospitalId)",
+                new { userId, d, hospitalId }, t);
+        await AuditLog.WriteAsync(c, t, actor.UserId, hospitalId, "doctor_departments", userId, new { count = departmentIds.Count });
     }
 
     /// <summary>New activation link for a pending user, or a password-reset link for an active one.</summary>
