@@ -46,6 +46,8 @@ export type Status = 'active' | 'suspended' | 'pending';
 export type Hospital = {
   id: string; name: Names; status: Status; slug: string; users: number;
   createdAt: string; timezone: string; lastSyncAt: string | null; bookings30d: number;
+  /** Per-hospital overrides; null = the company-wide value. */
+  bookingWindowDays: number | null; minNoticeMin: number | null;
 };
 
 export type HospitalDetail = {
@@ -72,6 +74,12 @@ export type LinkInfo = {
 export type HospitalMe = {
   id: string; name: Names; status: Status; timezone: string; noShowGraceMin: number;
   retentionMonths: number; staffTotpRequired: boolean; slug: string | null;
+  bookingRules: { windowDays: number; minNoticeMin: number; overridden: boolean };
+};
+
+export type PlatformSettings = {
+  defaultTimezone: string; bookingWindowDays: number; minNoticeMin: number;
+  patientCanCancel: boolean; perPhoneDailyLimit: number; updatedAt: string;
 };
 
 export type ScheduleBlock = { weekday: number; start: string; end: string; slotMinutes: number; capacity: number };

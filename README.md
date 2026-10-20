@@ -115,7 +115,8 @@ All settings are environment variables; see [`.env.example`](.env.example). The 
 4. Run `docker compose --env-file ../.env run --rm api bootstrap-admin --email <owner email>` once.
 5. Build each site with `VITE_API_URL=https://api.medlink.website` and publish its `dist/` to Cloudflare Pages: `web/admin` → `admin.medlink.website`, `web/hospital` → `app.medlink.website`, `web/booking` → `medlink.website` (also deploy `web/booking/functions/` and set `API_ORIGIN=https://api.medlink.website`, so renamed links get a real 301).
 6. Set `HOSPITAL_WEB_URL=https://app.medlink.website` and list all three origins in `CORS_ORIGINS`.
-7. If the only Owner loses access: `docker compose --env-file ../.env run --rm api reset-company-user --email <address>` prints a 1-hour reset link. Hand it over only after verifying identity.
+7. Company-wide values (default time zone, booking window, minimum notice, patient cancellation, per-phone limit) are set in the console under **System settings**, not in `.env`.
+8. If the only Owner loses access: `docker compose --env-file ../.env run --rm api reset-company-user --email <address>` prints a 1-hour reset link. Hand it over only after verifying identity.
 
 ### Backups
 `infra/backup/backup.sh` runs `pg_dump`, encrypts it with `age` using a public key, and uploads it to R2. Schedule it every 6 hours with cron, and set an R2 lifecycle rule to keep 35 days. `infra/backup/restore.sh` restores into a new database for the monthly restore test. The age private key stays offline with the owner. These scripts are written but not yet run; that is Phase 11.

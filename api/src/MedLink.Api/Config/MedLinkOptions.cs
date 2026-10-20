@@ -32,7 +32,6 @@ public sealed class MedLinkOptions
     public string[] CorsOrigins { get; init; } = [];
     public string[] TrustedProxies { get; init; } = [];
     public bool CookieSecure { get; init; } = true;
-    public string DefaultHospitalTimezone { get; init; } = "Asia/Damascus";
     public int AuthRatePerIp { get; init; } = 20;
     public int AuthRatePerNet24 { get; init; } = 60;
 
@@ -94,7 +93,6 @@ public sealed class MedLinkOptions
             CorsOrigins = Split(c["CORS_ORIGINS"]),
             TrustedProxies = Split(c["TRUSTED_PROXIES"]),
             CookieSecure = !string.Equals(c["COOKIE_SECURE"], "false", StringComparison.OrdinalIgnoreCase),
-            DefaultHospitalTimezone = Opt("DEFAULT_HOSPITAL_TIMEZONE", "Asia/Damascus"),
             AuthRatePerIp = int.Parse(Opt("AUTH_RATE_PER_IP_PER_MIN", "20")),
             AuthRatePerNet24 = int.Parse(Opt("AUTH_RATE_PER_NET24_PER_MIN", "60")),
         };
@@ -103,8 +101,6 @@ public sealed class MedLinkOptions
             throw new InvalidOperationException(
                 "Missing or invalid configuration: " + string.Join(", ", errors) +
                 ". See .env.example; generate secrets locally with `openssl rand -base64 48`.");
-        if (requireApp && TimeZoneInfo.TryFindSystemTimeZoneById(opts.DefaultHospitalTimezone, out _) == false)
-            throw new InvalidOperationException("DEFAULT_HOSPITAL_TIMEZONE is not a known IANA time zone.");
         return opts;
     }
 

@@ -4,6 +4,38 @@ Real runs only. Re-run the commands to reproduce. Newest phase first.
 
 ---
 
+# Phase 5 addendum — System settings in the company console (2026-10-20)
+
+The owner asked for these values to be editable in the company console, not fixed in code: default time zone (Syria), booking window (14 days), minimum notice (30 min), patient cancellation (off), and the per-phone limit (none).
+
+| Check | Result |
+|---|---|
+| API tests (`dotnet test -c Release`) | ✅ **44 passed, 0 failed** (2 min 2 s). 5 new in `PlatformSettingsTests`, plus the Syria-default check in the time-zone test |
+| Web: `tsc` × 4, unit tests, `vite build` × 3 | ✅ no errors · 9/9 · 3 built |
+| Browser, focused run (System settings) | ✅ **7 of 7** |
+| Browser, Phase 5 run repeated | ✅ 16 of 16 |
+| Browser, Phase 4 run repeated | ✅ 16 of 16 |
+
+Browser steps:
+```
+PASS owner signs in
+PASS System settings tab shows the owner values (Syria, 14 days, 30 min, no cancel, no limit)
+PASS create dialog defaults to the system time zone (Asia/Damascus)
+PASS owner changes the booking window to 21 days; saved and audited
+PASS hospital drawer: override minimum notice to 60 minutes for this hospital only
+PASS hospital admin sees the effective rules read-only: 21 days (company) and 60 minutes (override)
+PASS audit log labels the new actions
+```
+The hospital step also calls `PATCH /admin/settings` directly → **403**.
+
+Failures along the way (both in the tests, not the product):
+- The database-guard test tried to "change" an active hospital's status to `active`, which isn't a change, so the guard correctly didn't fire. It now uses `suspended`.
+- The browser test clicked the middle of a hospital row, where the Copy button sits. It now clicks the hospital name.
+
+Screenshots: `docs/screenshots/phase-5/system-*.png`.
+
+---
+
 # Phase 5 — hospital management and unique links (2026-10-20)
 
 ## 1. API tests — xUnit + Testcontainers (PostgreSQL 16)

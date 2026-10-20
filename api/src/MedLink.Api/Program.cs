@@ -138,6 +138,7 @@ public static class Startup
         app.MapAuth();
         app.MapAdmin();
         app.MapTeam();
+        app.MapPlatform();
         app.MapHospital();
         app.MapPublic();
         return app;

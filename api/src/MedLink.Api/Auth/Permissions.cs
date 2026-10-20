@@ -27,6 +27,7 @@ public enum Permission
     ViewReports,
     ViewAuditFull,
     ViewAuditHospitalOnly,
+    PlatformSettings,
     ManageTeam,
     // Hospital
     HospitalRead,
@@ -43,7 +44,7 @@ public static class PermissionMatrix
     private static readonly Dictionary<string, Permission[]> Map = new()
     {
         [Roles.Owner] = [Permission.HospitalsCreateEdit, Permission.HospitalsSuspend, Permission.RecoverAdminAccess,
-                         Permission.ViewReports, Permission.ViewAuditFull, Permission.ViewAuditHospitalOnly, Permission.ManageTeam],
+                         Permission.ViewReports, Permission.ViewAuditFull, Permission.ViewAuditHospitalOnly, Permission.PlatformSettings, Permission.ManageTeam],
         [Roles.Support] = [Permission.RecoverAdminAccess, Permission.ViewReports, Permission.ViewAuditHospitalOnly],
         [Roles.Viewer] = [Permission.ViewReports],
         [Roles.HospAdmin] = [Permission.HospitalRead, Permission.FormEditPublish, Permission.HospitalSettings, Permission.BookingsView,

@@ -50,7 +50,7 @@ export const A = {
     tooSoon: (d: string) => 'يُسمح بتغيير الرابط مرة كل 30 يومًا. التغيير التالي ممكن بعد ' + d + '.',
     emailTaken: 'هذا البريد مستخدم لحساب آخر.', noAdmin: 'لا يوجد مسؤول نشط لهذا المستشفى.',
     noData: '—', roleNames: { owner: 'مالك', support: 'دعم', viewer: 'مشاهد' } as Record<string, string>,
-    extraTags: { logout: 'خروج', login_locked: 'قفل', link_completed: 'تفعيل حساب', bootstrap_admin: 'إنشاء المالك', user_invite: 'دعوة مستخدم', user_role: 'تغيير دور', user_disable: 'تعطيل مستخدم', user_enable: 'تفعيل مستخدم', user_link: 'إرسال رابط', hospital_settings: 'إعدادات', department_create: 'قسم جديد', department_edit: 'تعديل قسم', schedule_edit: 'جدول مواعيد', closure_add: 'إغلاق', closure_remove: 'إلغاء إغلاق', company_user_reset_cli: 'استعادة من الخادم' } as Record<string, string>,
+    extraTags: { logout: 'خروج', login_locked: 'قفل', link_completed: 'تفعيل حساب', bootstrap_admin: 'إنشاء المالك', user_invite: 'دعوة مستخدم', user_role: 'تغيير دور', user_disable: 'تعطيل مستخدم', user_enable: 'تفعيل مستخدم', user_link: 'إرسال رابط', hospital_settings: 'إعدادات', department_create: 'قسم جديد', department_edit: 'تعديل قسم', schedule_edit: 'جدول مواعيد', closure_add: 'إغلاق', closure_remove: 'إلغاء إغلاق', company_user_reset_cli: 'استعادة من الخادم', platform_settings: 'إعدادات النظام', booking_rules: 'قواعد الحجز' } as Record<string, string>,
     reportsPending: 'تظهر أرقام الحجوزات والحضور بعد تفعيل نظام الحجز (المرحلة 6).',
   },
   en: {
@@ -84,7 +84,7 @@ export const A = {
     tooSoon: (d: string) => 'The link can change once every 30 days. The next change is possible after ' + d + '.',
     emailTaken: 'This email is already used by another account.', noAdmin: 'This hospital has no active admin.',
     noData: '—', roleNames: { owner: 'Owner', support: 'Support', viewer: 'Viewer' } as Record<string, string>,
-    extraTags: { logout: 'Sign-out', login_locked: 'Locked', link_completed: 'Account set up', bootstrap_admin: 'Owner created', user_invite: 'User invited', user_role: 'Role change', user_disable: 'User disabled', user_enable: 'User enabled', user_link: 'Link sent', hospital_settings: 'Settings', department_create: 'New department', department_edit: 'Department edit', schedule_edit: 'Schedule', closure_add: 'Closure', closure_remove: 'Closure removed', company_user_reset_cli: 'Server recovery' } as Record<string, string>,
+    extraTags: { logout: 'Sign-out', login_locked: 'Locked', link_completed: 'Account set up', bootstrap_admin: 'Owner created', user_invite: 'User invited', user_role: 'Role change', user_disable: 'User disabled', user_enable: 'User enabled', user_link: 'Link sent', hospital_settings: 'Settings', department_create: 'New department', department_edit: 'Department edit', schedule_edit: 'Schedule', closure_add: 'Closure', closure_remove: 'Closure removed', company_user_reset_cli: 'Server recovery', platform_settings: 'System settings', booking_rules: 'Booking rules' } as Record<string, string>,
     reportsPending: 'Booking and attendance numbers appear once booking is live (phase 6).',
   },
   tr: {
@@ -118,7 +118,7 @@ export const A = {
     tooSoon: (d: string) => 'Bağlantı 30 günde bir değiştirilebilir. Sonraki değişiklik ' + d + ' tarihinden sonra mümkün.',
     emailTaken: 'Bu e-posta başka bir hesapta kullanılıyor.', noAdmin: 'Bu hastanenin aktif yöneticisi yok.',
     noData: '—', roleNames: { owner: 'Sahip', support: 'Destek', viewer: 'İzleyici' } as Record<string, string>,
-    extraTags: { logout: 'Çıkış', login_locked: 'Kilit', link_completed: 'Hesap kuruldu', bootstrap_admin: 'Sahip oluşturuldu', user_invite: 'Kullanıcı daveti', user_role: 'Rol değişikliği', user_disable: 'Kullanıcı kapatıldı', user_enable: 'Kullanıcı açıldı', user_link: 'Bağlantı gönderildi', hospital_settings: 'Ayarlar', department_create: 'Yeni bölüm', department_edit: 'Bölüm düzenleme', schedule_edit: 'Program', closure_add: 'Kapanış', closure_remove: 'Kapanış kaldırıldı', company_user_reset_cli: 'Sunucu kurtarma' } as Record<string, string>,
+    extraTags: { logout: 'Çıkış', login_locked: 'Kilit', link_completed: 'Hesap kuruldu', bootstrap_admin: 'Sahip oluşturuldu', user_invite: 'Kullanıcı daveti', user_role: 'Rol değişikliği', user_disable: 'Kullanıcı kapatıldı', user_enable: 'Kullanıcı açıldı', user_link: 'Bağlantı gönderildi', hospital_settings: 'Ayarlar', department_create: 'Yeni bölüm', department_edit: 'Bölüm düzenleme', schedule_edit: 'Program', closure_add: 'Kapanış', closure_remove: 'Kapanış kaldırıldı', company_user_reset_cli: 'Sunucu kurtarma', platform_settings: 'Sistem ayarları', booking_rules: 'Randevu kuralları' } as Record<string, string>,
     reportsPending: 'Randevu ve katılım sayıları randevu sistemi açıldığında görünür (aşama 6).',
   },
 };

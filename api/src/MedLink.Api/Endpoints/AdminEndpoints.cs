@@ -30,10 +30,12 @@ public static class AdminEndpoints
         public int Users { get; set; }
         public DateTime CreatedAt { get; set; }
         public string Timezone { get; set; } = "";
+        public int? BookingWindowDays { get; set; }
+        public int? MinNoticeMin { get; set; }
     }
 
     private const string HospitalSelect = """
-        SELECT h.id, h.name_ar, h.name_en, h.name_tr, h.status, h.created_at, h.timezone,
+        SELECT h.id, h.name_ar, h.name_en, h.name_tr, h.status, h.created_at, h.timezone, h.booking_window_days, h.min_notice_min,
                (SELECT slug FROM hospital_slugs s WHERE s.hospital_id = h.id AND s.is_primary) AS slug,
                (SELECT count(*)::int FROM users u WHERE u.hospital_id = h.id AND u.status <> 'disabled') AS users
         FROM hospitals h
@@ -48,6 +50,9 @@ public static class AdminEndpoints
         users = h.Users,
         createdAt = DateTime.SpecifyKind(h.CreatedAt, DateTimeKind.Utc),
         timezone = h.Timezone,
+        // Per-hospital overrides; null = the company-wide value from System settings.
+        bookingWindowDays = h.BookingWindowDays,
+        minNoticeMin = h.MinNoticeMin,
         // Sync and booking data arrive in phases 6-7; null means "never connected", not zero activity hidden.
         lastSyncAt = (DateTime?)null,
         bookings30d = 0,
@@ -125,8 +130,7 @@ public static class AdminEndpoints
             if (nameAr is null || nameEn is null) return Error("NAME_REQUIRED", 422);
             if (!IsEmail(req.AdminEmail)) return Error("EMAIL_INVALID", 422);
             if (!SlugPolicy.IsValidFormat(req.Slug)) return Error("SLUG_INVALID", 422);
-            var timezone = req.Timezone ?? o.DefaultHospitalTimezone;
-            if (!Timezones.IsValid(timezone)) return Error("TIMEZONE_INVALID", 422);
+            if (req.Timezone is not null && !Timezones.IsValid(req.Timezone)) return Error("TIMEZONE_INVALID", 422);
             var adminEmail = req.AdminEmail!.Trim();
 
             try
@@ -137,6 +141,8 @@ public static class AdminEndpoints
                     if (await c.ExecuteScalarAsync<bool>("SELECT EXISTS (SELECT 1 FROM users WHERE email = @adminEmail)", new { adminEmail }, t))
                         return (null, null, "EMAIL_TAKEN");
                     var id = Ids.Hospital();
+                    // No zone given → the company-wide default from System settings.
+                    var timezone = req.Timezone ?? await PlatformEndpoints.DefaultTimezoneAsync(c, t);
                     await c.ExecuteAsync("""
                         INSERT INTO hospitals (id, name_ar, name_en, name_tr, timezone) VALUES (@id, @nameAr, @nameEn, @nameTr, @tz)
                         """, new { id, nameAr, nameEn, nameTr, tz = timezone }, t);

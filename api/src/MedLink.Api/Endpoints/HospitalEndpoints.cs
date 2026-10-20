@@ -85,11 +85,14 @@ public static class HospitalEndpoints
                        (SELECT slug FROM hospital_slugs s WHERE s.hospital_id = h.id AND s.is_primary) AS slug
                 FROM hospitals h WHERE h.id = @id
                 """, new { id = p.HospitalId }, t));
+            var rules = await db.RunAsync(p.DbScope, (c, t) => PlatformEndpoints.EffectiveRulesAsync(c, t, p.HospitalId!));
             return Results.Json(new
             {
                 id = h.Id, name = new { ar = h.NameAr, en = h.NameEn, tr = h.NameTr }, status = h.Status,
                 timezone = h.Timezone, noShowGraceMin = h.NoShowGraceMin, retentionMonths = h.RetentionMonths,
                 staffTotpRequired = h.StaffTotpRequired, slug = h.Slug,
+                // Set by the company (System settings, or this hospital's override); read-only here.
+                bookingRules = new { windowDays = rules.WindowDays, minNoticeMin = rules.MinNoticeMin, overridden = rules.Overridden },
             });
         }).Require(Permission.HospitalRead);
 

@@ -7,11 +7,27 @@ Real test results: [`test-results.md`](test-results.md) (Phase 5 section). Scree
 ## Phase 4 open questions — what I did (the owner said "start Phase 5", so I used my recommendations)
 | Question | What was built |
 |---|---|
-| Hospital time zone | A time-zone list in the create dialog and the edit drawer (company), and in hospital settings. The server accepts only real IANA zones. The dialog and the API fallback (`DEFAULT_HOSPITAL_TIMEZONE`) default to **Asia/Damascus** (owner's decision, 2026-10-20) |
+| Hospital time zone | A time-zone list in the create dialog and the edit drawer (company), and in hospital settings. The server accepts only real IANA zones. The default is **Asia/Damascus** (owner's decision), editable in System settings |
 | Company staff accounts | A **Team** tab (Owner only): invite Owner/Support/Viewer by a 24-hour activation link, change roles, disable/enable, resend links. Nobody can change their own account, and at least one active Owner always remains, even if two Owners demote each other at the same moment |
 | Company user loses access | Another Owner sends a reset link from the Team tab. If there is only one Owner: `medlink reset-company-user --email …` on the server (revokes sessions, prints a 1-hour link) |
 | Maximum session age | Hard limit of 7 days, on top of the 8 h / 12 h idle timeouts |
 | Password length | Unchanged: at least 10 characters |
+
+## Addendum: System settings (company console)
+At the owner's request, these values are edited in the company console's new **System settings** tab (Owner edits; Support and Viewer can only read). They are stored in the database (`platform_settings`, migration 0003), not in code or `.env`:
+
+| Setting | Value set by the owner | Applies |
+|---|---|---|
+| Default time zone for new hospitals | **Asia/Damascus (Syria)** | now (create dialog and API) |
+| Booking window | **14 days** | phase 6 booking |
+| Minimum notice before a slot | **30 minutes** | phase 6 booking |
+| Patients cancel online | **No**, reception only | phase 6 |
+| Bookings per phone per day | **No limit** (0); the per-device/network rate limit stays | phase 6 |
+
+- Each hospital's drawer has **Booking rules for this hospital**: leave a field empty to use the company value, or set a value for that hospital only.
+- Hospitals see their effective rules read-only in Settings.
+- The database itself refuses a hospital session that tries to change company-controlled fields: booking rules, status, names.
+- The `DEFAULT_HOSPITAL_TIMEZONE` environment variable was removed; the database value is the only source.
 
 ## What was built
 **Database (migration `0002_hospital_management.sql`):**
@@ -52,7 +68,7 @@ Real test results: [`test-results.md`](test-results.md) (Phase 5 section). Scree
 - The design has no detailed mock-ups for the Departments and Settings screens. They follow the console's style; tell me if you want changes.
 - No hospital logo upload yet; the booking header shows the design's logo slot. Recommendation: Phase 6 or 12.
 
-## Questions for Phase 6 (booking form and dynamic booking)
-1. **Booking window:** how far ahead can patients book (the design shows 14 days)? And the minimum notice (e.g. no booking less than 1 hour before)?
-2. **Cancellation by the patient:** the design re-shows nothing after confirmation and has no cancel flow. Should patients be able to cancel (for example by booking number plus phone)? I recommend no for now: reception cancels.
-3. **Limits per patient:** without accounts, should there be a limit (e.g. per phone number per day) to stop abuse, or only the per-IP rate limit?
+## Phase 6 decisions (answered by the owner, 2026-10-20)
+1. Booking window **14 days**; minimum notice **30 minutes**. Both editable in System settings, with optional per-hospital overrides.
+2. Patients **cannot cancel** online; reception cancels.
+3. **No** per-phone daily limit; the existing per-device and per-network rate limits are enough.

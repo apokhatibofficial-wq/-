@@ -58,6 +58,13 @@ export function Settings({ lang, me, hospital, reload, flash }: Props) {
         <p className="note" style={{ margin: 0 }}>{t.bookingLinkNote}</p>
       </div>
 
+      <div className="card" style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <h2 className="section-title">{t.bookingRules}</h2>
+        <span style={{ fontSize: 14 }}>{t.windowDays(hospital.bookingRules.windowDays)}</span>
+        <span style={{ fontSize: 14 }}>{t.minNotice(hospital.bookingRules.minNoticeMin)}</span>
+        <p className="note" style={{ margin: 0 }}>{t.rulesByCompany}</p>
+      </div>
+
       <div className="card" style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
         <h2 className="section-title">{t.rules}</h2>
         <div className="grid-2">

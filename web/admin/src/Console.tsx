@@ -3,14 +3,14 @@ import { api, ApiError, type AuditEntry, type Hospital, type HospitalDetail, typ
 import { A, C, COMPANY_PERMS, HOSPITAL_PERMS, LANGS, LANG_TAG, ROLE_LABELS, T, type Lang, type Mark } from './i18n';
 import { tzLabel, tzOptions } from '@medlink/shared/timezones';
 import { UsersPanel } from '@medlink/shared/UsersPanel';
-import type { ManagedUser } from '@medlink/shared/api';
+import type { ManagedUser, PlatformSettings } from '@medlink/shared/api';
 import { cleanSlugInput, SLUG_RE, slugify } from '@medlink/shared/slug';
 import { LangPill } from '@medlink/shared/LangPill';
 
 const BOOK_BASE = 'medlink.website/book/';
 type SlugState = '' | 'ok' | 'bad' | 'taken' | 'checking';
-type Tab = 0 | 1 | 2 | 3 | 4;
-/** Owner's decision (2026-10-20): new hospitals default to Syria. */
+type Tab = 0 | 1 | 2 | 3 | 4 | 5;
+/** Used only until System settings have loaded; the real default comes from the server. */
 const DEFAULT_TZ = 'Asia/Damascus';
 
 const nameIn = (n: Names, l: Lang) => (l === 'tr' ? n.tr || n.en : n[l]);
@@ -82,6 +82,10 @@ export function Console({ lang: L, onLang, me, onSignedOut }: Props) {
   }, [onSignedOut]);
   useEffect(() => { void load(); }, [load]);
 
+  const [platform, setPlatform] = useState<PlatformSettings | null>(null);
+  const loadPlatform = useCallback(() => { api<PlatformSettings>('GET', '/admin/settings').then(setPlatform).catch(() => undefined); }, []);
+  useEffect(loadPlatform, [loadPlatform]);
+
   async function signOut() {
     await api('POST', '/auth/logout', {}).catch(() => undefined);
     onSignedOut();
@@ -105,12 +109,14 @@ export function Console({ lang: L, onLang, me, onSignedOut }: Props) {
   const [edit, setEdit] = useState<{ name: { ar: string; en: string; tr: string }; slug: string; timezone: string } | null>(null);
   const [saving, setSaving] = useState(false);
   const [drawerErr, setDrawerErr] = useState('');
+  const [rules, setRules] = useState({ window: '', notice: '' });
   const sh = hs?.find(h => h.id === selId) ?? null;
 
   const openDrawer = async (h: Hospital) => {
     setSelId(h.id);
     setDrawerErr('');
     setEdit({ name: { ar: h.name.ar, en: h.name.en, tr: h.name.tr ?? '' }, slug: h.slug, timezone: h.timezone });
+    setRules({ window: h.bookingWindowDays == null ? '' : String(h.bookingWindowDays), notice: h.minNoticeMin == null ? '' : String(h.minNoticeMin) });
     setDetail(null);
     try { setDetail(await api<HospitalDetail>('GET', '/admin/hospitals/' + encodeURIComponent(h.id))); } catch { /* facts stay empty */ }
   };
@@ -138,6 +144,20 @@ export function Console({ lang: L, onLang, me, onSignedOut }: Props) {
     }
   }
 
+  const parseRule = (v: string, max: number, min: number) => (v.trim() === '' ? null : Number.isInteger(Number(v)) && Number(v) >= min && Number(v) <= max ? Number(v) : NaN);
+  const ruleWindow = parseRule(rules.window, 365, 1), ruleNotice = parseRule(rules.notice, 1440, 0);
+  const rulesChanged = !!sh && (ruleWindow !== sh.bookingWindowDays || ruleNotice !== sh.minNoticeMin);
+  const rulesValid = !Number.isNaN(ruleWindow) && !Number.isNaN(ruleNotice);
+  async function saveRules() {
+    if (!sh || !rulesValid) return;
+    setDrawerErr('');
+    try {
+      await api('PUT', '/admin/hospitals/' + encodeURIComponent(sh.id) + '/booking-rules', { bookingWindowDays: ruleWindow, minNoticeMin: ruleNotice });
+      await load();
+      flash(c.rulesSaved);
+    } catch { setDrawerErr(a.errGeneric); }
+  }
+
   // ------------------------------------------------------------ modals
   const [modal, setModal] = useState<'create' | 'suspend' | 'recover' | null>(null);
   const [busy, setBusy] = useState(false);
@@ -151,7 +171,7 @@ export function Console({ lang: L, onLang, me, onSignedOut }: Props) {
 
   const openModal = (m: 'create' | 'suspend' | 'recover') => {
     setModal(m); setBusy(false); setModalErr('');
-    if (m === 'create') { setCreated(null); setForm({ ar: '', en: '', tr: '', email: '', slug: '', slugTouched: false, timezone: DEFAULT_TZ }); }
+    if (m === 'create') { setCreated(null); setForm({ ar: '', en: '', tr: '', email: '', slug: '', slugTouched: false, timezone: platform?.defaultTimezone ?? DEFAULT_TZ }); }
     if (m === 'suspend') setReason('');
     if (m === 'recover') { setChecks([false, false, false]); setRecoverDone(null); }
   };
@@ -194,9 +214,9 @@ export function Console({ lang: L, onLang, me, onSignedOut }: Props) {
     || h.id.toLowerCase().includes(ql) || (h.slug ?? '').includes(ql)), [hs, ql]);
   const rows = base.filter(h => sf === 'all' || h.status === sf);
 
-  const navLabels = [...t.nav, c.team];
-  const subs = [...t.subs, c.teamSub];
-  const tabs: Tab[] = ([0, 1, 2, 3, 4] as Tab[]).filter(i => (i !== 2 || canAudit) && (i !== 4 || can('ManageTeam')));
+  const navLabels = [...t.nav, c.team, c.system];
+  const subs = [...t.subs, c.teamSub, c.systemSub];
+  const tabs: Tab[] = ([0, 1, 2, 3, 4, 5] as Tab[]).filter(i => (i !== 2 || canAudit) && (i !== 4 || can('ManageTeam')));
   const roleLabel = me.roles.map(r => a.roleNames[r] ?? r).join(' · ');
 
   const nav = (cls: string) => (
@@ -299,6 +319,7 @@ export function Console({ lang: L, onLang, me, onSignedOut }: Props) {
           {tab === 2 && canAudit && <AuditTab L={L} hospitals={hs ?? []} />}
           {tab === 3 && <RolesTab L={L} />}
           {tab === 4 && can('ManageTeam') && <TeamTab L={L} me={me} flash={flash} />}
+          {tab === 5 && <SystemTab L={L} settings={platform} canEdit={can('PlatformSettings')} onSaved={s => { setPlatform(s); flash(t.saved); }} />}
         </main>
       </div>
 
@@ -355,6 +376,26 @@ export function Console({ lang: L, onLang, me, onSignedOut }: Props) {
               </select>
               <span className="note" style={{ fontWeight: 400 }}>{c.timezoneNote}</span>
             </label>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <span style={{ fontSize: 14, fontWeight: 600 }}>{c.bookingRules}</span>
+              <div className="grid-2" style={{ gridTemplateColumns: '1fr 1fr' }}>
+                <label className="field"><span style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 400 }}>{c.windowDays}</span>
+                  <input className="input" type="number" dir="ltr" min={1} max={365} style={{ height: 40, fontSize: 14 }} value={rules.window} readOnly={!can('HospitalsCreateEdit')}
+                    placeholder={platform ? String(platform.bookingWindowDays) : ''} aria-describedby="rules-note" onChange={e => { const v = e.target.value; setRules(r => ({ ...r, window: v })); }} />
+                  {platform && <span className="note" style={{ fontWeight: 400 }}>{c.companyValue(platform.bookingWindowDays)}</span>}
+                </label>
+                <label className="field"><span style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 400 }}>{c.noticeMin}</span>
+                  <input className="input" type="number" dir="ltr" min={0} max={1440} style={{ height: 40, fontSize: 14 }} value={rules.notice} readOnly={!can('HospitalsCreateEdit')}
+                    placeholder={platform ? String(platform.minNoticeMin) : ''} aria-describedby="rules-note" onChange={e => { const v = e.target.value; setRules(r => ({ ...r, notice: v })); }} />
+                  {platform && <span className="note" style={{ fontWeight: 400 }}>{c.companyValue(platform.minNoticeMin)}</span>}
+                </label>
+              </div>
+              <span id="rules-note" className="note">{c.useCompany}</span>
+              {can('HospitalsCreateEdit') && (
+                <button type="button" className="btn btn-secondary" style={{ height: 40, alignSelf: 'flex-start' }} disabled={!rulesChanged || !rulesValid} onClick={() => void saveRules()}>{c.saveRules}</button>
+              )}
+            </div>
 
             {drawerErr && <div role="alert" className="alert alert-danger">{drawerErr}</div>}
             {can('HospitalsCreateEdit') && (
@@ -634,5 +675,66 @@ function TeamTab({ L, me, flash }: { L: Lang; me: Me; flash: (s: string) => void
       onChange={async (id, change) => { try { await api('PATCH', '/admin/team/' + encodeURIComponent(id), change); } finally { load(); } }}
       onSendLink={id => api<{ emailSent: boolean }>('POST', '/admin/team/' + encodeURIComponent(id) + '/send-link', {})}
     />
+  );
+}
+
+function SystemTab({ L, settings, canEdit, onSaved }: { L: Lang; settings: PlatformSettings | null; canEdit: boolean; onSaved: (s: PlatformSettings) => void }) {
+  const a = A[L], c = C[L];
+  const [f, setF] = useState<{ tz: string; window: string; notice: string; cancel: boolean; limit: string } | null>(null);
+  const [err, setErr] = useState('');
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    if (settings) setF({ tz: settings.defaultTimezone, window: String(settings.bookingWindowDays), notice: String(settings.minNoticeMin), cancel: settings.patientCanCancel, limit: String(settings.perPhoneDailyLimit) });
+  }, [settings]);
+  if (!settings || !f) return <div className="card empty">{a.loading}</div>;
+  const int = (v: string, min: number, max: number) => Number.isInteger(Number(v)) && v.trim() !== '' && Number(v) >= min && Number(v) <= max;
+  const valid = int(f.window, 1, 365) && int(f.notice, 0, 1440) && int(f.limit, 0, 50);
+  const changed = f.tz !== settings.defaultTimezone || Number(f.window) !== settings.bookingWindowDays || Number(f.notice) !== settings.minNoticeMin
+    || f.cancel !== settings.patientCanCancel || Number(f.limit) !== settings.perPhoneDailyLimit;
+
+  async function save() {
+    if (!f) return;
+    setBusy(true); setErr('');
+    try {
+      onSaved(await api<PlatformSettings>('PATCH', '/admin/settings', {
+        defaultTimezone: f.tz, bookingWindowDays: Number(f.window), minNoticeMin: Number(f.notice), patientCanCancel: f.cancel, perPhoneDailyLimit: Number(f.limit),
+      }));
+    } catch (e) { setErr(e instanceof ApiError && e.status === 422 ? c.invalid : a.errGeneric); } finally { setBusy(false); }
+  }
+
+  return (
+    <div className="card" style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {!canEdit && <div className="alert alert-warn">{c.readOnlyOwner}</div>}
+      <label className="field" style={{ maxWidth: 420 }}><span>{c.defaultTz}</span>
+        <select className="input" dir="ltr" value={f.tz} disabled={!canEdit} onChange={e => { const v = e.target.value; setF(x => x && { ...x, tz: v }); }}>
+          {tzOptions(f.tz).map(z => <option key={z} value={z}>{tzLabel(z)}</option>)}
+        </select>
+        <span className="note" style={{ fontWeight: 400 }}>{c.timezoneNote}</span>
+      </label>
+      <div className="grid-2">
+        <label className="field"><span>{c.windowDays}</span>
+          <input className="input" type="number" dir="ltr" min={1} max={365} value={f.window} readOnly={!canEdit} onChange={e => { const v = e.target.value; setF(x => x && { ...x, window: v }); }} />
+          <span className="note" style={{ fontWeight: 400 }}>{c.windowNote}</span>
+        </label>
+        <label className="field"><span>{c.noticeMin}</span>
+          <input className="input" type="number" dir="ltr" min={0} max={1440} value={f.notice} readOnly={!canEdit} onChange={e => { const v = e.target.value; setF(x => x && { ...x, notice: v }); }} />
+          <span className="note" style={{ fontWeight: 400 }}>{c.noticeNote}</span>
+        </label>
+        <label className="field"><span>{c.perPhone}</span>
+          <input className="input" type="number" dir="ltr" min={0} max={50} value={f.limit} readOnly={!canEdit} onChange={e => { const v = e.target.value; setF(x => x && { ...x, limit: v }); }} />
+          <span className="note" style={{ fontWeight: 400 }}>{c.perPhoneNote}</span>
+        </label>
+      </div>
+      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+        <button type="button" role="switch" aria-checked={f.cancel} aria-labelledby="cancel-label" className="switch" disabled={!canEdit} onClick={() => setF(x => x && { ...x, cancel: !x.cancel })} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <span id="cancel-label" style={{ fontSize: 14, fontWeight: 500 }}>{c.patientCancel}</span>
+          <span className="note">{c.patientCancelNote}</span>
+        </div>
+      </div>
+      <div className="note">{c.phase6Note}</div>
+      {err && <div role="alert" className="alert alert-danger">{err}</div>}
+      {canEdit && <button type="button" className="btn btn-primary" style={{ alignSelf: 'flex-start' }} disabled={!valid || !changed || busy} onClick={() => void save()}>{c.saveSystem}</button>}
+    </div>
   );
 }
