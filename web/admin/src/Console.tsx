@@ -1,12 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { api, ApiError, type AuditEntry, type Hospital, type HospitalDetail, type Me, type Names, type Reports, type Status } from './api';
-import { A, COMPANY_PERMS, HOSPITAL_PERMS, LANGS, LANG_TAG, ROLE_LABELS, T, type Lang, type Mark } from './i18n';
-import { cleanSlugInput, SLUG_RE, slugify } from './slug';
-import { LangPill } from './LangPill';
+import { api, ApiError, type AuditEntry, type Hospital, type HospitalDetail, type Me, type Names, type Reports, type Status } from '@medlink/shared/api';
+import { A, C, COMPANY_PERMS, HOSPITAL_PERMS, LANGS, LANG_TAG, ROLE_LABELS, T, type Lang, type Mark } from './i18n';
+import { tzLabel, tzOptions } from '@medlink/shared/timezones';
+import { UsersPanel } from '@medlink/shared/UsersPanel';
+import type { ManagedUser } from '@medlink/shared/api';
+import { cleanSlugInput, SLUG_RE, slugify } from '@medlink/shared/slug';
+import { LangPill } from '@medlink/shared/LangPill';
 
 const BOOK_BASE = 'medlink.website/book/';
 type SlugState = '' | 'ok' | 'bad' | 'taken' | 'checking';
-type Tab = 0 | 1 | 2 | 3;
+type Tab = 0 | 1 | 2 | 3 | 4;
+const DEFAULT_TZ = 'Africa/Tripoli';
 
 const nameIn = (n: Names, l: Lang) => (l === 'tr' ? n.tr || n.en : n[l]);
 
@@ -44,6 +48,7 @@ type Props = { lang: Lang; onLang: (l: Lang) => void; me: Me; onSignedOut: () =>
 export function Console({ lang: L, onLang, me, onSignedOut }: Props) {
   const t = T[L];
   const a = A[L];
+  const c = C[L];
   const w = useWidth();
   const wide = w >= 900;
   const can = (p: string) => me.permissions.includes(p);
@@ -96,7 +101,7 @@ export function Console({ lang: L, onLang, me, onSignedOut }: Props) {
   // ------------------------------------------------------------ drawer
   const [selId, setSelId] = useState<string | null>(null);
   const [detail, setDetail] = useState<HospitalDetail | null>(null);
-  const [edit, setEdit] = useState<{ name: { ar: string; en: string; tr: string }; slug: string } | null>(null);
+  const [edit, setEdit] = useState<{ name: { ar: string; en: string; tr: string }; slug: string; timezone: string } | null>(null);
   const [saving, setSaving] = useState(false);
   const [drawerErr, setDrawerErr] = useState('');
   const sh = hs?.find(h => h.id === selId) ?? null;
@@ -104,14 +109,14 @@ export function Console({ lang: L, onLang, me, onSignedOut }: Props) {
   const openDrawer = async (h: Hospital) => {
     setSelId(h.id);
     setDrawerErr('');
-    setEdit({ name: { ar: h.name.ar, en: h.name.en, tr: h.name.tr ?? '' }, slug: h.slug });
+    setEdit({ name: { ar: h.name.ar, en: h.name.en, tr: h.name.tr ?? '' }, slug: h.slug, timezone: h.timezone });
     setDetail(null);
     try { setDetail(await api<HospitalDetail>('GET', '/admin/hospitals/' + encodeURIComponent(h.id))); } catch { /* facts stay empty */ }
   };
   const closeDrawer = () => { setSelId(null); setEdit(null); setDetail(null); };
 
   const editSlugState = useSlugCheck(edit?.slug ?? '', selId, !!sh && edit?.slug === sh.slug);
-  const changed = !!sh && !!edit && (edit.name.ar !== sh.name.ar || edit.name.en !== sh.name.en || edit.name.tr !== (sh.name.tr ?? '') || edit.slug !== sh.slug);
+  const changed = !!sh && !!edit && (edit.name.ar !== sh.name.ar || edit.name.en !== sh.name.en || edit.name.tr !== (sh.name.tr ?? '') || edit.slug !== sh.slug || edit.timezone !== sh.timezone);
   const cantSave = !can('HospitalsCreateEdit') || !changed || editSlugState !== 'ok' || !edit?.name.ar.trim() || !edit?.name.en.trim() || saving;
 
   async function saveDrawer() {
@@ -119,7 +124,7 @@ export function Console({ lang: L, onLang, me, onSignedOut }: Props) {
     setSaving(true);
     setDrawerErr('');
     try {
-      await api('PATCH', '/admin/hospitals/' + encodeURIComponent(sh.id), { nameAr: edit.name.ar, nameEn: edit.name.en, nameTr: edit.name.tr, slug: edit.slug });
+      await api('PATCH', '/admin/hospitals/' + encodeURIComponent(sh.id), { nameAr: edit.name.ar, nameEn: edit.name.en, nameTr: edit.name.tr, slug: edit.slug, timezone: edit.timezone });
       await load();
       setDetail(await api<HospitalDetail>('GET', '/admin/hospitals/' + encodeURIComponent(sh.id)));
       flash(t.saved);
@@ -136,7 +141,7 @@ export function Console({ lang: L, onLang, me, onSignedOut }: Props) {
   const [modal, setModal] = useState<'create' | 'suspend' | 'recover' | null>(null);
   const [busy, setBusy] = useState(false);
   const [modalErr, setModalErr] = useState('');
-  const [form, setForm] = useState({ ar: '', en: '', tr: '', email: '', slug: '', slugTouched: false });
+  const [form, setForm] = useState({ ar: '', en: '', tr: '', email: '', slug: '', slugTouched: false, timezone: DEFAULT_TZ });
   const [created, setCreated] = useState<{ id: string; slug: string; name: string; emailSent: boolean } | null>(null);
   const [reason, setReason] = useState('');
   const [checks, setChecks] = useState([false, false, false]);
@@ -145,7 +150,7 @@ export function Console({ lang: L, onLang, me, onSignedOut }: Props) {
 
   const openModal = (m: 'create' | 'suspend' | 'recover') => {
     setModal(m); setBusy(false); setModalErr('');
-    if (m === 'create') { setCreated(null); setForm({ ar: '', en: '', tr: '', email: '', slug: '', slugTouched: false }); }
+    if (m === 'create') { setCreated(null); setForm({ ar: '', en: '', tr: '', email: '', slug: '', slugTouched: false, timezone: DEFAULT_TZ }); }
     if (m === 'suspend') setReason('');
     if (m === 'recover') { setChecks([false, false, false]); setRecoverDone(null); }
   };
@@ -160,7 +165,7 @@ export function Console({ lang: L, onLang, me, onSignedOut }: Props) {
     try {
       if (modal === 'create') {
         const r = await api<{ id: string; slug: string; emailSent: boolean }>('POST', '/admin/hospitals', {
-          nameAr: form.ar.trim(), nameEn: form.en.trim(), nameTr: form.tr.trim() || null, adminEmail: form.email.trim(), slug: form.slug,
+          nameAr: form.ar.trim(), nameEn: form.en.trim(), nameTr: form.tr.trim() || null, adminEmail: form.email.trim(), slug: form.slug, timezone: form.timezone,
         });
         setCreated({ id: r.id, slug: r.slug, name: L === 'ar' ? form.ar.trim() : form.en.trim(), emailSent: r.emailSent });
         await load();
@@ -176,7 +181,7 @@ export function Console({ lang: L, onLang, me, onSignedOut }: Props) {
     } catch (e) {
       const c = e instanceof ApiError ? e.code : '';
       setModalErr(c === 'SLUG_TAKEN' ? t.slugTaken : c === 'SLUG_INVALID' ? t.slugBad : c === 'EMAIL_TAKEN' ? a.emailTaken
-        : c === 'NO_ADMIN' ? a.noAdmin : c === 'NETWORK' ? a.errNetwork : a.errGeneric);
+        : c === 'TIMEZONE_INVALID' ? C[L].tzInvalid : c === 'NO_ADMIN' ? a.noAdmin : c === 'NETWORK' ? a.errNetwork : a.errGeneric);
     } finally {
       setBusy(false);
     }
@@ -188,8 +193,9 @@ export function Console({ lang: L, onLang, me, onSignedOut }: Props) {
     || h.id.toLowerCase().includes(ql) || (h.slug ?? '').includes(ql)), [hs, ql]);
   const rows = base.filter(h => sf === 'all' || h.status === sf);
 
-  const navLabels = t.nav;
-  const tabs: Tab[] = ([0, 1, 2, 3] as Tab[]).filter(i => i !== 2 || canAudit);
+  const navLabels = [...t.nav, c.team];
+  const subs = [...t.subs, c.teamSub];
+  const tabs: Tab[] = ([0, 1, 2, 3, 4] as Tab[]).filter(i => (i !== 2 || canAudit) && (i !== 4 || can('ManageTeam')));
   const roleLabel = me.roles.map(r => a.roleNames[r] ?? r).join(' · ');
 
   const nav = (cls: string) => (
@@ -232,7 +238,7 @@ export function Console({ lang: L, onLang, me, onSignedOut }: Props) {
           <div className="title-row">
             <div style={{ flex: '1 1 280px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
               <h1>{navLabels[tab]}</h1>
-              <div style={{ fontSize: 14, color: 'var(--muted)' }}>{t.subs[tab]}</div>
+              <div style={{ fontSize: 14, color: 'var(--muted)' }}>{subs[tab]}</div>
             </div>
             <LangPill lang={L} onLang={onLang} />
             {tab === 0 && can('HospitalsCreateEdit') && (
@@ -291,6 +297,7 @@ export function Console({ lang: L, onLang, me, onSignedOut }: Props) {
           {tab === 1 && <ReportsTab L={L} />}
           {tab === 2 && canAudit && <AuditTab L={L} hospitals={hs ?? []} />}
           {tab === 3 && <RolesTab L={L} />}
+          {tab === 4 && can('ManageTeam') && <TeamTab L={L} me={me} flash={flash} />}
         </main>
       </div>
 
@@ -338,6 +345,15 @@ export function Console({ lang: L, onLang, me, onSignedOut }: Props) {
                 <span dir="ltr" className="note" style={{ textAlign: 'start' }}>↪ {detail.oldSlugs.map(o => '/book/' + o.slug).join(', ')}</span>
               )}
             </div>
+
+            <label className="field">
+              <span style={{ fontSize: 14, fontWeight: 600 }}>{c.timezone}</span>
+              <select className="input" dir="ltr" style={{ height: 40, fontSize: 14 }} value={edit.timezone} disabled={!can('HospitalsCreateEdit')}
+                onChange={e => { const v = e.target.value; setEdit(s => (s ? { ...s, timezone: v } : s)); }}>
+                {tzOptions(edit.timezone).map(z => <option key={z} value={z}>{tzLabel(z)}</option>)}
+              </select>
+              <span className="note" style={{ fontWeight: 400 }}>{c.timezoneNote}</span>
+            </label>
 
             {drawerErr && <div role="alert" className="alert alert-danger">{drawerErr}</div>}
             {can('HospitalsCreateEdit') && (
@@ -394,6 +410,13 @@ export function Console({ lang: L, onLang, me, onSignedOut }: Props) {
                         </div>
                         <span style={{ fontSize: 12, fontWeight: 400, color: createSlugState === 'ok' ? '#13795b' : '#b42318' }}>{slugMsg}</span>
                       </div>
+                      <label className="field">
+                        <span>{c.timezone}</span>
+                        <select className="input" dir="ltr" value={form.timezone} onChange={e => { const v = e.target.value; setForm(f => ({ ...f, timezone: v })); }}>
+                          {tzOptions(form.timezone).map(z => <option key={z} value={z}>{tzLabel(z)}</option>)}
+                        </select>
+                        <span className="note" style={{ fontWeight: 400 }}>{c.timezoneNote}</span>
+                      </label>
                     </>
                   ) : (
                     <>
@@ -586,5 +609,29 @@ function RolesTab({ L }: { L: Lang }) {
       ))}
       <div className="note">{t.rolesNote}</div>
     </>
+  );
+}
+
+function TeamTab({ L, me, flash }: { L: Lang; me: Me; flash: (s: string) => void }) {
+  const a = A[L];
+  const [users, setUsers] = useState<ManagedUser[] | null>(null);
+  const load = useCallback(() => {
+    api<{ users: ManagedUser[] }>('GET', '/admin/team').then(r => setUsers(r.users)).catch(() => setUsers([]));
+  }, []);
+  useEffect(load, [load]);
+  const roleNames = a.roleNames;
+  return (
+    <UsersPanel
+      lang={L}
+      users={users}
+      roles={['support', 'viewer', 'owner'].map(id => ({ id, label: roleNames[id] }))}
+      roleNames={roleNames}
+      selfId={me.id}
+      flash={flash}
+      lockedNote={C[L].teamLockedNote}
+      onInvite={async (email, role) => { const r = await api<{ emailSent: boolean }>('POST', '/admin/team', { email, role }); load(); return r; }}
+      onChange={async (id, change) => { try { await api('PATCH', '/admin/team/' + encodeURIComponent(id), change); } finally { load(); } }}
+      onSendLink={id => api<{ emailSent: boolean }>('POST', '/admin/team/' + encodeURIComponent(id) + '/send-link', {})}
+    />
   );
 }

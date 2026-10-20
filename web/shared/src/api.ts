@@ -13,7 +13,7 @@ export class ApiError extends Error {
   }
 }
 
-export async function api<T>(method: 'GET' | 'POST' | 'PATCH', path: string, body?: unknown): Promise<T> {
+export async function api<T>(method: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE', path: string, body?: unknown): Promise<T> {
   const headers: Record<string, string> = {};
   if (body !== undefined) headers['Content-Type'] = 'application/json';
   if (method !== 'GET' && csrf) headers['X-CSRF-Token'] = csrf;
@@ -68,3 +68,20 @@ export type LinkInfo = {
   purpose: 'setup' | 'activation' | 'reset'; scope: 'company' | 'hospital'; email: string; totpRequired: boolean;
   totpUri: string | null; totpSecret: string | null; passwordMinLength: number;
 };
+
+export type HospitalMe = {
+  id: string; name: Names; status: Status; timezone: string; noShowGraceMin: number;
+  retentionMonths: number; staffTotpRequired: boolean; slug: string | null;
+};
+
+export type ScheduleBlock = { weekday: number; start: string; end: string; slotMinutes: number; capacity: number };
+export type Department = { id: string; name: Names & { en: string | null }; active: boolean; sort: number; schedules: ScheduleBlock[] };
+export type Closure = { id: string; date: string; departmentId: string | null; reason: string | null };
+
+export type ManagedUser = {
+  id: string; email: string; status: 'pending' | 'active' | 'disabled'; roles: string[]; has2fa: boolean;
+  createdAt: string; lastSeenAt: string | null;
+};
+
+/** The public booking-site base. Production: https://medlink.website */
+export const BOOK_ORIGIN: string = (import.meta.env.VITE_BOOK_ORIGIN as string | undefined) ?? 'https://medlink.website';

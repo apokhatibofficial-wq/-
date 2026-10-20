@@ -1,0 +1,10 @@
+{
+  "name": "medlink-web",
+  "private": true,
+  "workspaces": ["shared", "admin", "hospital", "booking"],
+  "scripts": {
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm test --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present"
+  }
+}

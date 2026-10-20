@@ -11,9 +11,9 @@ services:
       SMTP_TLS: none
       SMTP_USER: ""
       COOKIE_SECURE: "false"
-      CORS_ORIGINS: http://localhost:5173
+      CORS_ORIGINS: http://localhost:5173,http://localhost:5174,http://localhost:5175
       ADMIN_WEB_URL: http://localhost:5173
-      HOSPITAL_WEB_URL: http://localhost:5173
+      HOSPITAL_WEB_URL: http://localhost:5174
     networks: [backend, edge]
   mailpit:
     image: axllent/mailpit:v1.27

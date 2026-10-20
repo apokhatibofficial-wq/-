@@ -7,15 +7,17 @@
 ## نظرة عامة
 MEDLINK نظام مواعيد للمستشفيات يتكوّن من: لوحة تحكم الشركة، وتطبيق Windows للمستشفى، وموقع حجز للمرضى برابط خاص لكل مستشفى، وصفحة جوال لمسح QR، وخادم مركزي.
 
-**الحالة:** اكتملت المرحلة 4 (المصادقة والصلاحيات ولوحة الشركة)، وهي بانتظار مراجعة المالك.
-- التقرير: [`docs/phase-4-report.md`](docs/phase-4-report.md)
+**الحالة:** اكتملت المرحلة 5 (إدارة المستشفيات والروابط الخاصة)، وهي بانتظار مراجعة المالك.
+- التقارير: [`docs/phase-5-report.md`](docs/phase-5-report.md) و[`docs/phase-4-report.md`](docs/phase-4-report.md)
 - نتائج الاختبارات الفعلية: [`docs/test-results.md`](docs/test-results.md)
 
 | المجلد | المحتوى |
 |---|---|
 | `api/` | الخادم: ASP.NET Core 8، وترحيلات SQL، والاختبارات |
 | `web/admin/` | لوحة تحكم الشركة (React + Vite + TypeScript) |
-| `web/booking/`، `web/hospital/` | موقع الحجز وويب المستشفى (المرحلتان 5 و6) |
+| `web/hospital/` | ويب المستشفى: الأقسام والجداول والإعدادات والمستخدمون |
+| `web/booking/` | موقع الحجز للمرضى `/book/{slug}` |
+| `web/shared/` | المكوّنات المشتركة بين المواقع الثلاثة |
 | `windows/` | تطبيق Windows بـ WPF (المرحلة 8) |
 | `infra/` | Docker Compose، وCaddy، وسكربتات النسخ الاحتياطي |
 | `docs/` | حزمة التصميم، والتقارير، ولقطات الشاشة |
@@ -34,7 +36,10 @@ openssl rand -base64 48      # نفّذه مرة لكل سر
 cd infra
 docker compose -f docker-compose.yml -f docker-compose.dev.yml --env-file ../.env up -d --build db migrate api mailpit
 docker compose -f docker-compose.yml -f docker-compose.dev.yml --env-file ../.env run --rm api bootstrap-admin --email you@example.com
-cd ../web/admin && npm ci && npm run dev    # http://localhost:5173
+cd ../web && npm ci
+npm run dev -w @medlink/admin      # لوحة الشركة  http://localhost:5173
+npm run dev -w @medlink/hospital   # ويب المستشفى http://localhost:5174
+npm run dev -w @medlink/booking    # موقع الحجز   http://localhost:5175/book/<slug>
 ```
 - افتح رابط الإعداد الذي يطبعه الأمر (صالح 30 دقيقة)، ثم اختر كلمة المرور وفعّل التحقق الثنائي.
 - رسائل البريد في وضع التطوير تظهر في Mailpit: http://localhost:8025
@@ -42,7 +47,7 @@ cd ../web/admin && npm ci && npm run dev    # http://localhost:5173
 ### الاختبارات
 ```bash
 cd api && dotnet test                      # يحتاج Docker (Testcontainers)
-cd web/admin && npm test && npm run typecheck
+cd web && npm test && npm run typecheck
 ```
 
 ---
@@ -52,8 +57,8 @@ cd web/admin && npm test && npm run typecheck
 
 MEDLINK is a hospital appointment system with five parts: a company console, a hospital Windows app, a patient booking site (one link per hospital), a phone QR check-in page, and a central API.
 
-**Status:** Phase 4 (auth, permissions, company console) is complete and waiting for the owner's review.
-- Report: [`docs/phase-4-report.md`](docs/phase-4-report.md)
+**Status:** Phase 5 (hospital management and unique links) is complete and waiting for the owner's review.
+- Reports: [`docs/phase-5-report.md`](docs/phase-5-report.md), [`docs/phase-4-report.md`](docs/phase-4-report.md)
 - Real test results: [`docs/test-results.md`](docs/test-results.md)
 - Design handoff: [`docs/design/`](docs/design/)
 
@@ -74,7 +79,11 @@ cp .env.example .env && chmod 600 .env
 cd infra
 docker compose -f docker-compose.yml -f docker-compose.dev.yml --env-file ../.env up -d --build db migrate api mailpit
 docker compose -f docker-compose.yml -f docker-compose.dev.yml --env-file ../.env run --rm api bootstrap-admin --email you@example.com
-cd ../web/admin && npm ci && npm run dev   # http://localhost:5173 (the API is proxied under /api)
+cd ../web && npm ci                      # one npm workspace: shared, admin, hospital, booking
+npm run dev -w @medlink/admin     # company console  http://localhost:5173
+npm run dev -w @medlink/hospital  # hospital web     http://localhost:5174
+npm run dev -w @medlink/booking   # booking site     http://localhost:5175/book/<slug>
+# each dev server proxies the API under /api
 ```
 - Open the printed setup link, choose a password and scan the 2FA QR code.
 - Development emails appear in Mailpit at http://localhost:8025.
@@ -84,7 +93,7 @@ Without Docker for the API: `cd api/src/MedLink.Api && dotnet run`, with the var
 ### Tests
 ```bash
 cd api && dotnet test                         # needs Docker: Testcontainers starts PostgreSQL 16
-cd web/admin && npm test && npm run typecheck && npm audit
+cd web && npm test && npm run typecheck && npm audit && npm run build
 ```
 CI (`.github/workflows/ci.yml`) also runs a vulnerable-package check and gitleaks over the full history.
 
@@ -104,8 +113,9 @@ All settings are environment variables; see [`.env.example`](.env.example). The 
 2. In Cloudflare, point `api.medlink.website` at the VM (proxied, SSL mode "Full (strict)").
 3. Copy the repo, create `.env` (`chmod 600`), then run `cd infra && docker compose --env-file ../.env up -d --build`.
 4. Run `docker compose --env-file ../.env run --rm api bootstrap-admin --email <owner email>` once.
-5. Build `web/admin` with `VITE_API_URL=https://api.medlink.website` and publish `dist/` to Cloudflare Pages on `admin.medlink.website`.
-6. Until the hospital web exists (Phase 5), set `HOSPITAL_WEB_URL` to the admin console URL.
+5. Build each site with `VITE_API_URL=https://api.medlink.website` and publish its `dist/` to Cloudflare Pages: `web/admin` → `admin.medlink.website`, `web/hospital` → `app.medlink.website`, `web/booking` → `medlink.website` (also deploy `web/booking/functions/` and set `API_ORIGIN=https://api.medlink.website`, so renamed links get a real 301).
+6. Set `HOSPITAL_WEB_URL=https://app.medlink.website` and list all three origins in `CORS_ORIGINS`.
+7. If the only Owner loses access: `docker compose --env-file ../.env run --rm api reset-company-user --email <address>` prints a 1-hour reset link. Hand it over only after verifying identity.
 
 ### Backups
 `infra/backup/backup.sh` runs `pg_dump`, encrypts it with `age` using a public key, and uploads it to R2. Schedule it every 6 hours with cron, and set an R2 lifecycle rule to keep 35 days. `infra/backup/restore.sh` restores into a new database for the monthly restore test. The age private key stays offline with the owner. These scripts are written but not yet run; that is Phase 11.

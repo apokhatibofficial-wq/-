@@ -1,4 +1,91 @@
-# MEDLINK — Test results (Phase 4)
+# MEDLINK — Test results
+
+Real runs only. Re-run the commands to reproduce. Newest phase first.
+
+---
+
+# Phase 5 — hospital management and unique links (2026-10-20)
+
+## 1. API tests — xUnit + Testcontainers (PostgreSQL 16)
+`cd api && dotnet build -c Release && dotnet test --no-build -c Release`
+
+**Result: 39 passed, 0 failed** (1 min 49 s). These are the 26 Phase 4 tests plus 13 new ones:
+
+| New test | Result |
+|---|---|
+| Hospital admin invites reception and scanner staff; they activate without 2FA by default and get only their permissions | ✅ |
+| Changing a staff role or disabling the account revokes sessions; admins cannot change themselves or other admins | ✅ |
+| Send-link gives a pending user a new activation link and an active user a reset link | ✅ |
+| When the hospital requires staff 2FA, new staff must enrol and staff without 2FA are told to get a reset link | ✅ |
+| Hospital settings: validated ranges and real IANA time zones, recorded in the audit log | ✅ |
+| Departments and weekly schedules: validation, overlap rejected by the database, deactivate instead of delete | ✅ |
+| Closures: one per day per department (or whole hospital), and only for the session's hospital | ✅ |
+| RLS also isolates departments, schedules and closures, and the DB rejects cross-hospital links | ✅ |
+| Team: only an Owner invites company staff, by an emailed 24-hour activation link | ✅ |
+| Team: role changes revoke sessions; nobody can change themselves; two Owners demoting each other at once leave one Owner | ✅ |
+| reset-company-user: server-side recovery revokes sessions and issues a 1-hour reset link | ✅ |
+| A session ends 7 days after sign-in even if it is used all the time | ✅ |
+| Hospital time zone is chosen at creation and can be edited; unknown zones are refused | ✅ |
+
+The slug test now also covers `/public/slugs/{slug}`, the non-redirecting endpoint the booking app uses.
+
+**Mutation check:** two bugs were introduced on purpose: hospital admins allowed to create other admins, and role changes no longer revoking sessions. 3 tests failed as expected (`Failed: 3, Passed: 10`), and the code was restored.
+
+**Failures along the way:**
+- The 7-day session test was too strict: the database's transaction time is a few milliseconds earlier than the API's clock. One minute of tolerance was added; the 7-day limit itself is unchanged.
+
+## 2. Web — npm workspace (`web/`: shared, admin, hospital, booking)
+`cd web && npm ci && npm audit && npm run typecheck && npm test && npm run build`
+
+| Check | Result |
+|---|---|
+| `npm audit` | ✅ 0 vulnerabilities |
+| `tsc` (4 workspaces, strict) | ✅ no errors |
+| Unit tests | ✅ shared 3/3, hospital 2/2, booking 4/4 (includes the Cloudflare Pages 301 function) |
+| `vite build` × 3 | ✅ admin 242 kB, hospital 231 kB, booking 153 kB (JS, before gzip) |
+
+## 3. Browser end-to-end on the real stack
+API image + PostgreSQL + Mailpit (docker compose dev) and three Vite servers: console :5173, hospital web :5174, booking site :5175. Headless Chromium.
+
+**Phase 5 run: 16 of 16 steps passed.**
+```
+PASS owner sets up the account and signs in
+PASS create hospital with a chosen time zone (Europe/Istanbul)
+PASS Team tab: owner invites a Support colleague by email
+PASS hospital admin activation link opens the hospital web (port 5174) and enrols 2FA
+PASS hospital sign-in: forgot password opens the prepared WhatsApp message to support
+PASS hospital admin signs in with 2FA
+PASS add two departments and a Sunday + Monday timetable
+PASS an overlapping block is rejected with a clear message
+PASS hide a department and add a closure day
+PASS settings: booking link shown, grace changed to 45 minutes
+PASS admin invites a reception user; the admin row itself is locked
+PASS reception activates without 2FA, sees a limited, read-only dashboard
+PASS booking site shows the hospital and only its visible departments
+PASS renamed link: old URL lands on the new one; after 90 days it shows "link changed"
+PASS audit log shows the hospital-side actions
+PASS hospital web at phone width: top bar, no horizontal scroll
+```
+**Phase 4 run repeated after the refactor: 16 of 16 passed.** One expectation was updated on purpose: the hospital admin's activation link now points to the hospital web (:5174), not the console.
+
+The reception step also calls the API directly: `PATCH /hospital/settings` → **403**, so the server refuses, not only the interface. A `grep` of the API container log for test emails and `#t=` found **0 matches**.
+
+Bugs this run found (fixed):
+1. **Booking site, renamed links:** the app relied on the browser following the API's 301, which pointed to a path on the API. Behind the dev proxy it landed on the wrong server, and it would have broken behind any other proxy. Fixed with a non-redirecting endpoint, `/public/slugs/{slug}`. The real 301 remains at `/public/book/{slug}`, used by the Cloudflare Pages Function.
+2. **Closure form:** a flex rule meant for row layouts made the fields about 220 px tall. Fixed.
+
+Screenshots: `docs/screenshots/phase-5/`.
+
+## 4. Secrets
+Run on the Phase 5 tree: `gitleaks dir . --redact` and `gitleaks git . --redact` → no leaks (§ Phase 4 shows the control check).
+
+## Not tested yet
+- The same limits as Phase 4 still apply: the full `api/Dockerfile` build, CI on GitHub, Caddy/Cloudflare, real email, and backups.
+- The Cloudflare Pages Function was unit-tested with Node's `Request`/`Response`, not deployed to Cloudflare.
+
+---
+
+# Phase 4 — auth, permissions, company console
 
 Recorded on **2026-10-20** from real runs in the development container. Nothing here is estimated: every line below was printed by the tool named in its section. Re-run the commands to reproduce.
 

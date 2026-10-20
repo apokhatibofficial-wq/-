@@ -67,6 +67,11 @@ public sealed class SlugTests(MedLinkFixture fx) : IDisposable
         Assert.Equal(HttpStatusCode.MovedPermanently, moved.Status);
         Assert.Equal(newSlug, moved.Body.GetProperty("slug").GetString());
         Assert.Equal(HttpStatusCode.OK, (await anon.Get($"/public/book/{newSlug}")).Status);
+        // The app endpoint never redirects: it answers with the current page and current slug.
+        var viaApp = await anon.Get($"/public/slugs/{oldSlug}");
+        Assert.Equal(HttpStatusCode.OK, viaApp.Status);
+        Assert.Equal("active", viaApp.Body.GetProperty("state").GetString());
+        Assert.Equal(newSlug, viaApp.Body.GetProperty("slug").GetString());
 
         var detail = await owner.Get($"/admin/hospitals/{hid}");
         Assert.Equal(oldSlug, detail.Body.GetProperty("oldSlugs")[0].GetProperty("slug").GetString());
@@ -88,6 +93,8 @@ public sealed class SlugTests(MedLinkFixture fx) : IDisposable
         var gone = await anon.Get($"/public/book/{oldSlug}");
         Assert.Equal(HttpStatusCode.Gone, gone.Status);
         Assert.Equal("LINK_CHANGED", gone.Body.GetProperty("error").GetString());
+        Assert.Equal("changed", (await anon.Get($"/public/slugs/{oldSlug}")).Body.GetProperty("state").GetString());
+        Assert.Equal(HttpStatusCode.NotFound, (await anon.Get($"/public/slugs/{NewSlug("nobody")}")).Status);
 
         // 30+ days later the hospital may change again, including back to its own old slug.
         var back = await owner.Patch($"/admin/hospitals/{hid}", new { nameAr = "م", nameEn = "Test Hospital", slug = oldSlug });

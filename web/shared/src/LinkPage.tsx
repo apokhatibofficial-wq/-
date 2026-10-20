@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import QRCode from 'qrcode';
 import { api, ApiError, type LinkInfo } from './api';
-import { A, type Lang } from './i18n';
+import { A, type Audience, type Lang } from './text';
 import { AuthShell } from './SignIn';
 
 /**
@@ -18,7 +18,7 @@ function takeToken(): string | null {
 // so taking the token inside the component would lose it after the fragment is cleared.
 const initialToken = takeToken();
 
-export function LinkPage({ lang, onLang }: { lang: Lang; onLang: (l: Lang) => void }) {
+export function LinkPage({ lang, onLang, audience }: { lang: Lang; onLang: (l: Lang) => void; audience: Audience }) {
   const t = A[lang];
   const token = useRef<string | null>(null);
   if (token.current === null) token.current = initialToken ?? '';
@@ -41,10 +41,10 @@ export function LinkPage({ lang, onLang }: { lang: Lang; onLang: (l: Lang) => vo
       .catch(() => setInfo('invalid'));
   }, []);
 
-  if (info === null) return <AuthShell lang={lang} onLang={onLang}><p className="sub">{t.loading}</p></AuthShell>;
+  if (info === null) return <AuthShell lang={lang} onLang={onLang} audience={audience}><p className="sub">{t.loading}</p></AuthShell>;
   if (info === 'invalid')
     return (
-      <AuthShell lang={lang} onLang={onLang}>
+      <AuthShell lang={lang} onLang={onLang} audience={audience}>
         <h1>{t.linkTitles.reset}</h1>
         <div role="alert" className="alert alert-danger">{t.linkInvalid}</div>
       </AuthShell>
@@ -53,7 +53,8 @@ export function LinkPage({ lang, onLang }: { lang: Lang; onLang: (l: Lang) => vo
   const min = info.passwordMinLength;
   const pwErr = pw.length > 0 && pw.length < min ? t.pwMin(min) : pw2.length > 0 && pw !== pw2 ? t.pwMismatch : '';
   const canSave = pw.length >= min && pw === pw2 && (!info.totpRequired || /^\d{6}$/.test(code)) && !busy;
-  const isCompany = info.scope === 'company';
+  // The sign-in button only appears in the app this account belongs to.
+  const here = info.scope === audience;
 
   async function save(e: FormEvent) {
     e.preventDefault();
@@ -76,15 +77,15 @@ export function LinkPage({ lang, onLang }: { lang: Lang; onLang: (l: Lang) => vo
 
   if (done)
     return (
-      <AuthShell lang={lang} onLang={onLang}>
+      <AuthShell lang={lang} onLang={onLang} audience={audience}>
         <h1>{t.linkTitles[info.purpose]}</h1>
-        <div role="status" className="alert alert-ok">{isCompany ? t.linkDone : t.linkDoneHospital}</div>
-        {isCompany && <a className="btn btn-primary" href="/" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>{t.goSignIn}</a>}
+        <div role="status" className="alert alert-ok">{info.scope === 'company' ? t.linkDone : t.linkDoneHospital}</div>
+        {here && <a className="btn btn-primary" href="/" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>{t.goSignIn}</a>}
       </AuthShell>
     );
 
   return (
-    <AuthShell lang={lang} onLang={onLang}>
+    <AuthShell lang={lang} onLang={onLang} audience={audience}>
       <form onSubmit={save} style={{ display: 'flex', flexDirection: 'column', gap: 18 }} noValidate>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <h1>{t.linkTitles[info.purpose]}</h1>

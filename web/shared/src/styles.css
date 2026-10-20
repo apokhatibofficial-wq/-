@@ -140,3 +140,16 @@ button:disabled { cursor: not-allowed; }
 .check .mark { font-size: 16px; color: var(--brand); }
 textarea.input { height: auto; padding: 10px 12px; resize: vertical; font-size: 14px; }
 .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff; border-radius: 10px; padding: 12px 18px; font-size: 14px; z-index: 40; max-width: calc(100% - 32px); }
+
+/* ---------- users panel, forms ---------- */
+.user-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding: 12px 0; border-top: 1px solid var(--divider); }
+.section-title { font-size: 16px; font-weight: 600; color: var(--ink); margin: 0; }
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 14px; }
+.switch { position: relative; width: 40px; height: 24px; border-radius: 999px; border: none; background: var(--input); flex-shrink: 0; padding: 0; }
+.switch[aria-checked='true'] { background: var(--brand); }
+.switch::after { content: ''; position: absolute; top: 3px; inset-inline-start: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: inset-inline-start .15s; }
+.switch[aria-checked='true']::after { inset-inline-start: 19px; }
+select.input { padding: 0 8px; }
+.link-box { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; background: var(--soft); border-radius: 10px; padding: 12px 14px; }
+.form-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
+.form-row .input { height: 40px; }

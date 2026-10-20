@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { SLUG_RE, slugify, cleanSlugInput } from './slug.ts';
-import { A, COMPANY_PERMS, HOSPITAL_PERMS } from './i18n.ts';
+import { A, AH, UT } from './text.ts';
 
 test('slugify follows the prototype and produces valid slugs', () => {
   assert.equal(slugify('Al-Noor General Hospital'), 'al-noor-general-hospital');
@@ -16,12 +16,10 @@ test('slug rule matches the server', () => {
   assert.equal(cleanSlugInput('Al Noor_1!'), 'alnoor1');
 });
 
-test('every language has the same strings and permission rows', () => {
+test('every language has the same shared strings', () => {
   const keys = (o: object) => Object.keys(o).sort().join(',');
-  assert.equal(keys(A.ar), keys(A.en));
-  assert.equal(keys(A.tr), keys(A.en));
-  for (const m of [COMPANY_PERMS, HOSPITAL_PERMS]) {
-    assert.deepEqual(m.ar.map(r => r[1]), m.en.map(r => r[1]));
-    assert.deepEqual(m.tr.map(r => r[1]), m.en.map(r => r[1]));
+  for (const m of [A, AH, UT]) {
+    assert.equal(keys(m.ar), keys(m.en));
+    assert.equal(keys(m.tr), keys(m.en));
   }
 });

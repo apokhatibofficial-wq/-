@@ -33,23 +33,24 @@ jobs:
           name: api-test-results
           path: api/tests/**/TestResults/*.trx
 
-  web-admin:
+  web:
+    # npm workspace: shared, admin (company console), hospital (hospital web), booking (patient site)
     runs-on: ubuntu-24.04
     defaults:
       run:
-        working-directory: web/admin
+        working-directory: web
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: web/admin/package-lock.json
+          cache-dependency-path: web/package-lock.json
       - run: npm ci
       - run: npm audit --audit-level=low
       - run: npm run typecheck
       - run: npm test
-      - run: npx vite build
+      - run: npm run build
 
   secrets:
     runs-on: ubuntu-24.04

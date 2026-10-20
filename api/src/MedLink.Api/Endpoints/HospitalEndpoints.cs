@@ -322,35 +322,55 @@ public static class HospitalEndpoints
     /// Public booking-link resolution. Active slug → 200. Retired slug within 90 days → 301 to the new slug.
     /// After that → 410 LINK_CHANGED. Unknown → 404. Only display fields are returned.
     /// </summary>
+    private sealed record SlugInfo(string HospitalId, bool IsPrimary, DateTime? RedirectUntil, string NameAr, string NameEn, string? NameTr, string Status, string? Current);
+
+    private static Task<SlugInfo?> ResolveAsync(Db db, string slug) =>
+        db.RunAsync(DbScope.System, (c, t) => c.QuerySingleOrDefaultAsync<SlugInfo>("""
+            SELECT s.hospital_id, s.is_primary, s.redirect_until, h.name_ar, h.name_en, h.name_tr, h.status,
+                   (SELECT p.slug FROM hospital_slugs p WHERE p.hospital_id = s.hospital_id AND p.is_primary) AS current
+            FROM hospital_slugs s JOIN hospitals h ON h.id = s.hospital_id WHERE s.slug = @slug
+            """, new { slug }, t));
+
+    private static bool StillRedirecting(SlugInfo x, TimeProvider clock) =>
+        x.Current is not null && x.RedirectUntil is { } ru && DateTime.SpecifyKind(ru, DateTimeKind.Utc) > clock.GetUtcNow().UtcDateTime;
+
+    private static async Task<object> ActiveBody(Db db, SlugInfo x, string slug)
+    {
+        var deps = await db.RunAsync(DbScope.System, (c, t) => c.QueryAsync<(string Id, string NameAr, string? NameEn, string? NameTr)>(
+            "SELECT id, name_ar, name_en, name_tr FROM departments WHERE hospital_id = @h AND active ORDER BY sort, created_at",
+            new { h = x.HospitalId }, t));
+        return new
+        {
+            state = "active",
+            slug,
+            name = new { ar = x.NameAr, en = x.NameEn, tr = x.NameTr },
+            acceptingBookings = x.Status == "active",
+            departments = deps.Select(d => new { id = d.Id, name = new { ar = d.NameAr, en = d.NameEn, tr = d.NameTr } }),
+        };
+    }
+
     public static void MapPublic(this WebApplication app)
     {
+        // HTTP semantics, for crawlers and the Cloudflare Pages Function: 200 / 301 / 410 / 404.
         app.MapGet("/public/book/{slug}", async (string slug, Db db, TimeProvider clock) =>
         {
             if (!SlugPolicy.IsValidFormat(slug)) return Results.Json(new { error = "NOT_FOUND" }, statusCode: 404);
-            var r = await db.RunAsync(DbScope.System, (c, t) => c.QuerySingleOrDefaultAsync<(string HospitalId, bool IsPrimary, DateTime? RedirectUntil, string NameAr, string NameEn, string? NameTr, string Status, string? Current)?>("""
-                SELECT s.hospital_id, s.is_primary, s.redirect_until, h.name_ar, h.name_en, h.name_tr, h.status,
-                       (SELECT p.slug FROM hospital_slugs p WHERE p.hospital_id = s.hospital_id AND p.is_primary) AS current
-                FROM hospital_slugs s JOIN hospitals h ON h.id = s.hospital_id WHERE s.slug = @slug
-                """, new { slug }, t));
-            if (r is not { } x) return Results.Json(new { error = "NOT_FOUND" }, statusCode: 404);
+            if (await ResolveAsync(db, slug) is not { } x) return Results.Json(new { error = "NOT_FOUND" }, statusCode: 404);
             if (!x.IsPrimary)
-            {
-                var stillRedirecting = x.RedirectUntil is { } ru && DateTime.SpecifyKind(ru, DateTimeKind.Utc) > clock.GetUtcNow().UtcDateTime;
-                if (stillRedirecting && x.Current is not null)
-                    return new RedirectJson("/public/book/" + x.Current, x.Current);
-                return Results.Json(new { error = "LINK_CHANGED" }, statusCode: 410);
-            }
-            var deps = await db.RunAsync(DbScope.System, (c, t) => c.QueryAsync<(string Id, string NameAr, string? NameEn, string? NameTr)>(
-                "SELECT id, name_ar, name_en, name_tr FROM departments WHERE hospital_id = @h AND active ORDER BY sort, created_at",
-                new { h = x.HospitalId }, t));
-            return Results.Json(new
-            {
-                state = "active",
-                slug,
-                name = new { ar = x.NameAr, en = x.NameEn, tr = x.NameTr },
-                acceptingBookings = x.Status == "active",
-                departments = deps.Select(d => new { id = d.Id, name = new { ar = d.NameAr, en = d.NameEn, tr = d.NameTr } }),
-            });
+                return StillRedirecting(x, clock)
+                    ? new RedirectJson("/public/book/" + x.Current, x.Current!)
+                    : Results.Json(new { error = "LINK_CHANGED" }, statusCode: 410);
+            return Results.Json(await ActiveBody(db, x, slug));
+        });
+
+        // For the booking app: never redirects, so it works the same behind any proxy.
+        // A renamed link (within 90 days) answers with the current hospital page and its current slug.
+        app.MapGet("/public/slugs/{slug}", async (string slug, Db db, TimeProvider clock) =>
+        {
+            if (!SlugPolicy.IsValidFormat(slug)) return Results.Json(new { error = "NOT_FOUND" }, statusCode: 404);
+            if (await ResolveAsync(db, slug) is not { } x) return Results.Json(new { error = "NOT_FOUND" }, statusCode: 404);
+            if (!x.IsPrimary && !StillRedirecting(x, clock)) return Results.Json(new { state = "changed" });
+            return Results.Json(await ActiveBody(db, x, x.IsPrimary ? slug : x.Current!));
         });
     }
 

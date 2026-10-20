@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import { api, ApiError, setCsrf, type Me } from './api';
+import { api, ApiError, setCsrf, type Me } from '@medlink/shared/api';
 import { loadLang, saveLang, type Lang } from './i18n';
-import { SignIn } from './SignIn';
-import { LinkPage } from './LinkPage';
+import { SignIn } from '@medlink/shared/SignIn';
+import { LinkPage } from '@medlink/shared/LinkPage';
 import { Console } from './Console';
 
 export function App() {
@@ -29,10 +29,10 @@ export function App() {
 
   useEffect(() => { if (!isLink) void refresh(); }, [isLink, refresh]);
 
-  if (isLink) return <LinkPage lang={lang} onLang={setLang} />;
+  if (isLink) return <LinkPage audience="company" lang={lang} onLang={setLang} />;
   if (me === undefined) return null;
   if (me === null || me.scope !== 'company')
-    return <SignIn lang={lang} onLang={setLang} onSignedIn={(u, csrf) => { setCsrf(csrf); setMe(u); }} />;
+    return <SignIn audience="company" lang={lang} onLang={setLang} onSignedIn={(u, csrf) => { setCsrf(csrf); setMe(u); }} />;
   return (
     <Console
       lang={lang}

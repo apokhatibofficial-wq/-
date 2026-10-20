@@ -1,9 +1,9 @@
 import { useState, type FormEvent, type KeyboardEvent } from 'react';
 import { api, ApiError, setCsrf, type Me } from './api';
-import { A, type Lang } from './i18n';
+import { A, AH, whatsappUrl, type Audience, type Lang } from './text';
 import { LangPill } from './LangPill';
 
-type Props = { lang: Lang; onLang: (l: Lang) => void; onSignedIn: (me: Me, csrf: string | null) => void };
+type Props = { lang: Lang; onLang: (l: Lang) => void; onSignedIn: (me: Me, csrf: string | null) => void; audience: Audience };
 
 export function errorText(t: (typeof A)['en'], e: unknown): string {
   if (!(e instanceof ApiError)) return t.errGeneric;
@@ -18,8 +18,8 @@ export function errorText(t: (typeof A)['en'], e: unknown): string {
   }
 }
 
-export function AuthShell({ lang, onLang, children }: { lang: Lang; onLang: (l: Lang) => void; children: React.ReactNode }) {
-  const t = A[lang];
+export function AuthShell({ lang, onLang, children, audience }: { lang: Lang; onLang: (l: Lang) => void; children: React.ReactNode; audience: Audience }) {
+  const t = audience === 'company' ? A[lang] : { ...A[lang], ...AH[lang] };
   return (
     <div className="auth">
       <div className="auth-brand">
@@ -39,8 +39,9 @@ export function AuthShell({ lang, onLang, children }: { lang: Lang; onLang: (l: 
   );
 }
 
-export function SignIn({ lang, onLang, onSignedIn }: Props) {
+export function SignIn({ lang, onLang, onSignedIn, audience }: Props) {
   const t = A[lang];
+  const h = AH[lang];
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
@@ -63,8 +64,8 @@ export function SignIn({ lang, onLang, onSignedIn }: Props) {
         email: email.trim(), password, totp: step === 'totp' ? code : undefined, client: 'web',
       });
       if (r.status === 'mfa_required') { setStep('totp'); setCode(''); return; }
-      if (r.user && r.user.scope !== 'company') {
-        // This console is for company staff; hospital accounts use the hospital app.
+      if (r.user && r.user.scope !== audience) {
+        // Company staff use the company console; hospital accounts use the hospital app.
         setCsrf(r.csrf ?? null);
         await api('POST', '/auth/logout', {}).catch(() => undefined);
         setCsrf(null);
@@ -85,11 +86,11 @@ export function SignIn({ lang, onLang, onSignedIn }: Props) {
   const canSubmit = step === 'password' ? email.includes('@') && password.length > 0 : /^\d{6}$/.test(code);
 
   return (
-    <AuthShell lang={lang} onLang={onLang}>
+    <AuthShell lang={lang} onLang={onLang} audience={audience}>
       <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }} noValidate>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <h1>{step === 'password' ? t.signIn : t.totpTitle}</h1>
-          <p className="sub">{step === 'password' ? t.signInSub : t.totpSub}</p>
+          <p className="sub">{step === 'password' ? (audience === 'company' ? t.signInSub : h.signInSub) : t.totpSub}</p>
         </div>
         {err && <div role="alert" className="alert alert-danger">{err}</div>}
         {step === 'password' ? (
@@ -128,9 +129,26 @@ export function SignIn({ lang, onLang, onSignedIn }: Props) {
       {forgot && (
         <div className="modal-scrim" onClick={() => setForgot(false)}>
           <div className="modal" role="dialog" aria-modal="true" aria-labelledby="forgot-title" onClick={e => e.stopPropagation()}>
-            <h2 id="forgot-title">{t.forgotTitle}</h2>
-            <p className="body">{t.forgotBody}</p>
-            <div className="modal-actions"><button className="btn btn-secondary" onClick={() => setForgot(false)}>{t.close}</button></div>
+            {audience === 'company' ? (
+              <>
+                <h2 id="forgot-title">{t.forgotTitle}</h2>
+                <p className="body">{t.forgotBody}</p>
+                <div className="modal-actions"><button className="btn btn-secondary" onClick={() => setForgot(false)}>{t.close}</button></div>
+              </>
+            ) : (
+              <>
+                <h2 id="forgot-title">{h.forgotTitle}</h2>
+                <p className="body">{h.forgotBody}</p>
+                <div className="alert alert-warn">{h.forgotWarn}</div>
+                <pre dir="auto" className="secret" style={{ whiteSpace: 'pre-wrap', fontFamily: 'var(--font)' }}>{h.waMsg(email.trim())}</pre>
+                <p className="note" style={{ margin: 0 }}>{h.staffHint}</p>
+                <div className="modal-actions">
+                  <button className="btn btn-secondary" onClick={() => setForgot(false)}>{h.cancel}</button>
+                  <a className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}
+                    href={whatsappUrl(h.waMsg(email.trim()))} target="_blank" rel="noopener noreferrer">{h.openWa}</a>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

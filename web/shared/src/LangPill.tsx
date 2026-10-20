@@ -1,4 +1,4 @@
-import { LANG_PILL, type Lang } from './i18n';
+import { LANG_PILL, type Lang } from './text';
 
 export function LangPill({ lang, onLang }: { lang: Lang; onLang: (l: Lang) => void }) {
   return (

@@ -3,6 +3,7 @@
 ```
 medlink migrate                          # apply SQL migrations as the DB owner
 medlink bootstrap-admin --email <addr>   # first company owner + single-use setup link (once only)
+medlink reset-company-user --email <a>   # recovery for a company user who lost access (1-hour link)
 medlink                                  # run the API on :8080
 ```
 
