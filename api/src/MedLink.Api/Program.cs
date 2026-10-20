@@ -41,6 +41,7 @@ public static class Startup
         services.AddSingleton<PasswordHasher>();
         services.AddSingleton<TotpService>();
         services.AddSingleton<AuthService>();
+        services.AddSingleton<MedLink.Api.Bookings.BookingService>();
         services.AddSingleton<IEmailSender, SmtpEmailSender>();
         services.AddProblemDetails();
 
@@ -68,7 +69,7 @@ public static class Startup
         services.AddCors(c => c.AddDefaultPolicy(p => p
             .WithOrigins(options.CorsOrigins)
             .AllowCredentials()
-            .WithHeaders("Content-Type", HttpAuth.CsrfHeader, "Authorization")
+            .WithHeaders("Content-Type", HttpAuth.CsrfHeader, "Authorization", "Idempotency-Key")
             .WithMethods("GET", "POST", "PATCH", "PUT", "DELETE")));
 
         services.AddRateLimiter(r =>
@@ -82,7 +83,10 @@ public static class Startup
             // Applies to /auth/*: per client IP and per /24 network (BACKEND-SPEC §3).
             r.GlobalLimiter = PartitionedRateLimiter.CreateChained(
                 PartitionedRateLimiter.Create<HttpContext, string>(ctx => AuthPartition(ctx, options.AuthRatePerIp, net24: false)),
-                PartitionedRateLimiter.Create<HttpContext, string>(ctx => AuthPartition(ctx, options.AuthRatePerNet24, net24: true)));
+                PartitionedRateLimiter.Create<HttpContext, string>(ctx => AuthPartition(ctx, options.AuthRatePerNet24, net24: true)),
+                // Booking creation: per client IP and per hospital (BACKEND-SPEC §3).
+                PartitionedRateLimiter.Create<HttpContext, string>(ctx => BookingPartition(ctx, options.BookingRatePerIp, perHospital: false)),
+                PartitionedRateLimiter.Create<HttpContext, string>(ctx => BookingPartition(ctx, options.BookingRatePerHospital, perHospital: true)));
         });
         return services;
     }
@@ -106,6 +110,18 @@ public static class Startup
             Window = TimeSpan.FromMinutes(1),
             SegmentsPerWindow = 6,
             QueueLimit = 0,
+        });
+    }
+
+    private static RateLimitPartition<string> BookingPartition(HttpContext ctx, int perMinute, bool perHospital)
+    {
+        var path = ctx.Request.Path.Value ?? "";
+        if (!HttpMethods.IsPost(ctx.Request.Method) || !path.StartsWith("/public/hospitals/", StringComparison.Ordinal) || !path.EndsWith("/bookings", StringComparison.Ordinal))
+            return RateLimitPartition.GetNoLimiter("none");
+        var key = perHospital ? "h:" + path.Split('/')[3] : "b:" + (ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown");
+        return RateLimitPartition.GetSlidingWindowLimiter(key, _ => new SlidingWindowRateLimiterOptions
+        {
+            PermitLimit = perMinute, Window = TimeSpan.FromMinutes(1), SegmentsPerWindow = 6, QueueLimit = 0,
         });
     }
 
@@ -139,6 +155,9 @@ public static class Startup
         app.MapAdmin();
         app.MapTeam();
         app.MapPlatform();
+        app.MapForms();
+        app.MapPublicBooking();
+        app.MapHospitalBookings();
         app.MapHospital();
         app.MapPublic();
         return app;

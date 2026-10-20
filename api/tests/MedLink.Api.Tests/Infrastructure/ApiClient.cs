@@ -45,6 +45,15 @@ public sealed class ApiClient(HttpClient http)
         return (res.StatusCode, json);
     }
 
+    public async Task<(HttpStatusCode Status, JsonElement Body)> SendWithHeaderAsync(HttpMethod method, string path, object body, string header, string value)
+    {
+        using var req = new HttpRequestMessage(method, path) { Content = JsonContent.Create(body) };
+        req.Headers.Add(header, value);
+        using var res = await http.SendAsync(req);
+        var text = await res.Content.ReadAsStringAsync();
+        return (res.StatusCode, text.Length == 0 ? default : JsonDocument.Parse(text).RootElement.Clone());
+    }
+
     public Task<(HttpStatusCode Status, JsonElement Body)> Get(string path) => SendAsync(HttpMethod.Get, path);
     public Task<(HttpStatusCode Status, JsonElement Body)> Post(string path, object body, bool csrf = true) => SendAsync(HttpMethod.Post, path, body, csrf);
     public Task<(HttpStatusCode Status, JsonElement Body)> Patch(string path, object body) => SendAsync(HttpMethod.Patch, path, body);

@@ -72,6 +72,8 @@ public sealed class MedLinkFixture : IAsyncLifetime
             ["HOSPITAL_WEB_URL"] = "https://app.medlink.website",
             ["AUTH_RATE_PER_IP_PER_MIN"] = authRate.ToString(),
             ["AUTH_RATE_PER_NET24_PER_MIN"] = authRate.ToString(),
+            ["BOOKING_RATE_PER_IP_PER_MIN"] = authRate.ToString(),
+            ["BOOKING_RATE_PER_HOSPITAL_PER_MIN"] = authRate.ToString(),
         };
     }
 

@@ -34,6 +34,8 @@ public sealed class MedLinkOptions
     public bool CookieSecure { get; init; } = true;
     public int AuthRatePerIp { get; init; } = 20;
     public int AuthRatePerNet24 { get; init; } = 60;
+    public int BookingRatePerIp { get; init; } = 10;
+    public int BookingRatePerHospital { get; init; } = 120;
 
     public static MedLinkOptions FromConfiguration(IConfiguration c, bool requireApp = true, bool requireOwner = false)
     {
@@ -95,6 +97,8 @@ public sealed class MedLinkOptions
             CookieSecure = !string.Equals(c["COOKIE_SECURE"], "false", StringComparison.OrdinalIgnoreCase),
             AuthRatePerIp = int.Parse(Opt("AUTH_RATE_PER_IP_PER_MIN", "20")),
             AuthRatePerNet24 = int.Parse(Opt("AUTH_RATE_PER_NET24_PER_MIN", "60")),
+            BookingRatePerIp = int.Parse(Opt("BOOKING_RATE_PER_IP_PER_MIN", "10")),
+            BookingRatePerHospital = int.Parse(Opt("BOOKING_RATE_PER_HOSPITAL_PER_MIN", "120")),
         };
 
         if (errors.Count > 0)
