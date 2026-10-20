@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+<style>
+body{margin:0;background:#f4f6fb;-webkit-font-smoothing:antialiased}
+a{color:#2b41c5}a:hover{color:#1a2d99}
+input,textarea,button{font-family:inherit}
+</style>
+</helmet>
+<div dir="{{ dir }}" style="min-height:100vh;background:#f4f6fb;color:#1c2340;font-family:'IBM Plex Sans','IBM Plex Sans Arabic',system-ui,sans-serif;display:flex;flex-direction:column">
+
+  <header style="background:#ffffff;border-bottom:1px solid #dde2f0">
+    <div style="max-width:1040px;margin:0 auto;padding:12px clamp(14px,4vw,20px);display:flex;align-items:center;gap:clamp(10px,3vw,14px)">
+      <div style="width:44px;height:44px;border-radius:12px;background:#eef1fc;border:1px dashed #9aa6d8;display:flex;align-items:center;justify-content:center;font-size:10px;color:#5b6380;text-align:center;line-height:1.1;flex-shrink:0">{{ t.logoSlot }}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:clamp(15px,4vw,18px);font-weight:600;color:#0f1a4a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ hospitalName }}</div>
+        <div style="font-size:13px;color:#5b6380">{{ t.bookTitle }}</div>
+      </div>
+      <div style="display:flex;gap:2px;padding:3px;border:1px solid #dde2f0;border-radius:999px;background:#f4f6fb;flex-shrink:0">
+        <sc-for list="{{ langs }}" as="l" hint-placeholder-count="3">
+          <button onClick="{{ l.pick }}" aria-pressed="{{ l.on }}" style="min-width:44px;height:36px;border:none;border-radius:999px;background:{{ l.bg }};color:{{ l.color }};font-size:13px;font-weight:600;cursor:pointer;padding:0 10px">{{ l.label }}</button>
+        </sc-for>
+      </div>
+    </div>
+  </header>
+
+  <main style="flex:1;width:100%;max-width:1040px;margin:0 auto;padding:clamp(14px,4vw,24px) clamp(12px,4vw,20px) 40px;box-sizing:border-box;display:flex;flex-direction:column;gap:clamp(14px,3vw,20px)">
+
+    <sc-if value="{{ notDone }}" hint-placeholder-val="{{ true }}">
+      <nav style="display:flex;gap:6px;flex-wrap:wrap">
+        <sc-for list="{{ steps }}" as="s" hint-placeholder-count="5">
+          <div style="flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:8px">
+            <div style="height:4px;border-radius:2px;background:{{ s.bar }}"></div>
+            <div style="font-size:clamp(11px,2.8vw,13px);font-weight:{{ s.weight }};color:{{ s.color }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ s.num }}. {{ s.label }}</div>
+          </div>
+        </sc-for>
+      </nav>
+    </sc-if>
+
+    <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start">
+
+      <section style="flex:1 1 520px;min-width:0;background:#ffffff;border:1px solid #dde2f0;border-radius:16px;padding:clamp(16px,5vw,28px);box-sizing:border-box;display:flex;flex-direction:column;gap:22px">
+
+        <sc-if value="{{ conflict }}">
+          <div style="background:#fff4e5;border:1px solid #f3c27a;color:#7a4300;border-radius:10px;padding:12px 14px;font-size:14px;line-height:1.5">{{ t.conflict }}</div>
+        </sc-if>
+
+        <sc-if value="{{ isStep0 }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <h1 style="margin:0;font-size:clamp(20px,5.5vw,24px);font-weight:600;color:#0f1a4a">{{ t.s0Title }}</h1>
+            <p style="margin:0;font-size:15px;color:#5b6380;text-wrap:pretty">{{ t.s0Sub }}</p>
+          </div>
+          <label style="display:flex;flex-direction:column;gap:8px">
+            <span style="font-size:14px;font-weight:500">{{ t.name }} <span style="color:#b42318">*</span></span>
+            <input value="{{ name }}" onChange="{{ onName }}" maxlength="80" autocomplete="name" style="height:48px;border:1px solid {{ nameBorder }};border-radius:10px;padding:0 14px;font-size:16px;color:#1c2340;outline:none" style-focus="border-color:#2b41c5;box-shadow:0 0 0 3px rgba(43,65,197,.15)">
+            <sc-if value="{{ errName }}"><span style="font-size:13px;color:#b42318">{{ errName }}</span></sc-if>
+          </label>
+          <label style="display:flex;flex-direction:column;gap:8px">
+            <span style="font-size:14px;font-weight:500">{{ t.phone }} <span style="font-weight:400;color:#5b6380">({{ t.optional }})</span></span>
+            <input value="{{ phone }}" onChange="{{ onPhone }}" inputmode="tel" dir="ltr" placeholder="+218 9X XXX XXXX" autocomplete="tel" style="height:48px;border:1px solid {{ phoneBorder }};border-radius:10px;padding:0 14px;font-size:16px;color:#1c2340;outline:none;text-align:start" style-focus="border-color:#2b41c5;box-shadow:0 0 0 3px rgba(43,65,197,.15)">
+            <sc-if value="{{ errPhone }}"><span style="font-size:13px;color:#b42318">{{ errPhone }}</span></sc-if>
+            <span style="font-size:13px;color:#5b6380">{{ t.phoneHint }}</span>
+          </label>
+        </sc-if>
+
+        <sc-if value="{{ isStep1 }}">
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <h1 style="margin:0;font-size:clamp(20px,5.5vw,24px);font-weight:600;color:#0f1a4a">{{ t.s1Title }}</h1>
+            <p style="margin:0;font-size:15px;color:#5b6380">{{ t.s1Sub }}</p>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,200px),1fr));gap:10px">
+            <sc-for list="{{ depts }}" as="d" hint-placeholder-count="6">
+              <button onClick="{{ d.pick }}" style="min-height:64px;text-align:start;border:1.5px solid {{ d.border }};background:{{ d.bg }};color:{{ d.color }};border-radius:12px;padding:14px 16px;font-size:16px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px" style-hover="border-color:#2b41c5">
+                <span>{{ d.label }}</span><span style="font-size:18px">{{ d.mark }}</span>
+              </button>
+            </sc-for>
+          </div>
+          <sc-if value="{{ errDept }}"><span style="font-size:13px;color:#b42318">{{ errDept }}</span></sc-if>
+        </sc-if>
+
+        <sc-if value="{{ isStep2 }}">
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <h1 style="margin:0;font-size:clamp(20px,5.5vw,24px);font-weight:600;color:#0f1a4a">{{ t.s2Title }}</h1>
+            <p style="margin:0;font-size:15px;color:#5b6380">{{ t.s2Sub }}</p>
+          </div>
+          <sc-for list="{{ questions }}" as="q" hint-placeholder-count="4">
+            <div style="display:flex;flex-direction:column;gap:10px;padding-bottom:18px;border-bottom:1px solid #eef0f6">
+              <div style="font-size:15px;font-weight:500;line-height:1.4">{{ q.label }} <span style="color:{{ q.reqColor }};font-weight:400;font-size:13px">{{ q.reqText }}</span></div>
+              <sc-if value="{{ q.isChoice }}">
+                <div style="display:flex;flex-wrap:wrap;gap:8px">
+                  <sc-for list="{{ q.opts }}" as="o">
+                    <button onClick="{{ o.pick }}" style="min-height:44px;border:1.5px solid {{ o.border }};background:{{ o.bg }};color:{{ o.color }};border-radius:999px;padding:0 18px;font-size:15px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:8px">{{ o.mark }}{{ o.label }}</button>
+                  </sc-for>
+                </div>
+                <sc-if value="{{ q.isMulti }}"><span style="font-size:13px;color:#5b6380">{{ t.multiHint }}</span></sc-if>
+              </sc-if>
+              <sc-if value="{{ q.isText }}">
+                <input value="{{ q.value }}" onChange="{{ q.onText }}" maxlength="120" style="height:48px;border:1px solid #c9cfe3;border-radius:10px;padding:0 14px;font-size:16px;color:#1c2340;outline:none" style-focus="border-color:#2b41c5;box-shadow:0 0 0 3px rgba(43,65,197,.15)">
+                <span style="font-size:13px;color:#5b6380">{{ q.count }}/120</span>
+              </sc-if>
+              <sc-if value="{{ q.err }}"><span style="font-size:13px;color:#b42318">{{ q.err }}</span></sc-if>
+            </div>
+          </sc-for>
+          <div style="font-size:13px;color:#5b6380">{{ t.formVersion }}</div>
+        </sc-if>
+
+        <sc-if value="{{ isStep3 }}">
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <h1 style="margin:0;font-size:clamp(20px,5.5vw,24px);font-weight:600;color:#0f1a4a">{{ t.s3Title }}</h1>
+            <p style="margin:0;font-size:15px;color:#5b6380">{{ t.s3Sub }}</p>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="font-size:14px;font-weight:500">{{ t.date }}</div>
+            <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:6px">
+              <sc-for list="{{ days }}" as="d" hint-placeholder-count="7">
+                <button onClick="{{ d.pick }}" disabled="{{ d.disabled }}" style="flex:0 0 78px;min-height:92px;border:1.5px solid {{ d.border }};background:{{ d.bg }};color:{{ d.color }};border-radius:12px;padding:10px 6px;cursor:{{ d.cursor }};display:flex;flex-direction:column;align-items:center;gap:2px;opacity:{{ d.opacity }}">
+                  <span style="font-size:12px;font-weight:500">{{ d.wd }}</span>
+                  <span style="font-size:22px;font-weight:600">{{ d.dn }}</span>
+                  <span style="font-size:12px">{{ d.sub }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </div>
+          <sc-if value="{{ hasDate }}">
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div style="font-size:14px;font-weight:500">{{ t.time }} · <span style="font-weight:400;color:#5b6380">{{ slotCountText }}</span></div>
+              <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px">
+                <sc-for list="{{ slots }}" as="s" hint-placeholder-count="8">
+                  <button onClick="{{ s.pick }}" dir="ltr" style="min-height:44px;border:1.5px solid {{ s.border }};background:{{ s.bg }};color:{{ s.color }};border-radius:10px;font-size:15px;font-weight:500;cursor:pointer">{{ s.label }}</button>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ errSlot }}"><span style="font-size:13px;color:#b42318">{{ errSlot }}</span></sc-if>
+        </sc-if>
+
+        <sc-if value="{{ isStep4 }}">
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <h1 style="margin:0;font-size:clamp(20px,5.5vw,24px);font-weight:600;color:#0f1a4a">{{ t.s4Title }}</h1>
+            <p style="margin:0;font-size:15px;color:#5b6380">{{ t.s4Sub }}</p>
+          </div>
+          <div style="display:flex;flex-direction:column;border:1px solid #dde2f0;border-radius:12px">
+            <sc-for list="{{ reviewRows }}" as="r" hint-placeholder-count="6">
+              <div style="display:flex;column-gap:12px;row-gap:4px;padding:12px 14px;border-bottom:1px solid #eef0f6;flex-wrap:wrap;align-items:baseline">
+                <div style="flex:1 1 100%;font-size:13px;color:#5b6380">{{ r.k }}</div>
+                <div style="flex:1 1 0;min-width:0;font-size:15px;font-weight:500;overflow-wrap:anywhere">{{ r.v }}</div>
+                <button onClick="{{ r.edit }}" style="border:none;background:none;color:#2b41c5;font-size:14px;font-weight:500;cursor:pointer;padding:0">{{ t.edit }}</button>
+              </div>
+            </sc-for>
+          </div>
+          <div style="font-size:13px;color:#5b6380;line-height:1.5;text-wrap:pretty">{{ t.privacy }}</div>
+        </sc-if>
+
+        <sc-if value="{{ isDone }}">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:20px">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center">
+              <div style="width:52px;height:52px;border-radius:50%;background:#e7f6ee;color:#13795b;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700">✓</div>
+              <h1 style="margin:0;font-size:clamp(20px,5.5vw,24px);font-weight:600;color:#0f1a4a">{{ t.doneTitle }}</h1>
+            </div>
+            <div style="width:100%;max-width:420px;border:1px solid #dde2f0;border-radius:16px;overflow:hidden;box-shadow:0 8px 28px rgba(26,45,153,.10)">
+              <div style="background:#1a2d99;color:#ffffff;padding:18px 22px;display:flex;flex-direction:column;gap:2px">
+                <div style="font-size:17px;font-weight:600">{{ hospitalName }}</div>
+                <div style="font-size:13px;color:#d6dcff">{{ t.ticketSub }}</div>
+              </div>
+              <div style="padding:22px;display:flex;flex-direction:column;gap:16px;background:#ffffff">
+                <div style="display:flex;flex-direction:column;gap:2px">
+                  <div style="font-size:12px;color:#5b6380;text-transform:uppercase;letter-spacing:.06em">{{ t.patient }}</div>
+                  <div style="font-size:18px;font-weight:600">{{ name }}</div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+                  <div style="display:flex;flex-direction:column;gap:2px"><div style="font-size:12px;color:#5b6380">{{ t.date }}</div><div style="font-size:15px;font-weight:600">{{ dateLabel }}</div></div>
+                  <div style="display:flex;flex-direction:column;gap:2px"><div style="font-size:12px;color:#5b6380">{{ t.time }}</div><div dir="ltr" style="font-size:15px;font-weight:600;text-align:start">{{ time }}</div></div>
+                  <div style="display:flex;flex-direction:column;gap:2px;grid-column:1 / -1"><div style="font-size:12px;color:#5b6380">{{ t.department }}</div><div style="font-size:15px;font-weight:600">{{ deptLabel }}</div></div>
+                </div>
+                <div style="border-top:1.5px dashed #c9cfe3;padding-top:18px;display:flex;flex-direction:column;align-items:center;gap:10px">
+                  <div style="width:200px;height:200px;background:#f4f6fb;display:flex">
+                    {{ qrImg }}
+                  </div>
+                  <div style="font-size:12px;color:#5b6380">{{ t.ref }}</div>
+                  <div dir="ltr" style="font-size:24px;font-weight:700;letter-spacing:.08em;color:#0f1a4a">{{ bookingRef }}</div>
+                </div>
+              </div>
+            </div>
+            <div style="width:100%;max-width:420px;background:#fff8e6;border:1px solid #f0d48a;color:#6b4a00;border-radius:10px;padding:12px 14px;font-size:14px;line-height:1.5;text-wrap:pretty">{{ t.saveWarn }}</div>
+            <div style="width:100%;max-width:420px;display:flex;gap:10px;flex-wrap:wrap">
+              <button onClick="{{ saveImage }}" style="flex:1 1 160px;height:48px;border:none;background:#2b41c5;color:#ffffff;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer" style-hover="background:#1a2d99">{{ t.save }}</button>
+              <button onClick="{{ printTicket }}" style="flex:1 1 120px;height:48px;border:1px solid #c9cfe3;background:#ffffff;color:#1a2d99;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer" style-hover="background:#eef1fc">{{ t.print }}</button>
+            </div>
+            <button onClick="{{ restart }}" style="border:none;background:none;color:#2b41c5;font-size:14px;font-weight:500;cursor:pointer">{{ t.another }}</button>
+            <div style="font-size:12px;color:#5b6380;text-align:center;max-width:420px">{{ t.qrNote }}</div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ notDone }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;gap:10px;justify-content:space-between;flex-wrap:wrap;padding-top:4px">
+            <sc-if value="{{ canBack }}">
+              <button onClick="{{ back }}" style="height:48px;border:1px solid #c9cfe3;background:#ffffff;color:#1a2d99;border-radius:10px;padding:0 20px;font-size:15px;font-weight:600;cursor:pointer" style-hover="background:#eef1fc">{{ t.back }}</button>
+            </sc-if>
+            <div style="flex:1"></div>
+            <button onClick="{{ next }}" disabled="{{ submitting }}" style="height:48px;min-width:160px;flex:1 1 160px;max-width:260px;border:none;background:{{ nextBg }};color:#ffffff;border-radius:10px;padding:0 24px;font-size:15px;font-weight:600;cursor:pointer" style-hover="background:#1a2d99">{{ nextLabel }}</button>
+          </div>
+        </sc-if>
+      </section>
+
+      <sc-if value="{{ notDone }}" hint-placeholder-val="{{ true }}">
+        <aside style="flex:1 1 260px;max-width:100%;background:#ffffff;border:1px solid #dde2f0;border-radius:16px;padding:22px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px">
+          <div style="font-size:14px;font-weight:600;color:#0f1a4a">{{ t.summary }}</div>
+          <sc-for list="{{ summary }}" as="r" hint-placeholder-count="5">
+            <div style="display:flex;flex-direction:column;gap:2px">
+              <div style="font-size:12px;color:#5b6380">{{ r.k }}</div>
+              <div style="font-size:15px;font-weight:500;color:{{ r.color }}">{{ r.v }}</div>
+            </div>
+          </sc-for>
+        </aside>
+      </sc-if>
+    </div>
+  </main>
+
+  <footer style="border-top:1px solid #dde2f0;background:#ffffff">
+    <div style="max-width:1040px;margin:0 auto;padding:14px 20px;display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between;align-items:center;font-size:12px;color:#5b6380">
+      <span style="display:flex;align-items:center;gap:8px">{{ t.powered }} <img src="assets/medlink-logo.svg" alt="MEDLINK" style="height:44px;width:auto"></span>
+      <img src="assets/khatib-logo.svg" alt="KHATIB TECHNICAL SOLUTIONS" style="height:26px;width:auto">
+    </div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;defaultLang&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;ar&quot;,&quot;en&quot;,&quot;tr&quot;],&quot;default&quot;:&quot;ar&quot;,&quot;tsType&quot;:&quot;'ar'|'en'|'tr'&quot;},&quot;simulateConflict&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;hospitalName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+const T = {
+  en: {
+    otherLang: 'العربية', logoSlot: 'Hospital logo', bookTitle: 'Book an appointment',
+    steps: ['Your details', 'Department', 'Questions', 'Date & time', 'Review'],
+    s0Title: 'Who is the appointment for?', s0Sub: 'Enter the patient’s name as it appears on their ID.',
+    name: 'Patient full name', phone: 'Phone number', optional: 'optional',
+    phoneHint: 'Used only if the hospital needs to contact you about this appointment.',
+    errName: 'Please enter the patient’s full name.', errPhone: 'Enter a valid phone number (7–15 digits).',
+    s1Title: 'Choose a department', s1Sub: 'Only departments currently accepting online bookings are shown.', errDept: 'Please choose a department.',
+    s2Title: 'A few questions from the hospital', s2Sub: 'These help reception prepare for your visit.',
+    required: 'Required', optionalTag: 'Optional', errReq: 'This question is required.', multiHint: 'Select all that apply.',
+    formVersion: 'Form version 3', yes: 'Yes', no: 'No',
+    s3Title: 'Pick a date and time', s3Sub: 'Only available times are shown.', date: 'Date', time: 'Time',
+    closed: 'Closed', full: 'Full', slots: n => n + ' open', slotCount: n => n + ' times available', errSlot: 'Please choose a date and time.',
+    s4Title: 'Review and confirm', s4Sub: 'Check the details before confirming.', edit: 'Edit',
+    privacy: 'We only collect what the hospital needs to schedule your visit. Do not enter medical information.',
+    back: 'Back', next: 'Continue', confirm: 'Confirm booking', confirming: 'Confirming…',
+    conflict: 'Sorry — that time was just booked by someone else. Please choose another time.',
+    summary: 'Your booking', patient: 'Patient', department: 'Department', notSet: 'Not selected yet',
+    doneTitle: 'Your appointment is confirmed', ticketSub: 'Appointment confirmation', ref: 'Booking number',
+    saveWarn: 'Save or print this confirmation now. For your privacy, it can’t be shown again after you leave this page.',
+    save: 'Save image', print: 'Print', another: 'Book another appointment',
+    qrNote: 'Show this QR code at reception. It contains no personal information.',
+    powered: 'Powered by'
+  },
+  tr: {
+    logoSlot: 'Hastane logosu', bookTitle: 'Randevu al',
+    steps: ['Bilgileriniz', 'Bölüm', 'Sorular', 'Tarih ve saat', 'Onay'],
+    s0Title: 'Randevu kimin için?', s0Sub: 'Hastanın adını kimlikte yazdığı gibi girin.',
+    name: 'Hastanın adı soyadı', phone: 'Telefon numarası', optional: 'isteğe bağlı',
+    phoneHint: 'Yalnızca hastanenin bu randevu hakkında size ulaşması gerekirse kullanılır.',
+    errName: 'Lütfen hastanın adını ve soyadını girin.', errPhone: 'Geçerli bir telefon numarası girin (7–15 rakam).',
+    s1Title: 'Bölüm seçin', s1Sub: 'Yalnızca şu anda çevrim içi randevu kabul eden bölümler gösterilir.', errDept: 'Lütfen bir bölüm seçin.',
+    s2Title: 'Hastaneden birkaç soru', s2Sub: 'Bu bilgiler kayıt biriminin ziyaretinize hazırlanmasına yardımcı olur.',
+    required: 'Zorunlu', optionalTag: 'İsteğe bağlı', errReq: 'Bu soru zorunludur.', multiHint: 'Uygun olanların tümünü seçin.',
+    formVersion: 'Form sürümü 3', yes: 'Evet', no: 'Hayır',
+    s3Title: 'Tarih ve saat seçin', s3Sub: 'Yalnızca uygun saatler gösterilir.', date: 'Tarih', time: 'Saat',
+    closed: 'Kapalı', full: 'Dolu', slots: n => n + ' boş', slotCount: n => n + ' uygun saat', errSlot: 'Lütfen tarih ve saat seçin.',
+    s4Title: 'Kontrol edin ve onaylayın', s4Sub: 'Onaylamadan önce bilgileri kontrol edin.', edit: 'Düzenle',
+    privacy: 'Yalnızca hastanenin ziyaretinizi planlaması için gereken bilgileri topluyoruz. Tıbbi bilgi girmeyin.',
+    back: 'Geri', next: 'Devam', confirm: 'Randevuyu onayla', confirming: 'Onaylanıyor…',
+    conflict: 'Üzgünüz, bu saat az önce başka biri tarafından alındı. Lütfen başka bir saat seçin.',
+    summary: 'Randevunuz', patient: 'Hasta', department: 'Bölüm', notSet: 'Henüz seçilmedi',
+    doneTitle: 'Randevunuz onaylandı', ticketSub: 'Randevu onayı', ref: 'Randevu numarası',
+    saveWarn: 'Bu onayı şimdi kaydedin veya yazdırın. Gizliliğiniz için bu sayfadan ayrıldıktan sonra tekrar gösterilemez.',
+    save: 'Görseli kaydet', print: 'Yazdır', another: 'Yeni randevu al',
+    qrNote: 'Bu QR kodu kayıt biriminde gösterin. Kişisel bilgi içermez.',
+    powered: 'Altyapı:'
+  },
+  ar: { logoSlot: 'شعار المستشفى', bookTitle: 'حجز موعد',
+    steps: ['بياناتك', 'القسم', 'الأسئلة', 'التاريخ والوقت', 'المراجعة'],
+    s0Title: 'لمن هذا الموعد؟', s0Sub: 'أدخل اسم المريض كما هو في بطاقة الهوية.',
+    name: 'اسم المريض الكامل', phone: 'رقم الهاتف', optional: 'اختياري',
+    phoneHint: 'يُستخدم فقط إذا احتاج المستشفى للتواصل معك بخصوص هذا الموعد.',
+    errName: 'يرجى إدخال اسم المريض الكامل.', errPhone: 'أدخل رقم هاتف صحيحًا (7–15 رقمًا).',
+    s1Title: 'اختر القسم', s1Sub: 'تظهر فقط الأقسام التي تقبل الحجز الإلكتروني حاليًا.', errDept: 'يرجى اختيار القسم.',
+    s2Title: 'أسئلة من المستشفى', s2Sub: 'تساعد موظف الاستقبال على الاستعداد لزيارتك.',
+    required: 'إلزامي', optionalTag: 'اختياري', errReq: 'هذا السؤال إلزامي.', multiHint: 'اختر كل ما ينطبق.',
+    formVersion: 'إصدار النموذج 3', yes: 'نعم', no: 'لا',
+    s3Title: 'اختر التاريخ والوقت', s3Sub: 'تظهر الأوقات المتاحة فقط.', date: 'التاريخ', time: 'الوقت',
+    closed: 'مغلق', full: 'ممتلئ', slots: n => n + ' متاح', slotCount: n => n + ' وقت متاح', errSlot: 'يرجى اختيار التاريخ والوقت.',
+    s4Title: 'المراجعة والتأكيد', s4Sub: 'تحقق من البيانات قبل التأكيد.', edit: 'تعديل',
+    privacy: 'نجمع فقط ما يحتاجه المستشفى لجدولة زيارتك. لا تُدخل أي معلومات طبية.',
+    back: 'رجوع', next: 'متابعة', confirm: 'تأكيد الحجز', confirming: 'جارٍ التأكيد…',
+    conflict: 'عذرًا، تم حجز هذا الوقت للتو من شخص آخر. يرجى اختيار وقت آخر.',
+    summary: 'حجزك', patient: 'المريض', department: 'القسم', notSet: 'لم يُحدد بعد',
+    doneTitle: 'تم تأكيد موعدك', ticketSub: 'تأكيد الموعد', ref: 'رقم الحجز',
+    saveWarn: 'احفظ هذا التأكيد أو اطبعه الآن. حفاظًا على خصوصيتك، لا يمكن عرضه مرة أخرى بعد مغادرة الصفحة.',
+    save: 'حفظ الصورة', print: 'طباعة', another: 'حجز موعد آخر',
+    qrNote: 'اعرض رمز QR عند الاستقبال. لا يحتوي الرمز على أي بيانات شخصية.',
+    powered: 'مدعوم من'
+  }
+};
+const DEPTS = [
+  { id: 'im', en: 'Internal Medicine', ar: 'الباطنة', tr: 'Dahiliye' },
+  { id: 'ped', en: 'Pediatrics', ar: 'طب الأطفال', tr: 'Çocuk Sağlığı' },
+  { id: 'card', en: 'Cardiology', ar: 'القلب', tr: 'Kardiyoloji' },
+  { id: 'orth', en: 'Orthopedics', ar: 'العظام', tr: 'Ortopedi' },
+  { id: 'derm', en: 'Dermatology', ar: 'الجلدية', tr: 'Dermatoloji' },
+  { id: 'ent', en: 'Ear, Nose & Throat', ar: 'الأنف والأذن والحنجرة', tr: 'Kulak Burun Boğaz' }
+];
+const QS = [
+  { id: 'visit', type: 'single', req: true, en: 'Visit type', ar: 'نوع الزيارة', tr: 'Ziyaret türü',
+    opts: [{ id: 'new', en: 'New consultation', ar: 'استشارة جديدة', tr: 'Yeni muayene' }, { id: 'fu', en: 'Follow-up', ar: 'متابعة', tr: 'Kontrol' }] },
+  { id: 'first', type: 'yesno', req: true, en: 'Is this your first visit to this hospital?', ar: 'هل هذه زيارتك الأولى لهذا المستشفى؟', tr: 'Bu hastaneye ilk ziyaretiniz mi?' },
+  { id: 'assist', type: 'multi', req: false, en: 'Do you need any assistance on arrival?', ar: 'هل تحتاج إلى مساعدة عند الوصول؟', tr: 'Varışta yardıma ihtiyacınız var mı?',
+    opts: [{ id: 'wc', en: 'Wheelchair', ar: 'كرسي متحرك', tr: 'Tekerlekli sandalye' }, { id: 'int', en: 'Interpreter', ar: 'مترجم', tr: 'Tercüman' }, { id: 'comp', en: 'Companion access', ar: 'دخول مرافق', tr: 'Refakatçi girişi' }] },
+  { id: 'note', type: 'short', req: false, en: 'Note for reception (non-medical)', ar: 'ملاحظة لموظف الاستقبال (غير طبية)', tr: 'Kayıt birimi için not (tıbbi olmayan)' }
+];
+const pad = n => String(n).padStart(2, '0');
+const keyOf = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+const hash = s => { let h = 2166136261; for (const c of s) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
+const rand = (n, set) => { const a = new Uint8Array(n); crypto.getRandomValues(a); return Array.from(a, b => set[b % set.length]).join(''); };
+
+class Component extends DCLogic {
+  state = { lang: null, step: 0, name: '', phone: '', dept: null, answers: {}, date: null, time: null,
+    errors: {}, submitting: false, conflict: false, conflictUsed: false, taken: {}, booking: null };
+
+  lang() { return this.state.lang || this.props.defaultLang || 'ar'; }
+  locale() { return { ar: 'ar-u-nu-latn', en: 'en-GB', tr: 'tr-TR' }[this.lang()]; }
+  setErr(e) { this.setState({ errors: e }); }
+
+  slotsFor(dateKey) {
+    const out = [], now = new Date(), today = keyOf(now);
+    for (let m = 8 * 60; m < 16 * 60; m += 20) {
+      if (m >= 12 * 60 && m < 13 * 60) continue;
+      const t = pad(Math.floor(m / 60)) + ':' + pad(m % 60);
+      if (dateKey === today && m < now.getHours() * 60 + now.getMinutes() + 30) continue;
+      const k = dateKey + '|' + this.state.dept + '|' + t;
+      if (hash(k) % 3 === 0 || this.state.taken[k]) continue;
+      out.push(t);
+    }
+    return out;
+  }
+
+  validate(step) {
+    const s = this.state, t = T[this.lang()], e = {};
+    if (step === 0) {
+      if (s.name.trim().length < 2) e.name = t.errName;
+      const digits = s.phone.replace(/[\s\-()]/g, '');
+      if (digits && !/^\+?\d{7,15}$/.test(digits)) e.phone = t.errPhone;
+    }
+    if (step === 1 && !s.dept) e.dept = t.errDept;
+    if (step === 2) QS.forEach(q => {
+      const v = s.answers[q.id];
+      if (q.req && (v == null || v === '' || (Array.isArray(v) && !v.length))) e['q_' + q.id] = t.errReq;
+    });
+    if (step === 3 && (!s.date || !s.time)) e.slot = t.errSlot;
+    return e;
+  }
+
+  next = () => {
+    const s = this.state, e = this.validate(s.step);
+    if (Object.keys(e).length) return this.setErr(e);
+    if (s.step < 4) return this.setState({ step: s.step + 1, errors: {}, conflict: false });
+    if (s.submitting) return;
+    this.setState({ submitting: true });
+    setTimeout(() => {
+      if (this.props.simulateConflict && !this.state.conflictUsed) {
+        const k = s.date + '|' + s.dept + '|' + s.time;
+        return this.setState({ submitting: false, conflict: true, conflictUsed: true, step: 3, time: null, taken: { ...this.state.taken, [k]: true } });
+      }
+      const ref = 'ML-' + rand(6, 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789');
+      const token = 'MLK1.' + rand(22, 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_');
+      this.setState({ submitting: false, booking: { ref, token }, step: 5 });
+    }, 900);
+  };
+  back = () => this.setState(s => ({ step: Math.max(0, s.step - 1), errors: {}, conflict: false }));
+  restart = () => this.setState({ step: 0, name: '', phone: '', dept: null, answers: {}, date: null, time: null, errors: {}, booking: null, conflict: false });
+  
+
+  qrMatrix() {
+    const b = this.state.booking;
+    if (!b || !window.qrcode) return null;
+    const qr = window.qrcode(0, 'M'); qr.addData(b.token); qr.make();
+    return qr;
+  }
+
+  ticketCanvas() {
+    const s = this.state, L = this.lang(), t = T[L], rtl = L === 'ar';
+    const W = 1080, H = 1500, c = document.createElement('canvas'); c.width = W; c.height = H;
+    const x = c.getContext('2d'), F = "'IBM Plex Sans','IBM Plex Sans Arabic',sans-serif";
+    x.direction = rtl ? 'rtl' : 'ltr'; x.textAlign = rtl ? 'right' : 'left';
+    const X = rtl ? W - 90 : 90;
+    x.fillStyle = '#ffffff'; x.fillRect(0, 0, W, H);
+    x.fillStyle = '#1a2d99'; x.fillRect(0, 0, W, 240);
+    x.fillStyle = '#ffffff'; x.font = '600 54px ' + F; x.fillText(this.hospital(), X, 120);
+    x.fillStyle = '#d6dcff'; x.font = '400 32px ' + F; x.fillText(t.ticketSub, X, 180);
+    const row = (k, v, y) => { x.fillStyle = '#5b6380'; x.font = '400 28px ' + F; x.fillText(k, X, y); x.fillStyle = '#1c2340'; x.font = '600 44px ' + F; x.fillText(v, X, y + 56); };
+    row(t.patient, s.name, 320); row(t.department, this.deptLabel(), 460);
+    row(t.date, this.dateLabel(), 600); row(t.time, s.time, 740);
+    x.strokeStyle = '#c9cfe3'; x.setLineDash([14, 10]); x.lineWidth = 3; x.beginPath(); x.moveTo(90, 850); x.lineTo(W - 90, 850); x.stroke(); x.setLineDash([]);
+    const qr = this.qrMatrix();
+    if (qr) { const n = qr.getModuleCount(), size = 440, cell = size / n, ox = (W - size) / 2, oy = 900;
+      x.fillStyle = '#0f1a4a'; for (let r = 0; r < n; r++) for (let q = 0; q < n; q++) if (qr.isDark(r, q)) x.fillRect(ox + q * cell, oy + r * cell, Math.ceil(cell), Math.ceil(cell)); }
+    x.textAlign = 'center'; x.fillStyle = '#5b6380'; x.font = '400 28px ' + F; x.fillText(t.ref, W / 2, 1400);
+    x.direction = 'ltr'; x.fillStyle = '#0f1a4a'; x.font = '700 52px ' + F; x.fillText(s.booking.ref, W / 2, 1462);
+    return c;
+  }
+  saveImage = () => { const a = document.createElement('a'); a.href = this.ticketCanvas().toDataURL('image/png'); a.download = 'MEDLINK-' + this.state.booking.ref + '.png'; a.click(); };
+  printTicket = () => {
+    const url = this.ticketCanvas().toDataURL('image/png'), w = window.open('', '_blank');
+    if (!w) return;
+    w.document.write('<title>' + this.state.booking.ref + '</title><img src="' + url + '" style="width:100%;max-width:520px;display:block;margin:0 auto" onload="setTimeout(()=>print(),200)">');
+    w.document.close();
+  };
+
+  hospital() { return this.props.hospitalName || { ar: 'مستشفى النور العام', en: 'Al-Noor General Hospital', tr: 'Al-Noor Devlet Hastanesi' }[this.lang()]; }
+  deptLabel() { const d = DEPTS.find(d => d.id === this.state.dept); return d ? d[this.lang()] : ''; }
+  dateLabel() {
+    if (!this.state.date) return '';
+    const [y, m, d] = this.state.date.split('-').map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString(this.locale(), { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' });
+  }
+
+  renderVals() {
+    const s = this.state, L = this.lang(), t = T[L], e = s.errors;
+    const sel = on => ({ border: on ? '#2b41c5' : '#dde2f0', bg: on ? '#eef1fc' : '#ffffff', color: on ? '#1a2d99' : '#1c2340' });
+    const loc = this.locale();
+    const langs = [['ar', 'عربي'], ['en', 'EN'], ['tr', 'TR']].map(([id, label]) => ({ label, on: L === id,
+      bg: L === id ? '#2b41c5' : 'transparent', color: L === id ? '#ffffff' : '#1a2d99', pick: () => this.setState({ lang: id }) }));
+
+    const steps = t.steps.map((label, i) => ({ label, num: i + 1,
+      bar: i < s.step ? '#2b41c5' : i === s.step ? '#2b41c5' : '#dde2f0',
+      color: i <= s.step ? '#1a2d99' : '#5b6380', weight: i === s.step ? 600 : 400 }));
+
+    const depts = DEPTS.map(d => ({ label: d[L], mark: s.dept === d.id ? '✓' : '', ...sel(s.dept === d.id),
+      pick: () => this.setState({ dept: d.id, date: null, time: null, errors: {} }) }));
+
+    const questions = QS.map(q => {
+      const v = s.answers[q.id];
+      const setA = val => this.setState({ answers: { ...this.state.answers, [q.id]: val }, errors: { ...this.state.errors, ['q_' + q.id]: null } });
+      let opts = [];
+      if (q.type === 'yesno') opts = [{ id: 'yes', label: t.yes }, { id: 'no', label: t.no }];
+      else if (q.opts) opts = q.opts.map(o => ({ id: o.id, label: o[L] }));
+      opts = opts.map(o => {
+        const on = q.type === 'multi' ? (v || []).includes(o.id) : v === o.id;
+        return { ...o, ...sel(on), mark: q.type === 'multi' ? (on ? '☑ ' : '☐ ') : '',
+          pick: () => q.type === 'multi' ? setA(on ? (v || []).filter(x => x !== o.id) : [...(v || []), o.id]) : setA(o.id) };
+      });
+      return { label: q[L], reqText: q.req ? t.required : t.optionalTag, reqColor: q.req ? '#b42318' : '#5b6380',
+        isChoice: q.type !== 'short', isMulti: q.type === 'multi', isText: q.type === 'short', opts,
+        value: v || '', count: (v || '').length, onText: ev => setA(ev.target.value.slice(0, 120)), err: e['q_' + q.id] || '' };
+    });
+
+    const days = [];
+    const base = new Date(); base.setHours(0, 0, 0, 0);
+    if (s.step === 3) for (let i = 0; i < 14; i++) {
+      const d = new Date(base); d.setDate(base.getDate() + i);
+      const k = keyOf(d), closed = d.getDay() === 5, n = closed ? 0 : this.slotsFor(k).length, on = s.date === k;
+      const disabled = closed || n === 0;
+      days.push({ wd: d.toLocaleDateString(loc, { weekday: 'short' }), dn: d.getDate(), sub: closed ? t.closed : n === 0 ? t.full : t.slots(n),
+        disabled, cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1, ...sel(on),
+        pick: () => this.setState({ date: k, time: null, errors: {} }) });
+    }
+    const slotList = s.date ? this.slotsFor(s.date) : [];
+    const slots = slotList.map(tm => ({ label: tm, ...sel(s.time === tm), pick: () => this.setState({ time: tm, errors: {}, conflict: false }) }));
+
+    const answerText = q => {
+      const v = s.answers[q.id];
+      if (v == null || v === '' || (Array.isArray(v) && !v.length)) return '—';
+      if (q.type === 'yesno') return v === 'yes' ? t.yes : t.no;
+      if (q.type === 'short') return v;
+      const arr = Array.isArray(v) ? v : [v];
+      return arr.map(id => q.opts.find(o => o.id === id)[L]).join(', ');
+    };
+    const go = n => () => this.setState({ step: n, errors: {} });
+    const reviewRows = [
+      { k: t.patient, v: s.name, edit: go(0) },
+      ...(s.phone ? [{ k: t.phone, v: s.phone, edit: go(0) }] : []),
+      { k: t.department, v: this.deptLabel(), edit: go(1) },
+      ...QS.map(q => ({ k: q[L], v: answerText(q), edit: go(2) })),
+      { k: t.date, v: this.dateLabel(), edit: go(3) },
+      { k: t.time, v: s.time, edit: go(3) }
+    ];
+    const sv = v => ({ v: v || t.notSet, color: v ? '#1c2340' : '#8a91a8' });
+    const summary = [
+      { k: t.patient, ...sv(s.name.trim()) },
+      { k: t.department, ...sv(this.deptLabel()) },
+      { k: t.date, ...sv(this.dateLabel()) },
+      { k: t.time, ...sv(s.time) }
+    ];
+
+    const qr = this.qrMatrix();
+    if (s.booking && !qr) setTimeout(() => this.forceUpdate(), 300);
+
+    return {
+      t, dir: L === 'ar' ? 'rtl' : 'ltr', hospitalName: this.hospital(), langs,
+      steps, notDone: s.step < 5, isDone: s.step === 5,
+      isStep0: s.step === 0, isStep1: s.step === 1, isStep2: s.step === 2, isStep3: s.step === 3, isStep4: s.step === 4,
+      conflict: s.conflict && s.step === 3,
+      name: s.name, phone: s.phone,
+      onName: ev => this.setState({ name: ev.target.value, errors: { ...e, name: null } }),
+      onPhone: ev => this.setState({ phone: ev.target.value, errors: { ...e, phone: null } }),
+      errName: e.name || '', errPhone: e.phone || '', errDept: e.dept || '', errSlot: e.slot || '',
+      nameBorder: e.name ? '#b42318' : '#c9cfe3', phoneBorder: e.phone ? '#b42318' : '#c9cfe3',
+      depts, questions, days, slots, hasDate: !!s.date, slotCountText: t.slotCount(slotList.length),
+      reviewRows, summary,
+      canBack: s.step > 0, back: this.back, next: this.next, submitting: s.submitting,
+      nextLabel: s.step === 4 ? (s.submitting ? t.confirming : t.confirm) : t.next,
+      nextBg: s.submitting ? '#7d8bd8' : '#2b41c5',
+      time: s.time, dateLabel: this.dateLabel(), deptLabel: this.deptLabel(),
+      bookingRef: s.booking ? s.booking.ref : '', qrImg: qr ? React.createElement('img', { src: qr.createDataURL(6, 2), alt: 'QR', style: { width: 200, height: 200, imageRendering: 'pixelated' } }) : null,
+      saveImage: this.saveImage, printTicket: this.printTicket, restart: this.restart
+    };
+  }
+}
+</script>
+</body>
+</html>

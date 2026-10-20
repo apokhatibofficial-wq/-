@@ -33,7 +33,9 @@ public static class Startup
     {
         services.AddSingleton(options);
         services.AddSingleton(TimeProvider.System);
-        services.AddSingleton(_ => new NpgsqlDataSourceBuilder(options.AppConnectionString).Build());
+        // Npgsql logs commands without parameter values (parameter logging is never enabled).
+        services.AddSingleton(sp => new NpgsqlDataSourceBuilder(options.AppConnectionString)
+            .UseLoggerFactory(sp.GetRequiredService<ILoggerFactory>()).Build());
         services.AddSingleton<Db>();
         services.AddSingleton<PasswordHasher>();
         services.AddSingleton<TotpService>();

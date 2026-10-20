@@ -1,0 +1,98 @@
+# MEDLINK production stack for one Oracle Cloud Always Free ARM VM.
+#   cd infra && docker compose --env-file ../.env up -d --build
+# Cloudflare (free) sits in front for DNS, proxy and WAF; Caddy terminates HTTPS with Let's Encrypt.
+name: medlink
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_OWNER_USER:-medlink_owner}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
+      POSTGRES_DB: ${DB_NAME:-medlink}
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks: [backend]
+
+  # Applies SQL migrations as the database owner, then exits. The API never uses the owner account.
+  migrate:
+    build: ../api
+    image: medlink-api:local
+    command: ["migrate"]
+    restart: "no"
+    environment:
+      DB_HOST: db
+      DB_NAME: ${DB_NAME:-medlink}
+      DB_OWNER_USER: ${DB_OWNER_USER:-medlink_owner}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_APP_PASSWORD: ${DB_APP_PASSWORD:?set DB_APP_PASSWORD in .env}
+    depends_on:
+      db: { condition: service_healthy }
+    networks: [backend]
+
+  api:
+    image: medlink-api:local
+    restart: unless-stopped
+    environment:
+      DB_HOST: db
+      DB_NAME: ${DB_NAME:-medlink}
+      DB_APP_PASSWORD: ${DB_APP_PASSWORD}
+      SESSION_SIGNING_KEY: ${SESSION_SIGNING_KEY:?set SESSION_SIGNING_KEY in .env}
+      TOTP_ENC_KEY: ${TOTP_ENC_KEY:?set TOTP_ENC_KEY in .env}
+      DATA_PROTECTION_KEYS_PATH: /var/lib/medlink/keys
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT:-465}
+      SMTP_TLS: ${SMTP_TLS:-ssl}
+      SMTP_USER: ${SMTP_USER:-}
+      EMAIL_API_KEY: ${EMAIL_API_KEY:-}
+      EMAIL_FROM: ${EMAIL_FROM}
+      ADMIN_WEB_URL: ${ADMIN_WEB_URL}
+      HOSPITAL_WEB_URL: ${HOSPITAL_WEB_URL}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+      TRUSTED_PROXIES: 172.30.0.0/24
+      COOKIE_SECURE: "true"
+      DEFAULT_HOSPITAL_TIMEZONE: ${DEFAULT_HOSPITAL_TIMEZONE:-UTC}
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    volumes:
+      - dpkeys:/var/lib/medlink/keys
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+    networks: [backend, edge]
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    environment:
+      ACME_EMAIL: ${ACME_EMAIL}
+      API_DOMAIN: ${API_DOMAIN:-api.medlink.website}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [api]
+    networks: [edge]
+
+volumes:
+  pgdata:
+  dpkeys:
+  caddy_data:
+  caddy_config:
+
+networks:
+  backend:
+    internal: true
+  edge:
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24

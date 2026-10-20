@@ -1,0 +1,22 @@
+# Local development overrides: publishes ports on localhost only, adds Mailpit, no Caddy/HTTPS.
+#   cd infra && docker compose -f docker-compose.yml -f docker-compose.dev.yml --env-file ../.env up -d --build db migrate api mailpit
+services:
+  db:
+    ports: ["127.0.0.1:5432:5432"]
+  api:
+    ports: ["127.0.0.1:8080:8080"]
+    environment:
+      SMTP_HOST: mailpit
+      SMTP_PORT: "1025"
+      SMTP_TLS: none
+      SMTP_USER: ""
+      COOKIE_SECURE: "false"
+      CORS_ORIGINS: http://localhost:5173
+      ADMIN_WEB_URL: http://localhost:5173
+      HOSPITAL_WEB_URL: http://localhost:5173
+    networks: [backend, edge]
+  mailpit:
+    image: axllent/mailpit:v1.27
+    ports: ["127.0.0.1:8025:8025"]
+    # "backend" is internal (no published ports), so the web UI also joins "edge".
+    networks: [backend, edge]

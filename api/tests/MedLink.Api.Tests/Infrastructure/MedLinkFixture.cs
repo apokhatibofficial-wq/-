@@ -36,8 +36,7 @@ public sealed class MedLinkFixture : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        _pg = new PostgreSqlBuilder()
-            .WithImage(Image)
+        _pg = new PostgreSqlBuilder(Image)
             .WithDatabase("medlink")
             .WithUsername("medlink_owner")
             .WithPassword(_ownerPassword)
@@ -93,7 +92,8 @@ public sealed class MedLinkFixture : IAsyncLifetime
                 var f = new WebApplicationFactory<Program>().WithWebHostBuilder(w =>
                 {
                     w.UseEnvironment("Production");
-                    w.ConfigureLogging(l => l.AddProvider(Logs).SetMinimumLevel(LogLevel.Debug));
+                    // Provider-specific rule: the capture sees everything down to Trace, whatever appsettings.json filters.
+                    w.ConfigureLogging(l => l.AddProvider(Logs).AddFilter<LogCapture>(null, LogLevel.Trace));
                     w.ConfigureServices(s =>
                     {
                         s.RemoveAll<IEmailSender>();

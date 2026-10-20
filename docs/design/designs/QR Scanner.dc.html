@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#dfe3ee;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+a{color:#2b41c5}a:hover{color:#1a2d99}
+input,button{font-family:inherit}
+@keyframes mlscan{0%{top:8%}50%{top:88%}100%{top:8%}}
+</style>
+</helmet>
+<div dir="{{ dir }}" style="min-height:100vh;background:#dfe3ee;display:flex;justify-content:center;font-family:'IBM Plex Sans','IBM Plex Sans Arabic',system-ui,sans-serif;color:#1c2340">
+  <div style="width:100%;max-width:440px;min-height:100vh;background:#f4f6fb;display:flex;flex-direction:column;box-shadow:0 0 0 1px rgba(15,26,74,.08)">
+
+    <header style="background:#ffffff;border-bottom:1px solid #dde2f0;padding:10px 14px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:5">
+      <img src="assets/medlink-icon.svg" alt="MEDLINK" style="width:30px;height:30px">
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+        <span style="font-size:15px;font-weight:600;color:#0f1a4a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ hospital }}</span>
+        <span style="font-size:12px;color:#5b6380;display:flex;align-items:center;gap:6px"><span style="width:7px;height:7px;border-radius:50%;background:{{ netDot }}"></span>{{ headerSub }}</span>
+      </div>
+      <div style="display:flex;gap:2px;padding:2px;border:1px solid #dde2f0;border-radius:999px;background:#f4f6fb">
+        <sc-for list="{{ langs }}" as="l" hint-placeholder-count="3">
+          <button onClick="{{ l.pick }}" style="min-width:36px;height:30px;border:none;border-radius:999px;background:{{ l.bg }};color:{{ l.color }};font-size:12px;font-weight:600;cursor:pointer;padding:0 8px">{{ l.label }}</button>
+        </sc-for>
+      </div>
+    </header>
+
+    <sc-if value="{{ isLogin }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;padding:28px 20px;display:flex;flex-direction:column;gap:18px">
+        <img src="assets/medlink-logo.svg" alt="MEDLINK" style="width:200px;height:auto;align-self:center;margin-bottom:8px">
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <h1 style="margin:0;font-size:22px;font-weight:600;color:#0f1a4a">{{ t.loginTitle }}</h1>
+          <p style="margin:0;font-size:14px;color:#5b6380;line-height:1.5">{{ t.loginSub }}</p>
+        </div>
+        <sc-if value="{{ loginErr }}"><div role="alert" style="background:#fdecea;border:1px solid #f1b4ae;color:#8a1c12;border-radius:10px;padding:10px 12px;font-size:14px">{{ loginErr }}</div></sc-if>
+        <label style="display:flex;flex-direction:column;gap:6px"><span style="font-size:14px;font-weight:500">{{ t.username }}</span>
+          <input value="{{ user }}" onChange="{{ onUser }}" dir="ltr" autocomplete="username" autocapitalize="off" placeholder="" style="height:50px;border:1px solid #c9cfe3;border-radius:10px;padding:0 14px;font-size:16px;outline:none;text-align:start" style-focus="border-color:#2b41c5"></label>
+        <label style="display:flex;flex-direction:column;gap:6px"><span style="font-size:14px;font-weight:500">{{ t.password }}</span>
+          <input type="password" value="{{ pw }}" onChange="{{ onPw }}" dir="ltr" autocomplete="current-password" style="height:50px;border:1px solid #c9cfe3;border-radius:10px;padding:0 14px;font-size:16px;outline:none" style-focus="border-color:#2b41c5"></label>
+        <button onClick="{{ login }}" style="height:52px;border:none;background:#2b41c5;color:#ffffff;border-radius:12px;font-size:16px;font-weight:600;cursor:pointer">{{ loginLabel }}</button>
+        <div style="font-size:13px;color:#5b6380;text-align:center;line-height:1.5">{{ t.loginNote }}</div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isApp }}" hint-placeholder-val="{{ true }}">
+      <div style="flex:1;display:flex;flex-direction:column;gap:14px;padding:14px">
+
+        <div style="display:flex;gap:4px;padding:4px;background:#ffffff;border:1px solid #dde2f0;border-radius:12px">
+          <sc-for list="{{ modes }}" as="m" hint-placeholder-count="2">
+            <button onClick="{{ m.pick }}" style="flex:1;height:44px;border:none;border-radius:9px;background:{{ m.bg }};color:{{ m.color }};font-size:15px;font-weight:600;cursor:pointer">{{ m.label }}</button>
+          </sc-for>
+        </div>
+
+        <sc-if value="{{ isScanMode }}" hint-placeholder-val="{{ true }}">
+          <sc-if value="{{ noResult }}" hint-placeholder-val="{{ true }}">
+            <div style="position:relative;width:100%;aspect-ratio:1 / 1;background:#0b1230;border-radius:18px;overflow:hidden">
+              <video ref="{{ videoRef }}" autoplay="{{ true }}" playsinline="{{ true }}" muted="{{ true }}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:{{ videoOpacity }}"></video>
+              <div style="position:absolute;inset:14%;border-radius:14px;box-shadow:0 0 0 999px rgba(11,18,48,.45)"></div>
+              <div style="position:absolute;inset:14%;pointer-events:none">
+                <span style="position:absolute;top:0;left:0;width:34px;height:34px;border-top:4px solid #ffffff;border-left:4px solid #ffffff;border-top-left-radius:14px"></span>
+                <span style="position:absolute;top:0;right:0;width:34px;height:34px;border-top:4px solid #ffffff;border-right:4px solid #ffffff;border-top-right-radius:14px"></span>
+                <span style="position:absolute;bottom:0;left:0;width:34px;height:34px;border-bottom:4px solid #ffffff;border-left:4px solid #ffffff;border-bottom-left-radius:14px"></span>
+                <span style="position:absolute;bottom:0;right:0;width:34px;height:34px;border-bottom:4px solid #ffffff;border-right:4px solid #ffffff;border-bottom-right-radius:14px"></span>
+                {{ scanLine }}
+              </div>
+              <sc-if value="{{ camIdle }}" hint-placeholder-val="{{ true }}">
+                <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center;color:#ffffff">
+                  <div style="font-size:15px;line-height:1.5;color:#d6dcff;max-width:260px">{{ t.camIntro }}</div>
+                  <button onClick="{{ startCam }}" style="height:50px;border:none;background:#ffffff;color:#1a2d99;border-radius:12px;padding:0 24px;font-size:16px;font-weight:600;cursor:pointer">{{ t.startCam }}</button>
+                </div>
+              </sc-if>
+              <sc-if value="{{ camMsg }}">
+                <div style="position:absolute;left:12px;right:12px;bottom:12px;background:rgba(255,255,255,.96);border-radius:12px;padding:12px 14px;font-size:13px;line-height:1.5;color:#1c2340;display:flex;flex-direction:column;gap:8px">
+                  <span>{{ camMsg }}</span>
+                  <button onClick="{{ goManual }}" style="align-self:flex-start;border:none;background:none;color:#2b41c5;font-size:14px;font-weight:600;cursor:pointer;padding:0">{{ t.useManual }}</button>
+                </div>
+              </sc-if>
+              <sc-if value="{{ camLive }}">
+                <div style="position:absolute;top:12px;left:0;right:0;text-align:center;color:#ffffff;font-size:13px;font-weight:500">{{ t.aim }}</div>
+              </sc-if>
+            </div>
+
+            <div style="background:#ffffff;border:1px dashed #9aa6d8;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px">
+              <div style="font-size:12px;font-weight:600;color:#5b6380">{{ t.demoTitle }}</div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px">
+                <sc-for list="{{ demos }}" as="x" hint-placeholder-count="5">
+                  <button onClick="{{ x.pick }}" style="min-height:36px;border:1px solid #dde2f0;background:#f4f6fb;color:#1a2d99;border-radius:999px;padding:0 12px;font-size:13px;font-weight:500;cursor:pointer">{{ x.label }}</button>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+        </sc-if>
+
+        <sc-if value="{{ isManualMode }}">
+          <sc-if value="{{ noResult }}">
+            <div style="background:#ffffff;border:1px solid #dde2f0;border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:12px">
+              <div style="display:flex;flex-direction:column;gap:4px">
+                <div style="font-size:17px;font-weight:600;color:#0f1a4a">{{ t.manualTitle }}</div>
+                <div style="font-size:13px;color:#5b6380;line-height:1.5">{{ t.manualSub }}</div>
+              </div>
+              <input value="{{ refQ }}" onChange="{{ onRef }}" onKeyDown="{{ onRefKey }}" dir="ltr" autocapitalize="characters" placeholder="ML-XXXXXX" style="height:54px;border:1px solid #c9cfe3;border-radius:12px;padding:0 14px;font-size:20px;letter-spacing:.08em;font-weight:600;outline:none;text-align:center" style-focus="border-color:#2b41c5">
+              <button onClick="{{ lookup }}" style="height:50px;border:none;background:#2b41c5;color:#ffffff;border-radius:12px;font-size:16px;font-weight:600;cursor:pointer">{{ lookupLabel }}</button>
+              <div style="font-size:12px;color:#5b6380">{{ t.manualTry }}</div>
+            </div>
+          </sc-if>
+        </sc-if>
+
+        <sc-if value="{{ result }}">
+          <div role="status" style="background:#ffffff;border:2px solid {{ result.border }};border-radius:18px;overflow:hidden;display:flex;flex-direction:column">
+            <div style="background:{{ result.bg }};color:{{ result.fg }};padding:22px 18px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center">
+              <div style="width:60px;height:60px;border-radius:50%;background:{{ result.fg }};color:{{ result.bg }};display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:700">{{ result.icon }}</div>
+              <div style="font-size:21px;font-weight:700">{{ result.title }}</div>
+              <div style="font-size:14px;line-height:1.5;max-width:300px">{{ result.body }}</div>
+            </div>
+            <sc-if value="{{ result.facts }}">
+              <div style="padding:16px 18px;display:grid;grid-template-columns:auto 1fr;gap:10px 14px;font-size:15px">
+                <sc-for list="{{ result.facts }}" as="f"><span style="color:#5b6380;font-size:13px;padding-top:1px">{{ f.k }}</span><span style="font-weight:600;overflow-wrap:anywhere">{{ f.v }}</span></sc-for>
+              </div>
+            </sc-if>
+            <div style="padding:0 18px 18px;display:flex;flex-direction:column;gap:8px">
+              <sc-if value="{{ result.canConfirm }}">
+                <button onClick="{{ confirmManual }}" style="height:52px;border:none;background:#13795b;color:#ffffff;border-radius:12px;font-size:16px;font-weight:600;cursor:pointer">{{ confirmLabel }}</button>
+              </sc-if>
+              <button onClick="{{ next }}" style="height:52px;border:{{ nextBorder }};background:{{ nextBg }};color:{{ nextColor }};border-radius:12px;font-size:16px;font-weight:600;cursor:pointer">{{ nextLabel }}</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ hasRecent }}">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="font-size:13px;font-weight:600;color:#5b6380">{{ t.recent }}</div>
+            <div style="background:#ffffff;border:1px solid #dde2f0;border-radius:12px">
+              <sc-for list="{{ recent }}" as="r">
+                <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid #eef0f6">
+                  <span style="width:10px;height:10px;border-radius:50%;background:{{ r.dot }};flex-shrink:0"></span>
+                  <span style="flex:1;min-width:0;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.label }}</span>
+                  <span dir="ltr" style="font-size:12px;color:#5b6380">{{ r.time }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <div style="flex:1"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12px;color:#5b6380;padding:4px 2px">
+          <span dir="ltr">user@example.com</span>
+          <button onClick="{{ logout }}" style="border:none;background:none;color:#2b41c5;font-size:13px;font-weight:600;cursor:pointer;padding:6px 0">{{ t.logout }}</button>
+        </div>
+      </div>
+    </sc-if>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;defaultLang&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;ar&quot;,&quot;en&quot;,&quot;tr&quot;],&quot;default&quot;:&quot;ar&quot;,&quot;tsType&quot;:&quot;'ar'|'en'|'tr'&quot;},&quot;startSignedIn&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;simulateOffline&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;}}">
+const T = {
+  ar: { hospital: 'مستشفى النور العام', online: 'متصل · ماسح الحضور', offline: 'غير متصل',
+    loginTitle: 'تسجيل دخول الموظف', loginSub: 'استخدم حساب الموظف المرتبط بهذا المستشفى.', username: 'اسم المستخدم', password: 'كلمة المرور',
+    login: 'دخول', loggingIn: 'جارٍ التحقق…', loginErr: 'اسم المستخدم أو كلمة المرور غير صحيحة.', loginNote: 'تنتهي الجلسة تلقائيًا بعد 12 ساعة أو عند تسجيل الخروج.',
+    scan: 'مسح QR', manual: 'رقم الحجز', camIntro: 'سيطلب المتصفح إذن استخدام الكاميرا لقراءة رمز QR الخاص بالحجز.', startCam: 'تشغيل الكاميرا',
+    aim: 'وجّه الكاميرا نحو رمز QR', camDenied: 'لم يُسمح باستخدام الكاميرا. فعّل الإذن من إعدادات المتصفح، أو ابحث برقم الحجز.',
+    camNone: 'الكاميرا غير متاحة على هذا الجهاز أو المتصفح. ابحث برقم الحجز بدلًا من ذلك.', camNoDecoder: 'الكاميرا تعمل، لكن هذا المتصفح لا يدعم قراءة QR تلقائيًا في هذا النموذج. استخدم أزرار المحاكاة أو رقم الحجز.',
+    useManual: 'البحث برقم الحجز', demoTitle: 'محاكاة (للمعاينة فقط)',
+    d: { ok: 'حجز صالح', already: 'مسجّل مسبقًا', other: 'مستشفى آخر', cancelled: 'ملغى', otherday: 'يوم آخر', bad: 'رمز غير معروف' },
+    manualTitle: 'البحث برقم الحجز', manualSub: 'أدخل رقم الحجز كاملًا كما يظهر على تأكيد المريض. لا يمكن البحث بالاسم حفاظًا على الخصوصية.',
+    lookup: 'بحث', looking: 'جارٍ البحث…', manualTry: 'للتجربة: ML-7KQ4PZ أو ML-3HX9TA',
+    okTitle: 'تم تسجيل الحضور', okBody: 'تم تحديث الحالة في النظام وتطبيق Windows.',
+    foundTitle: 'تم العثور على الحجز', foundBody: 'تأكد من هوية المريض ثم سجّل الحضور.', confirm: 'تسجيل الحضور', confirming: 'جارٍ التسجيل…',
+    alreadyTitle: 'الحضور مسجّل مسبقًا', alreadyBody: t => 'سُجّل حضور هذا الحجز الساعة ' + t + '. لم يُسجَّل مرة ثانية.',
+    otherTitle: 'الحجز لا يخص هذا المستشفى', otherBody: 'لا يمكن عرض بيانات هذا الحجز. اطلب من المريض التأكد من المستشفى.',
+    cancelledTitle: 'الحجز ملغى', cancelledBody: 'هذا الحجز أُلغي ولا يمكن تسجيل حضوره.',
+    otherdayTitle: 'الموعد في يوم آخر', otherdayBody: d => 'موعد هذا الحجز ' + d + '. لا يمكن تسجيل الحضور اليوم.',
+    badTitle: 'رمز غير معروف', badBody: 'هذا الرمز ليس حجز MEDLINK صالحًا أو انتهت صلاحيته.', notFoundTitle: 'لا يوجد حجز بهذا الرقم', notFoundBody: 'تحقق من الرقم وحاول مرة أخرى.',
+    netTitle: 'لا يوجد اتصال', netBody: 'يجب التحقق من الحجز على الخادم. أعد المحاولة عند عودة الاتصال.',
+    patient: 'المريض', time: 'الموعد', dept: 'القسم', ref: 'رقم الحجز', checkin: 'وقت الحضور',
+    scanNext: 'مسح التالي', back: 'رجوع', recent: 'آخر العمليات', logout: 'تسجيل الخروج',
+    r: { ok: 'حضر', already: 'مكرر', other: 'مستشفى آخر', cancelled: 'ملغى', otherday: 'يوم آخر', bad: 'غير معروف' } },
+  en: { hospital: 'Al-Noor General Hospital', online: 'Online · check-in scanner', offline: 'Offline',
+    loginTitle: 'Staff sign-in', loginSub: 'Use the staff account linked to this hospital.', username: 'Username', password: 'Password',
+    login: 'Sign in', loggingIn: 'Verifying…', loginErr: 'Incorrect username or password.', loginNote: 'Sessions end automatically after 12 hours or when you sign out.',
+    scan: 'Scan QR', manual: 'Booking no.', camIntro: 'Your browser will ask for camera permission to read the booking QR code.', startCam: 'Turn on camera',
+    aim: 'Point the camera at the QR code', camDenied: 'Camera access was denied. Allow it in browser settings, or search by booking number.',
+    camNone: 'No camera available on this device or browser. Search by booking number instead.', camNoDecoder: 'Camera is on, but this browser can’t decode QR in this prototype. Use the simulation buttons or booking number.',
+    useManual: 'Search by booking number', demoTitle: 'Simulate (preview only)',
+    d: { ok: 'Valid booking', already: 'Already in', other: 'Other hospital', cancelled: 'Cancelled', otherday: 'Other day', bad: 'Unknown code' },
+    manualTitle: 'Find by booking number', manualSub: 'Enter the full booking number from the patient’s confirmation. Name search isn’t allowed, to protect privacy.',
+    lookup: 'Search', looking: 'Searching…', manualTry: 'Try: ML-7KQ4PZ or ML-3HX9TA',
+    okTitle: 'Checked in', okBody: 'Status updated in the system and the Windows app.',
+    foundTitle: 'Booking found', foundBody: 'Confirm the patient’s identity, then check in.', confirm: 'Check in', confirming: 'Checking in…',
+    alreadyTitle: 'Already checked in', alreadyBody: t => 'This booking was checked in at ' + t + '. It wasn’t recorded again.',
+    otherTitle: 'Not a booking for this hospital', otherBody: 'This booking’s details can’t be shown. Ask the patient to confirm the hospital.',
+    cancelledTitle: 'Booking cancelled', cancelledBody: 'This booking was cancelled and can’t be checked in.',
+    otherdayTitle: 'Appointment is on another day', otherdayBody: d => 'This booking is for ' + d + '. It can’t be checked in today.',
+    badTitle: 'Unknown code', badBody: 'This isn’t a valid MEDLINK booking code, or it has expired.', notFoundTitle: 'No booking with that number', notFoundBody: 'Check the number and try again.',
+    netTitle: 'No connection', netBody: 'Bookings must be verified by the server. Try again when you’re back online.',
+    patient: 'Patient', time: 'Appointment', dept: 'Department', ref: 'Booking no.', checkin: 'Checked in',
+    scanNext: 'Scan next', back: 'Back', recent: 'Recent', logout: 'Sign out',
+    r: { ok: 'Arrived', already: 'Duplicate', other: 'Other hospital', cancelled: 'Cancelled', otherday: 'Other day', bad: 'Unknown' } },
+  tr: { hospital: 'Al-Noor Devlet Hastanesi', online: 'Çevrim içi · giriş tarayıcı', offline: 'Çevrim dışı',
+    loginTitle: 'Personel girişi', loginSub: 'Bu hastaneye bağlı personel hesabını kullanın.', username: 'Kullanıcı adı', password: 'Şifre',
+    login: 'Giriş yap', loggingIn: 'Doğrulanıyor…', loginErr: 'Kullanıcı adı veya şifre hatalı.', loginNote: 'Oturum 12 saat sonra veya çıkış yapınca otomatik kapanır.',
+    scan: 'QR tara', manual: 'Randevu no.', camIntro: 'Tarayıcınız randevu QR kodunu okumak için kamera izni isteyecek.', startCam: 'Kamerayı aç',
+    aim: 'Kamerayı QR koda doğrultun', camDenied: 'Kamera izni reddedildi. Tarayıcı ayarlarından izin verin veya randevu numarasıyla arayın.',
+    camNone: 'Bu cihazda veya tarayıcıda kamera yok. Randevu numarasıyla arayın.', camNoDecoder: 'Kamera açık, ancak bu tarayıcı bu prototipte QR çözemiyor. Simülasyon düğmelerini veya randevu numarasını kullanın.',
+    useManual: 'Randevu numarasıyla ara', demoTitle: 'Simülasyon (yalnızca önizleme)',
+    d: { ok: 'Geçerli', already: 'Zaten girildi', other: 'Başka hastane', cancelled: 'İptal', otherday: 'Başka gün', bad: 'Bilinmeyen kod' },
+    manualTitle: 'Randevu numarasıyla bul', manualSub: 'Hastanın onayındaki tam randevu numarasını girin. Gizlilik için adla arama yapılamaz.',
+    lookup: 'Ara', looking: 'Aranıyor…', manualTry: 'Deneyin: ML-7KQ4PZ veya ML-3HX9TA',
+    okTitle: 'Giriş yapıldı', okBody: 'Durum sistemde ve Windows uygulamasında güncellendi.',
+    foundTitle: 'Randevu bulundu', foundBody: 'Hastanın kimliğini doğrulayın, ardından giriş yapın.', confirm: 'Giriş yap', confirming: 'Kaydediliyor…',
+    alreadyTitle: 'Giriş zaten yapılmış', alreadyBody: t => 'Bu randevunun girişi ' + t + ' saatinde yapıldı. Tekrar kaydedilmedi.',
+    otherTitle: 'Bu hastaneye ait değil', otherBody: 'Bu randevunun bilgileri gösterilemez. Hastadan hastaneyi doğrulamasını isteyin.',
+    cancelledTitle: 'Randevu iptal edildi', cancelledBody: 'Bu randevu iptal edildi ve giriş yapılamaz.',
+    otherdayTitle: 'Randevu başka bir günde', otherdayBody: d => 'Bu randevu ' + d + ' tarihinde. Bugün giriş yapılamaz.',
+    badTitle: 'Bilinmeyen kod', badBody: 'Bu geçerli bir MEDLINK randevu kodu değil veya süresi dolmuş.', notFoundTitle: 'Bu numarada randevu yok', notFoundBody: 'Numarayı kontrol edip tekrar deneyin.',
+    netTitle: 'Bağlantı yok', netBody: 'Randevular sunucuda doğrulanmalı. Bağlantı gelince tekrar deneyin.',
+    patient: 'Hasta', time: 'Randevu', dept: 'Bölüm', ref: 'Randevu no.', checkin: 'Giriş saati',
+    scanNext: 'Sıradakini tara', back: 'Geri', recent: 'Son işlemler', logout: 'Çıkış yap',
+    r: { ok: 'Geldi', already: 'Tekrar', other: 'Başka hastane', cancelled: 'İptal', otherday: 'Başka gün', bad: 'Bilinmeyen' } }
+};
+const DEPT = { im: ['الباطنة', 'Internal Medicine', 'Dahiliye'], ped: ['طب الأطفال', 'Pediatrics', 'Çocuk Sağlığı'], card: ['القلب', 'Cardiology', 'Kardiyoloji'] };
+const BOOKINGS = {
+  'MLK1.a9Fq2ZxL0pT7vBn3Kc8sWd': { kind: 'ok', ref: 'ML-7KQ4PZ', name: 'محمد علي الطاهر', time: '10:40', dept: 'im' },
+  'MLK1.r4Hc8NmQ1yV6tGz0Xe5uJb': { kind: 'already', ref: 'ML-3HX9TA', name: 'فاطمة سالم المبروك', time: '10:00', dept: 'ped', at: '09:52' },
+  'MLK1.p0Ws7DkE3nR9aYq2Lm6hFc': { kind: 'other' },
+  'MLK1.z6Tn1BvC8jM4xQe7Ka3sPd': { kind: 'cancelled', ref: 'ML-9PD2RM', name: 'أحمد خالد الورفلي', time: '11:20', dept: 'card' },
+  'MLK1.k2Jd5GfH9wS0uLc4Nb8rTe': { kind: 'otherday', ref: 'ML-5TB8WN', name: 'مريم عبدالله الزوي', time: '09:00', dept: 'im', day: 2 },
+  'NOT-A-MEDLINK-CODE': { kind: 'bad' }
+};
+const p2 = n => String(n).padStart(2, '0');
+const nowStr = () => { const d = new Date(); return p2(d.getHours()) + ':' + p2(d.getMinutes()); };
+
+class Component extends DCLogic {
+  state = { lang: null, authed: this.props.startSignedIn ?? true, user: '', pw: '', busy: false, loginErr: '',
+    mode: 'scan', cam: 'idle', result: null, refQ: '', checked: {}, recent: [] };
+  videoRef = React.createRef();
+
+  componentWillUnmount() { this.stopCam(); }
+  L() { return this.state.lang || this.props.defaultLang || 'ar'; }
+  offline() { return !!this.props.simulateOffline; }
+
+  stopCam() { if (this.stream) { this.stream.getTracks().forEach(t => t.stop()); this.stream = null; } cancelAnimationFrame(this.raf); }
+  async startCam() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return this.setState({ cam: 'none' });
+    try {
+      this.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+      const v = this.videoRef.current; if (v) { v.srcObject = this.stream; await v.play().catch(() => {}); }
+      if (!('BarcodeDetector' in window)) return this.setState({ cam: 'nodecoder' });
+      this.setState({ cam: 'live' });
+      const det = new window.BarcodeDetector({ formats: ['qr_code'] });
+      const loop = async () => {
+        if (!this.stream || this.state.result) return;
+        try { const codes = await det.detect(this.videoRef.current); if (codes.length) return this.handle(codes[0].rawValue); } catch (e) {}
+        this.raf = requestAnimationFrame(loop);
+      };
+      loop();
+    } catch (e) { this.setState({ cam: e && e.name === 'NotAllowedError' ? 'denied' : 'none' }); }
+  }
+
+  handle(token, viaManual) {
+    if (navigator.vibrate) navigator.vibrate(60);
+    if (this.offline()) return this.setState({ result: { kind: 'net' } });
+    const b = BOOKINGS[token] || { kind: 'bad' };
+    let kind = b.kind;
+    if (kind === 'ok' && this.state.checked[b.ref]) kind = 'already';
+    if (kind === 'ok' && viaManual) return this.setState({ result: { kind: 'found', b } });
+    if (kind === 'ok') return this.checkIn(b);
+    this.push(kind, b);
+    this.setState({ result: { kind, b, at: this.state.checked[b.ref] || b.at } });
+  }
+  checkIn(b) {
+    const at = nowStr();
+    this.setState(s => ({ checked: { ...s.checked, [b.ref]: at }, result: { kind: 'ok', b, at } }));
+    this.push('ok', b);
+  }
+  push(kind, b) { this.setState(s => ({ recent: [{ kind, name: b.name, ref: b.ref, time: nowStr() }, ...s.recent].slice(0, 5) })); }
+  lookup = () => {
+    const q = this.state.refQ.trim().toUpperCase();
+    if (!q || this.state.busy) return;
+    this.setState({ busy: true });
+    setTimeout(() => {
+      this.setState({ busy: false });
+      if (this.offline()) return this.setState({ result: { kind: 'net' } });
+      const e = Object.entries(BOOKINGS).find(([, b]) => b.ref === q);
+      if (!e) return this.setState({ result: { kind: 'notfound' } });
+      this.handle(e[0], true);
+    }, 500);
+  };
+
+  renderVals() {
+    const s = this.state, L = this.L(), t = T[L], li = { ar: 0, en: 1, tr: 2 }[L], r = s.result;
+    const live = s.cam === 'live' || s.cam === 'nodecoder';
+    const C = { ok: ['#e7f6ee', '#0d5a43', '#13795b', '✓'], found: ['#eef1fc', '#1a2d99', '#2b41c5', '✓'], already: ['#fff4e5', '#7a4300', '#e8a317', '!'],
+      otherday: ['#fff4e5', '#7a4300', '#e8a317', '!'], other: ['#fdecea', '#8a1c12', '#b42318', '✕'], cancelled: ['#fdecea', '#8a1c12', '#b42318', '✕'],
+      bad: ['#fdecea', '#8a1c12', '#b42318', '✕'], notfound: ['#fdecea', '#8a1c12', '#b42318', '?'], net: ['#fff4e5', '#7a4300', '#e8a317', '!'] };
+    let result = null;
+    if (r) {
+      const c = C[r.kind], b = r.b || {};
+      const dayStr = () => { const d = new Date(); d.setDate(d.getDate() + (b.day || 0)); return d.toLocaleDateString(L === 'ar' ? 'ar-u-nu-latn' : L === 'tr' ? 'tr-TR' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'long' }); };
+      const tb = { ok: [t.okTitle, t.okBody], found: [t.foundTitle, t.foundBody], already: [t.alreadyTitle, t.alreadyBody(r.at || '—')], other: [t.otherTitle, t.otherBody],
+        cancelled: [t.cancelledTitle, t.cancelledBody], otherday: [t.otherdayTitle, t.otherdayBody(dayStr())], bad: [t.badTitle, t.badBody],
+        notfound: [t.notFoundTitle, t.notFoundBody], net: [t.netTitle, t.netBody] }[r.kind];
+      const showFacts = ['ok', 'found', 'already', 'cancelled', 'otherday'].includes(r.kind);
+      const facts = showFacts ? [[t.patient, b.name], [t.time, b.time], [t.dept, DEPT[b.dept][li]], [t.ref, b.ref], ...(r.kind === 'ok' || r.kind === 'already' ? [[t.checkin, r.at || '—']] : [])].map(([k, v]) => ({ k, v })) : null;
+      result = { bg: c[0], fg: c[1], border: c[2], icon: c[3], title: tb[0], body: tb[1], facts, canConfirm: r.kind === 'found' };
+    }
+    const dot = { ok: '#13795b', already: '#e8a317', otherday: '#e8a317', other: '#b42318', cancelled: '#b42318', bad: '#b42318' };
+    return {
+      t, dir: L === 'ar' ? 'rtl' : 'ltr', hospital: t.hospital,
+      headerSub: this.offline() ? t.offline : t.online, netDot: this.offline() ? '#e8a317' : '#13795b',
+      langs: [['ar', 'ع'], ['en', 'EN'], ['tr', 'TR']].map(([id, label]) => ({ label, bg: L === id ? '#2b41c5' : 'transparent', color: L === id ? '#ffffff' : '#1a2d99', pick: () => this.setState({ lang: id }) })),
+      isLogin: !s.authed, isApp: s.authed,
+      user: s.user, pw: s.pw, onUser: e => this.setState({ user: e.target.value, loginErr: '' }), onPw: e => this.setState({ pw: e.target.value, loginErr: '' }),
+      loginErr: s.loginErr, loginLabel: s.busy ? t.loggingIn : t.login,
+      login: () => { if (s.busy) return; this.setState({ busy: true }); setTimeout(() => this.setState(s.user.trim() && s.pw.length >= 8 ? { busy: false, authed: true, pw: '' } : { busy: false, loginErr: t.loginErr }), 700); },
+      modes: [['scan', t.scan], ['manual', t.manual]].map(([id, label]) => ({ label, bg: s.mode === id ? '#2b41c5' : 'transparent', color: s.mode === id ? '#ffffff' : '#1a2d99',
+        pick: () => { if (id === 'manual') this.stopCam(); this.setState({ mode: id, result: null, cam: id === 'manual' ? 'idle' : s.cam }); } })),
+      isScanMode: s.mode === 'scan', isManualMode: s.mode === 'manual', noResult: !r, result,
+      videoRef: this.videoRef, videoOpacity: live ? 1 : 0, camIdle: s.cam === 'idle', camLive: live,
+      camMsg: { denied: t.camDenied, none: t.camNone, nodecoder: t.camNoDecoder }[s.cam] || '',
+      scanLine: live && !r ? React.createElement('span', { style: { position: 'absolute', left: '6%', right: '6%', height: 2, background: '#7d8bff', boxShadow: '0 0 12px #7d8bff', animation: 'mlscan 2.4s ease-in-out infinite' } }) : null,
+      startCam: () => this.startCam(), goManual: () => { this.stopCam(); this.setState({ mode: 'manual', cam: 'idle' }); },
+      demos: Object.entries(BOOKINGS).map(([tok, b]) => ({ label: t.d[b.kind], pick: () => this.handle(tok) })),
+      refQ: s.refQ, onRef: e => this.setState({ refQ: e.target.value }), onRefKey: e => { if (e.key === 'Enter') this.lookup(); },
+      lookup: this.lookup, lookupLabel: s.busy ? t.looking : t.lookup,
+      confirmManual: () => this.checkIn(r.b), confirmLabel: t.confirm,
+      next: () => { this.setState({ result: null, refQ: '' }); if (s.mode === 'scan' && s.cam === 'live') setTimeout(() => this.startCam(), 0); },
+      nextLabel: r && r.kind === 'found' ? t.back : s.mode === 'scan' ? t.scanNext : t.back,
+      nextBg: r && r.kind === 'found' ? '#ffffff' : '#2b41c5', nextColor: r && r.kind === 'found' ? '#1a2d99' : '#ffffff', nextBorder: r && r.kind === 'found' ? '1px solid #c9cfe3' : 'none',
+      hasRecent: s.recent.length > 0,
+      recent: s.recent.map(x => ({ dot: dot[x.kind], time: x.time, label: t.r[x.kind] + (x.name ? ' · ' + x.name : '') + (x.ref ? ' · ' + x.ref : '') })),
+      logout: () => { this.stopCam(); this.setState({ authed: false, user: '', pw: '', result: null, recent: [], cam: 'idle' }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

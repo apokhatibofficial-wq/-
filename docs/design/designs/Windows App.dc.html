@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#dfe3ee;-webkit-font-smoothing:antialiased}
+a{color:#2b41c5}a:hover{color:#1a2d99}
+input,button{font-family:inherit}
+</style>
+</helmet>
+<div dir="{{ dir }}" style="min-height:100vh;background:#dfe3ee;color:#1c2340;font-family:'IBM Plex Sans','IBM Plex Sans Arabic',system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;gap:14px;padding:16px;box-sizing:border-box">
+
+  <div style="width:100%;max-width:1280px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+    <div style="font-size:13px;color:#5b6380;flex:1 1 200px">{{ t.reviewBar }}</div>
+    <button onClick="{{ replay }}" style="height:36px;border:1px solid #c9cfe3;background:#ffffff;color:#1a2d99;border-radius:8px;padding:0 14px;font-size:13px;font-weight:600;cursor:pointer">↻ {{ t.replay }}</button>
+    <div style="display:flex;gap:2px;padding:3px;border:1px solid #c9cfe3;border-radius:999px;background:#ffffff">
+      <sc-for list="{{ langs }}" as="l" hint-placeholder-count="3">
+        <button onClick="{{ l.pick }}" style="min-width:44px;height:30px;border:none;border-radius:999px;background:{{ l.bg }};color:{{ l.color }};font-size:12px;font-weight:600;cursor:pointer;padding:0 10px">{{ l.label }}</button>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="width:100%;max-width:1280px;height:min(800px,calc(100vh - 84px));min-height:560px;background:#ffffff;border-radius:10px;box-shadow:0 24px 60px rgba(15,26,74,.28),0 0 0 1px rgba(15,26,74,.12);overflow:hidden;display:flex;flex-direction:column;position:relative">
+
+    <div dir="ltr" style="height:36px;flex-shrink:0;background:#f3f4f8;border-bottom:1px solid #e3e6ef;display:flex;align-items:center;padding-left:12px;gap:10px;user-select:none">
+      <img src="assets/medlink-icon.svg" alt="" style="height:18px;width:18px">
+      <span style="font-size:12px;color:#5b6380;flex:1">{{ t.winTitle }}</span>
+      <div style="display:flex;height:100%">
+        <span style="width:46px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#1c2340">—</span>
+        <span style="width:46px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#1c2340">☐</span>
+        <span style="width:46px;display:flex;align-items:center;justify-content:center;font-size:14px;color:#1c2340" style-hover="background:#c42b1c;color:#ffffff">✕</span>
+      </div>
+    </div>
+
+    <div style="flex:1;min-height:0;display:flex;position:relative">
+
+      <sc-if value="{{ showLogin }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1;display:flex;flex-wrap:wrap;min-height:0;overflow:auto">
+          <div style="flex:1 1 380px;background:#1a2d99;color:#ffffff;display:flex;flex-direction:column;justify-content:space-between;padding:clamp(24px,4vw,48px);box-sizing:border-box;gap:32px;min-height:220px">
+            <div style="display:flex;flex-direction:column;gap:18px">
+              <img src="assets/medlink-logo-white.svg" alt="MEDLINK" style="width:min(300px,100%);height:auto">
+              <div style="font-size:16px;color:#d6dcff;max-width:340px;line-height:1.6;text-wrap:pretty">{{ t.brandLine }}</div>
+            </div>
+            <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap">
+              <img src="assets/khatib-logo-white.svg" alt="KHATIB TECHNICAL SOLUTIONS" style="height:40px;width:auto">
+              <span dir="ltr" style="font-size:12px;color:#b9c2f0">v1.0.0 · Windows</span>
+            </div>
+          </div>
+
+          <div style="flex:1 1 420px;display:flex;align-items:center;justify-content:center;padding:clamp(24px,4vw,48px);box-sizing:border-box">
+            <sc-if value="{{ signedOut }}" hint-placeholder-val="{{ true }}">
+              <div style="width:100%;max-width:380px;display:flex;flex-direction:column;gap:20px">
+                <div style="display:flex;align-items:center;gap:8px;align-self:flex-start;padding:6px 12px;border-radius:999px;background:{{ netBg }};color:{{ netColor }};font-size:13px;font-weight:500">
+                  <span style="width:8px;height:8px;border-radius:50%;background:{{ netDot }}"></span>{{ netText }}
+                </div>
+                <div style="display:flex;flex-direction:column;gap:6px">
+                  <h1 style="margin:0;font-size:26px;font-weight:600;color:#0f1a4a">{{ t.signIn }}</h1>
+                  <p style="margin:0;font-size:14px;color:#5b6380;line-height:1.55;text-wrap:pretty">{{ t.signInSub }}</p>
+                </div>
+                <sc-if value="{{ errMsg }}">
+                  <div role="alert" style="background:#fdecea;border:1px solid #f1b4ae;color:#8a1c12;border-radius:8px;padding:10px 12px;font-size:13px;line-height:1.5">{{ errMsg }}</div>
+                </sc-if>
+                <sc-if value="{{ offline }}">
+                  <div style="background:#fff8e6;border:1px solid #f0d48a;color:#6b4a00;border-radius:8px;padding:10px 12px;font-size:13px;line-height:1.5">{{ t.offlineNote }}</div>
+                </sc-if>
+                <label style="display:flex;flex-direction:column;gap:6px">
+                  <span style="font-size:14px;font-weight:500">{{ t.username }}</span>
+                  <input value="{{ user }}" onChange="{{ onUser }}" dir="ltr" autocomplete="username" placeholder="" style="height:44px;border:1px solid #c9cfe3;border-bottom:2px solid #8a91a8;border-radius:6px;padding:0 12px;font-size:15px;color:#1c2340;outline:none;text-align:start" style-focus="border-bottom-color:#2b41c5">
+                </label>
+                <label style="display:flex;flex-direction:column;gap:6px">
+                  <span style="font-size:14px;font-weight:500">{{ t.password }}</span>
+                  <div style="position:relative;display:flex">
+                    <input type="{{ pwType }}" value="{{ pw }}" onChange="{{ onPw }}" onKeyDown="{{ onKey }}" dir="ltr" autocomplete="current-password" style="flex:1;height:44px;border:1px solid #c9cfe3;border-bottom:2px solid #8a91a8;border-radius:6px;padding:0 64px 0 12px;font-size:15px;color:#1c2340;outline:none" style-focus="border-bottom-color:#2b41c5">
+                    <button onClick="{{ togglePw }}" type="button" dir="ltr" style="position:absolute;right:4px;top:4px;height:36px;border:none;background:none;color:#2b41c5;font-size:13px;font-weight:600;cursor:pointer;padding:0 10px">{{ pwToggleLabel }}</button>
+                  </div>
+                  <sc-if value="{{ capsHint }}"><span style="font-size:12px;color:#7a5200">{{ t.caps }}</span></sc-if>
+                </label>
+                <button onClick="{{ submit }}" disabled="{{ cantSubmit }}" style="height:46px;border:none;background:{{ submitBg }};color:#ffffff;border-radius:6px;font-size:15px;font-weight:600;cursor:{{ submitCursor }}">{{ submitLabel }}</button>
+                <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:14px">
+                  <button onClick="{{ openForgot }}" style="border:none;background:none;color:#2b41c5;font-weight:500;cursor:pointer;padding:0">{{ t.forgot }}</button>
+                  <button onClick="{{ toggleNet }}" style="border:none;background:none;color:#5b6380;cursor:pointer;padding:0">{{ t.connSettings }}</button>
+                </div>
+              </div>
+            </sc-if>
+
+          </div>
+        </div>
+      </sc-if>
+
+
+      <sc-if value="{{ showDash }}">
+        <div style="flex:1;display:flex;min-height:0;min-width:0">
+          <aside style="width:{{ sideW }};flex-shrink:0;background:#f7f8fc;border-inline-end:1px solid #e3e6ef;display:flex;flex-direction:column;padding:14px 10px;box-sizing:border-box;gap:4px">
+            <img src="assets/medlink-logo.svg" alt="MEDLINK" style="width:{{ sideLogoW }};height:auto;margin:2px 8px 14px">
+            <sc-for list="{{ dnav }}" as="n">
+              <div style="padding:9px 12px;border-radius:6px;font-size:14px;font-weight:{{ n.weight }};background:{{ n.bg }};color:{{ n.color }};display:flex;justify-content:space-between;gap:6px">{{ n.label }}<span style="font-size:12px;color:#5b6380">{{ n.badge }}</span></div>
+            </sc-for>
+            <div style="flex:1"></div>
+            <div style="padding:10px 12px;border-top:1px solid #e3e6ef;display:flex;flex-direction:column;gap:2px">
+              <div style="font-size:13px;font-weight:600">user@example.com</div>
+              <div style="font-size:12px;color:#5b6380">{{ d.role }}</div>
+              <button onClick="{{ signOut }}" style="align-self:flex-start;margin-top:6px;border:none;background:none;color:#2b41c5;font-size:13px;font-weight:600;cursor:pointer;padding:0">{{ t.signOut }}</button>
+            </div>
+          </aside>
+
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column;min-height:0">
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid #e3e6ef">
+              <div style="display:flex;align-items:center;gap:4px">
+                <button onClick="{{ prevDay }}" style="width:32px;height:32px;border:1px solid #dde2f0;background:#ffffff;border-radius:6px;cursor:pointer;color:#1a2d99">{{ prevArrow }}</button>
+                <button onClick="{{ goToday }}" style="height:32px;border:1px solid #dde2f0;background:#ffffff;border-radius:6px;cursor:pointer;color:#1a2d99;font-size:13px;font-weight:600;padding:0 10px">{{ d.today }}</button>
+                <button onClick="{{ nextDay }}" style="width:32px;height:32px;border:1px solid #dde2f0;background:#ffffff;border-radius:6px;cursor:pointer;color:#1a2d99">{{ nextArrow }}</button>
+              </div>
+              <div style="font-size:16px;font-weight:600;color:#0f1a4a;min-width:0;flex:1 1 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ dayLabel }}</div>
+              <input value="{{ q }}" onChange="{{ onQ }}" placeholder="{{ d.search }}" style="flex:1 1 160px;min-width:140px;max-width:260px;height:34px;border:1px solid #c9cfe3;border-radius:6px;padding:0 10px;font-size:14px;outline:none" style-focus="border-color:#2b41c5">
+              <button onClick="{{ toggleDashNet }}" title="{{ d.netTip }}" style="height:34px;border:none;border-radius:999px;background:{{ syncBg }};color:{{ syncColor }};font-size:13px;font-weight:600;padding:0 12px;cursor:pointer;display:flex;align-items:center;gap:8px;white-space:nowrap;flex-shrink:0"><span style="width:8px;height:8px;border-radius:50%;background:{{ syncDot }}"></span>{{ syncText }}</button>
+            </div>
+
+            <sc-if value="{{ dashOffline }}">
+              <div style="background:#fff8e6;border-bottom:1px solid #f0d48a;color:#6b4a00;padding:9px 16px;font-size:13px">{{ d.offlineBanner }}</div>
+            </sc-if>
+            <sc-if value="{{ banner }}">
+              <div style="background:#eef1fc;border-bottom:1px solid #c9cfe3;color:#1a2d99;padding:9px 16px;font-size:13px;display:flex;gap:10px"><span style="flex:1">{{ banner }}</span><button onClick="{{ closeBanner }}" style="border:none;background:none;color:#1a2d99;cursor:pointer;font-size:16px;line-height:1">×</button></div>
+            </sc-if>
+
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 16px">
+              <div style="display:flex;gap:4px;flex-wrap:wrap">
+                <sc-for list="{{ ftabs }}" as="f" hint-placeholder-count="4">
+                  <button onClick="{{ f.pick }}" style="height:32px;border:1px solid {{ f.border }};background:{{ f.bg }};color:{{ f.color }};border-radius:999px;padding:0 12px;font-size:13px;font-weight:600;cursor:pointer;display:flex;gap:6px;align-items:center;white-space:nowrap">{{ f.label }}<span style="font-weight:500;opacity:.8">{{ f.n }}</span></button>
+                </sc-for>
+              </div>
+              <select value="{{ deptF }}" onChange="{{ onDept }}" style="height:32px;border:1px solid #c9cfe3;border-radius:6px;padding:0 8px;font-size:13px;color:#1c2340;background:#ffffff">
+                <sc-for list="{{ deptOpts }}" as="o"><option value="{{ o.v }}">{{ o.label }}</option></sc-for>
+              </select>
+              <div style="flex:1"></div>
+              <span style="font-size:12px;color:#5b6380">{{ d.grace }}</span>
+            </div>
+
+            <div style="flex:1;min-height:0;display:flex;border-top:1px solid #e3e6ef">
+              <div style="flex:1;min-width:0;overflow:auto">
+                <div style="display:grid;grid-template-columns:52px minmax(120px,1.6fr) minmax(90px,1fr) 78px 112px 52px;gap:8px;padding:8px 12px;font-size:12px;font-weight:600;color:#5b6380;background:#f7f8fc;border-bottom:1px solid #e3e6ef;position:sticky;top:0;min-width:560px">
+                  <span>{{ d.cTime }}</span><span>{{ d.cPatient }}</span><span>{{ d.cDept }}</span><span>{{ d.cRef }}</span><span>{{ d.cStatus }}</span><span>{{ d.cIn }}</span>
+                </div>
+                <sc-for list="{{ rows }}" as="r" hint-placeholder-count="8">
+                  <div onClick="{{ r.open }}" style="display:grid;grid-template-columns:52px minmax(120px,1.6fr) minmax(90px,1fr) 78px 112px 52px;gap:8px;padding:10px 12px;font-size:14px;align-items:center;border-bottom:1px solid #eef0f6;cursor:pointer;background:{{ r.bg }};min-width:560px" style-hover="background:#f4f6fb">
+                    <span dir="ltr" style="font-weight:600;color:#0f1a4a;text-align:start">{{ r.time }}</span>
+                    <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.name }}</span>
+                    <span style="color:#5b6380;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px">{{ r.dept }}</span>
+                    <span dir="ltr" style="font-size:12px;color:#5b6380;font-family:ui-monospace,Consolas,monospace;text-align:start">{{ r.ref }}</span>
+                    <span style="display:flex;align-items:center;gap:6px"><span style="font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;background:{{ r.chipBg }};color:{{ r.chipColor }};white-space:nowrap">{{ r.status }}</span><sc-if value="{{ r.pending }}"><span title="{{ d.pendingTip }}" style="color:#b07a00;font-size:13px">⟳</span></sc-if></span>
+                    <span dir="ltr" style="font-size:13px;color:#5b6380;text-align:start">{{ r.checkin }}</span>
+                  </div>
+                </sc-for>
+                <sc-if value="{{ noRows }}">
+                  <div style="padding:40px 16px;text-align:center;color:#5b6380;font-size:14px">{{ d.empty }}</div>
+                </sc-if>
+              </div>
+
+              <sc-if value="{{ sel }}">
+                <div style="width:{{ panelW }};flex-shrink:0;border-inline-start:1px solid #e3e6ef;overflow:auto;padding:16px;box-sizing:border-box;display:flex;flex-direction:column;gap:16px;background:#ffffff">
+                  <div style="display:flex;gap:10px;align-items:flex-start">
+                    <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">
+                      <div style="font-size:17px;font-weight:600;color:#0f1a4a">{{ sel.name }}</div>
+                      <div dir="ltr" style="font-size:12px;color:#5b6380;font-family:ui-monospace,Consolas,monospace;text-align:start">{{ sel.ref }}</div>
+                    </div>
+                    <button onClick="{{ closeSel }}" style="width:30px;height:30px;border:none;background:#f4f6fb;border-radius:6px;cursor:pointer;color:#1c2340;font-size:15px">×</button>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                    <span style="font-size:13px;font-weight:600;padding:4px 10px;border-radius:999px;background:{{ sel.chipBg }};color:{{ sel.chipColor }}">{{ sel.status }}</span>
+                    <span style="font-size:12px;color:#5b6380">{{ sel.srcText }}</span>
+                  </div>
+                  <div style="display:grid;grid-template-columns:auto 1fr;gap:8px 14px;font-size:13px">
+                    <sc-for list="{{ sel.facts }}" as="f"><span style="color:#5b6380">{{ f.k }}</span><span style="font-weight:500;overflow-wrap:anywhere">{{ f.v }}</span></sc-for>
+                  </div>
+                  <sc-if value="{{ sel.canArrive }}">
+                    <button onClick="{{ markArrived }}" style="height:40px;border:none;background:#2b41c5;color:#ffffff;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer">{{ d.markArrived }}</button>
+                  </sc-if>
+                  <sc-if value="{{ sel.canCorrect }}">
+                    <div style="border:1px solid #dde2f0;border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:10px">
+                      <div style="font-size:13px;font-weight:600">{{ d.correct }}</div>
+                      <div style="display:flex;gap:6px;flex-wrap:wrap">
+                        <sc-for list="{{ corrOpts }}" as="c">
+                          <button onClick="{{ c.pick }}" style="height:32px;border:1.5px solid {{ c.border }};background:{{ c.bg }};color:{{ c.color }};border-radius:999px;padding:0 12px;font-size:13px;font-weight:500;cursor:pointer">{{ c.label }}</button>
+                        </sc-for>
+                      </div>
+                      <textarea value="{{ reason }}" onChange="{{ onReason }}" rows="2" placeholder="{{ d.reasonPh }}" style="border:1px solid #c9cfe3;border-radius:6px;padding:8px 10px;font-size:13px;outline:none;resize:vertical" style-focus="border-color:#2b41c5"></textarea>
+                      <button onClick="{{ saveCorr }}" disabled="{{ cantCorr }}" style="height:36px;border:none;background:{{ corrBg }};color:#ffffff;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">{{ d.saveCorr }}</button>
+                      <span style="font-size:12px;color:#5b6380">{{ d.corrNote }}</span>
+                    </div>
+                  </sc-if>
+                  <div style="display:flex;flex-direction:column;gap:8px">
+                    <div style="font-size:13px;font-weight:600">{{ d.history }}</div>
+                    <sc-for list="{{ sel.hist }}" as="hh">
+                      <div style="display:flex;gap:10px;font-size:12px;line-height:1.45">
+                        <span dir="ltr" style="color:#5b6380;flex-shrink:0;width:40px">{{ hh.time }}</span>
+                        <span style="flex:1">{{ hh.text }}</span>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-if>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ showSplash }}" hint-placeholder-val="{{ true }}">
+        <div aria-hidden="true" style="position:absolute;inset:0;background:#1a2d99;display:flex;align-items:center;justify-content:center;opacity:{{ splashOpacity }};transition:opacity 420ms ease;z-index:5">
+          <img src="assets/khatib-logo-white.svg" alt="" style="position:absolute;width:min(420px,60%);height:auto;opacity:{{ khOpacity }};transform:{{ khTransform }};transition:opacity 520ms cubic-bezier(.2,.7,.2,1),transform 700ms cubic-bezier(.2,.7,.2,1)">
+          <img src="assets/medlink-logo-white.svg" alt="" style="position:absolute;width:min(460px,64%);height:auto;opacity:{{ mlOpacity }};transform:{{ mlTransform }};transition:opacity 520ms cubic-bezier(.2,.7,.2,1),transform 700ms cubic-bezier(.2,.7,.2,1)">
+          <div style="position:absolute;bottom:56px;width:180px;height:3px;border-radius:2px;background:rgba(255,255,255,.18);overflow:hidden;opacity:{{ barOpacity }};transition:opacity 300ms ease">
+            <div style="height:100%;width:{{ barW }};background:#ffffff;transition:width 900ms ease"></div>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+
+    <sc-if value="{{ forgotOpen }}">
+      <div style="position:absolute;inset:36px 0 0 0;background:rgba(15,26,74,.4);display:flex;align-items:center;justify-content:center;padding:16px;z-index:10">
+        <div role="dialog" style="width:100%;max-width:440px;background:#ffffff;border-radius:10px;padding:24px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;box-shadow:0 20px 50px rgba(15,26,74,.3)">
+          <div style="font-size:19px;font-weight:600;color:#0f1a4a">{{ t.forgotTitle }}</div>
+          <div style="font-size:14px;color:#1c2340;line-height:1.6;text-wrap:pretty">{{ t.forgotBody }}</div>
+          <div style="background:#f4f6fb;border-radius:8px;padding:12px;font-size:13px;color:#1c2340;line-height:1.6;white-space:pre-wrap">{{ waMsg }}</div>
+          <div style="background:#fff8e6;border:1px solid #f0d48a;color:#6b4a00;border-radius:8px;padding:10px 12px;font-size:13px;line-height:1.5">{{ t.forgotWarn }}</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button onClick="{{ closeForgot }}" style="flex:1 1 120px;height:44px;border:1px solid #c9cfe3;background:#ffffff;color:#1a2d99;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer">{{ t.cancel }}</button>
+            <a href="{{ waHref }}" target="_blank" rel="noopener noreferrer" style="flex:1 1 160px;height:44px;border:none;background:#13795b;color:#ffffff;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;text-decoration:none">{{ t.openWa }}</a>
+          </div>
+          <div dir="ltr" style="font-size:12px;color:#5b6380;text-align:start">+43 681 81700732</div>
+        </div>
+      </div>
+    </sc-if>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;defaultLang&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;ar&quot;,&quot;en&quot;,&quot;tr&quot;],&quot;default&quot;:&quot;ar&quot;,&quot;tsType&quot;:&quot;'ar'|'en'|'tr'&quot;},&quot;startSignedIn&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;reducedMotion&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;simulateOffline&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;}}">
+const LOC = { ar: 'ar', en: 'en', tr: 'tr' };
+const T = {
+  ar: {
+    reviewBar: 'معاينة تطبيق Windows · الشاشة الافتتاحية وتسجيل الدخول', replay: 'إعادة الافتتاحية',
+    winTitle: 'MEDLINK — تطبيق المستشفى', brandLine: 'إدارة مواعيد المستشفى وتسجيل الحضور، متصل بنظام MEDLINK المركزي.',
+    online: 'متصل بالخادم', offline: 'غير متصل بالإنترنت', offlineNote: 'تسجيل الدخول يحتاج إلى اتصال بالخادم للتحقق من الحساب. تحقق من الشبكة ثم حاول مرة أخرى.',
+    signIn: 'تسجيل الدخول', signInSub: 'استخدم حساب المستشفى الذي أنشأته لك KHATIB TECHNICAL SOLUTIONS.',
+    username: 'اسم المستخدم', password: 'كلمة المرور', show: 'إظهار', hide: 'إخفاء', caps: 'زر Caps Lock مفعّل.',
+    submit: 'تسجيل الدخول', submitting: 'جارٍ التحقق…', forgot: 'نسيت كلمة المرور؟', connSettings: 'إعدادات الاتصال',
+    errBad: n => 'اسم المستخدم أو كلمة المرور غير صحيحة. المحاولات المتبقية: ' + n + '.', errLocked: 'تم إيقاف تسجيل الدخول مؤقتًا بعد عدة محاولات فاشلة. حاول بعد 15 دقيقة أو تواصل مع الدعم.',
+    welcome: 'مرحبًا، مستشفى النور العام', welcomeSub: 'تم تسجيل الدخول. لوحة المواعيد هي الشاشة التالية في التصميم.', signOut: 'تسجيل الخروج',
+    forgotTitle: 'استعادة كلمة المرور', forgotBody: 'سيُفتح واتساب برسالة جاهزة إلى دعم KHATIB TECHNICAL SOLUTIONS. راجع الرسالة ثم أرسلها بنفسك.',
+    forgotWarn: 'لا تُرسل كلمة المرور أو أي رمز عبر واتساب. لن تتغير كلمة المرور إلا بعد التحقق من هويتك، وستصلك خطوات إعادة التعيين بطريقة آمنة.',
+    waMsg: u => 'مرحبًا، أحتاج إلى استعادة كلمة مرور حساب MEDLINK.\nاسم المستخدم: ' + (u || '—') + '\nالمستشفى: مستشفى النور العام',
+    openWa: 'فتح واتساب', waPending: 'رقم واتساب الدعم لم يُحدد بعد.', cancel: 'إلغاء'
+  },
+  en: {
+    reviewBar: 'Windows app preview · splash and sign-in', replay: 'Replay splash',
+    winTitle: 'MEDLINK — Hospital app', brandLine: 'Hospital appointments and check-in, connected to the MEDLINK central service.',
+    online: 'Connected to server', offline: 'No internet connection', offlineNote: 'Signing in needs a server connection to verify your account. Check the network and try again.',
+    signIn: 'Sign in', signInSub: 'Use the hospital account created for you by KHATIB TECHNICAL SOLUTIONS.',
+    username: 'Username', password: 'Password', show: 'Show', hide: 'Hide', caps: 'Caps Lock is on.',
+    submit: 'Sign in', submitting: 'Verifying…', forgot: 'Forgot password?', connSettings: 'Connection settings',
+    errBad: n => 'Incorrect username or password. Attempts left: ' + n + '.', errLocked: 'Sign-in is paused after several failed attempts. Try again in 15 minutes or contact support.',
+    welcome: 'Welcome, Al-Noor General Hospital', welcomeSub: 'You’re signed in. The appointments dashboard is the next screen in the design.', signOut: 'Sign out',
+    forgotTitle: 'Recover your password', forgotBody: 'WhatsApp will open with a prepared message to KHATIB TECHNICAL SOLUTIONS support. Review it and send it yourself.',
+    forgotWarn: 'Never send your password or any code over WhatsApp. Your password only changes after your identity is verified; reset steps are sent securely.',
+    waMsg: u => 'Hello, I need to recover my MEDLINK account password.\nUsername: ' + (u || '—') + '\nHospital: Al-Noor General Hospital',
+    openWa: 'Open WhatsApp', waPending: 'Support WhatsApp number not set yet.', cancel: 'Cancel'
+  },
+  tr: {
+    reviewBar: 'Windows uygulaması önizlemesi · açılış ve giriş', replay: 'Açılışı tekrarla',
+    winTitle: 'MEDLINK — Hastane uygulaması', brandLine: 'Hastane randevuları ve giriş kaydı, MEDLINK merkezi hizmetine bağlı.',
+    online: 'Sunucuya bağlı', offline: 'İnternet bağlantısı yok', offlineNote: 'Giriş için hesabınızın sunucuda doğrulanması gerekir. Ağı kontrol edip tekrar deneyin.',
+    signIn: 'Giriş yap', signInSub: 'KHATIB TECHNICAL SOLUTIONS tarafından oluşturulan hastane hesabınızı kullanın.',
+    username: 'Kullanıcı adı', password: 'Şifre', show: 'Göster', hide: 'Gizle', caps: 'Caps Lock açık.',
+    submit: 'Giriş yap', submitting: 'Doğrulanıyor…', forgot: 'Şifremi unuttum', connSettings: 'Bağlantı ayarları',
+    errBad: n => 'Kullanıcı adı veya şifre hatalı. Kalan deneme: ' + n + '.', errLocked: 'Çok sayıda başarısız denemeden sonra giriş durduruldu. 15 dakika sonra deneyin veya destekle iletişime geçin.',
+    welcome: 'Hoş geldiniz, Al-Noor Devlet Hastanesi', welcomeSub: 'Giriş yapıldı. Randevu paneli tasarımdaki bir sonraki ekran.', signOut: 'Çıkış yap',
+    forgotTitle: 'Şifre kurtarma', forgotBody: 'WhatsApp, KHATIB TECHNICAL SOLUTIONS desteğine hazır bir mesajla açılacak. Mesajı kontrol edip kendiniz gönderin.',
+    forgotWarn: 'Şifrenizi veya herhangi bir kodu WhatsApp ile göndermeyin. Şifreniz yalnızca kimliğiniz doğrulandıktan sonra değişir; sıfırlama adımları güvenli şekilde iletilir.',
+    waMsg: u => 'Merhaba, MEDLINK hesap şifremi kurtarmam gerekiyor.\nKullanıcı adı: ' + (u || '—') + '\nHastane: Al-Noor Devlet Hastanesi',
+    openWa: 'WhatsApp’ı aç', waPending: 'Destek WhatsApp numarası henüz belirlenmedi.', cancel: 'İptal'
+  }
+};
+
+
+const D = {
+  ar: { nav: ['المواعيد', 'البحث عن حجز', 'المزامنة', 'الإعدادات'], role: 'موظف استقبال', today: 'اليوم', search: 'بحث بالاسم أو رقم الحجز',
+    all: 'الكل', waiting: 'بانتظار الحضور', arrived: 'حضر', noshow: 'لم يحضر', allDepts: 'كل الأقسام',
+    cTime: 'الوقت', cPatient: 'المريض', cDept: 'القسم', cRef: 'رقم الحجز', cStatus: 'الحالة', cIn: 'الحضور',
+    online: 'متصل · تمت المزامنة', offline: 'غير متصل', pendingN: n => 'غير متصل · ' + n + ' بانتظار المزامنة', syncing: 'جارٍ المزامنة…',
+    netTip: 'محاكاة انقطاع الاتصال', offlineBanner: 'لا يوجد اتصال. تُحفظ تحديثات الحضور على هذا الجهاز وتُرسل تلقائيًا عند عودة الاتصال.',
+    synced: n => 'تمت مزامنة ' + n + ' تحديث.', conflict: (nm, t) => 'تعارض في حجز ' + nm + ': سجّل ماسح QR الحضور الساعة ' + t + ' قبل تحديثك، فاعتُمد الوقت الأسبق وسُجّل التعديلان.',
+    live: nm => 'وصل تسجيل حضور من ماسح الهاتف: ' + nm, grace: 'يُسجَّل «لم يحضر» تلقائيًا من الخادم بعد 30 دقيقة',
+    pendingTip: 'محفوظ محليًا، بانتظار المزامنة', empty: 'لا توجد حجوزات مطابقة.',
+    phone: 'الهاتف', date: 'الموعد', dept: 'القسم', visit: 'نوع الزيارة', first: 'زيارة أولى', yes: 'نعم', no: 'لا', vNew: 'استشارة جديدة', vFu: 'متابعة',
+    src: { qr: 'عبر ماسح QR', reception: 'يدويًا من الاستقبال', auto: 'تلقائيًا من الخادم', corr: 'بتصحيح يدوي' },
+    markArrived: 'تسجيل الحضور يدويًا', correct: 'تصحيح الحالة', reasonPh: 'سبب التصحيح (إلزامي)', saveCorr: 'حفظ التصحيح',
+    corrNote: 'يُسجَّل التصحيح مع السبب والوقت والحساب في سجل التدقيق.', history: 'السجل',
+    hBooked: 'تم الحجز عبر الرابط', hQr: 'حضر · ماسح QR', hRec: 'حضر · الاستقبال', hAuto: 'لم يحضر · تلقائي بعد 30 دقيقة', hCorr: (s, r) => 'تصحيح إلى «' + s + '»: ' + r, hConf: 'تعارض: اعتُمد وقت ماسح QR الأسبق' },
+  en: { nav: ['Appointments', 'Find booking', 'Sync', 'Settings'], role: 'Reception', today: 'Today', search: 'Search name or booking no.',
+    all: 'All', waiting: 'Awaiting', arrived: 'Arrived', noshow: 'No-show', allDepts: 'All departments',
+    cTime: 'Time', cPatient: 'Patient', cDept: 'Department', cRef: 'Booking no.', cStatus: 'Status', cIn: 'Check-in',
+    online: 'Online · synced', offline: 'Offline', pendingN: n => 'Offline · ' + n + ' pending', syncing: 'Syncing…',
+    netTip: 'Simulate losing connection', offlineBanner: 'No connection. Check-in updates are saved on this PC and sent automatically when the connection returns.',
+    synced: n => n + ' update(s) synced.', conflict: (nm, t) => 'Conflict on ' + nm + ': the QR scanner recorded arrival at ' + t + ' before your update. The earlier time was kept and both edits were logged.',
+    live: nm => 'Check-in received from phone scanner: ' + nm, grace: 'Server marks no-show automatically after 30 min',
+    pendingTip: 'Saved locally, waiting to sync', empty: 'No matching bookings.',
+    phone: 'Phone', date: 'Appointment', dept: 'Department', visit: 'Visit type', first: 'First visit', yes: 'Yes', no: 'No', vNew: 'New consultation', vFu: 'Follow-up',
+    src: { qr: 'via QR scanner', reception: 'manually at reception', auto: 'automatically by server', corr: 'by manual correction' },
+    markArrived: 'Check in manually', correct: 'Correct status', reasonPh: 'Reason for correction (required)', saveCorr: 'Save correction',
+    corrNote: 'Corrections are logged with reason, time and account in the audit log.', history: 'History',
+    hBooked: 'Booked via link', hQr: 'Arrived · QR scanner', hRec: 'Arrived · reception', hAuto: 'No-show · automatic after 30 min', hCorr: (s, r) => 'Corrected to “' + s + '”: ' + r, hConf: 'Conflict: earlier QR scanner time kept' },
+  tr: { nav: ['Randevular', 'Rezervasyon bul', 'Senkronizasyon', 'Ayarlar'], role: 'Kayıt birimi', today: 'Bugün', search: 'Ad veya randevu no. ara',
+    all: 'Tümü', waiting: 'Bekleniyor', arrived: 'Geldi', noshow: 'Gelmedi', allDepts: 'Tüm bölümler',
+    cTime: 'Saat', cPatient: 'Hasta', cDept: 'Bölüm', cRef: 'Randevu no.', cStatus: 'Durum', cIn: 'Giriş',
+    online: 'Çevrim içi · senkron', offline: 'Çevrim dışı', pendingN: n => 'Çevrim dışı · ' + n + ' bekliyor', syncing: 'Senkronize ediliyor…',
+    netTip: 'Bağlantı kesintisini simüle et', offlineBanner: 'Bağlantı yok. Giriş güncellemeleri bu bilgisayarda saklanır ve bağlantı gelince otomatik gönderilir.',
+    synced: n => n + ' güncelleme senkronize edildi.', conflict: (nm, t) => nm + ' için çakışma: QR tarayıcı gelişi sizden önce ' + t + ' olarak kaydetti. Erken saat korundu, iki işlem de kaydedildi.',
+    live: nm => 'Telefon tarayıcısından giriş alındı: ' + nm, grace: 'Sunucu 30 dk sonra otomatik "gelmedi" işaretler',
+    pendingTip: 'Yerel kayıtlı, senkronizasyon bekliyor', empty: 'Eşleşen randevu yok.',
+    phone: 'Telefon', date: 'Randevu', dept: 'Bölüm', visit: 'Ziyaret türü', first: 'İlk ziyaret', yes: 'Evet', no: 'Hayır', vNew: 'Yeni muayene', vFu: 'Kontrol',
+    src: { qr: 'QR tarayıcı ile', reception: 'kayıt biriminde elle', auto: 'sunucu tarafından otomatik', corr: 'elle düzeltme ile' },
+    markArrived: 'Elle giriş yap', correct: 'Durumu düzelt', reasonPh: 'Düzeltme nedeni (zorunlu)', saveCorr: 'Düzeltmeyi kaydet',
+    corrNote: 'Düzeltmeler neden, saat ve hesapla denetim kaydına yazılır.', history: 'Geçmiş',
+    hBooked: 'Bağlantı ile randevu alındı', hQr: 'Geldi · QR tarayıcı', hRec: 'Geldi · kayıt birimi', hAuto: 'Gelmedi · 30 dk sonra otomatik', hCorr: (s, r) => '"' + s + '" olarak düzeltildi: ' + r, hConf: 'Çakışma: erken QR saati korundu' }
+};
+const DEPTS = [['im', 'الباطنة', 'Internal Medicine', 'Dahiliye'], ['ped', 'طب الأطفال', 'Pediatrics', 'Çocuk Sağlığı'], ['card', 'القلب', 'Cardiology', 'Kardiyoloji'], ['orth', 'العظام', 'Orthopedics', 'Ortopedi'], ['derm', 'الجلدية', 'Dermatology', 'Dermatoloji'], ['ent', 'الأنف والأذن والحنجرة', 'ENT', 'KBB']];
+const NAMES = ['محمد علي الطاهر', 'فاطمة سالم المبروك', 'أحمد خالد الورفلي', 'مريم عبدالله الزوي', 'يوسف إبراهيم بن عمر', 'سارة محمود الشريف', 'عمر الهادي القماطي', 'نور الدين فرج', 'هدى عثمان الككلي', 'علي مصطفى بالحاج', 'Ayşe Demir', 'خديجة رمضان', 'إبراهيم ميلاد', 'ليلى الصادق', 'سالم عاشور', 'رنا البوسيفي', 'طارق النعاس', 'آمنة الفيتوري', 'John Carter', 'زينب المهدي', 'حسن العربي', 'منى بن سعيد'];
+const hsh = s => { let h = 2166136261; for (const c of s) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
+const p2 = n => String(n).padStart(2, '0');
+const NOW_MIN = 10 * 60 + 40;
+function genDay(off) {
+  const out = []; let i = 0;
+  for (let m = 8 * 60; m < 16 * 60; m += 20) {
+    if (m >= 12 * 60 && m < 13 * 60) continue;
+    const k = off + ':' + m, h = hsh(k);
+    if (h % 5 === 0) continue;
+    const dept = DEPTS[h % DEPTS.length][0], time = p2(Math.floor(m / 60)) + ':' + p2(m % 60);
+    const past = off < 0 || (off === 0 && m + 30 <= NOW_MIN);
+    let status = 'waiting', src = null, checkin = '';
+    if (past) { if (h % 4 === 0) { status = 'noshow'; src = 'auto'; } else { status = 'arrived'; src = h % 3 === 0 ? 'reception' : 'qr'; const cm = m - 12 + (h % 20); checkin = p2(Math.floor(cm / 60)) + ':' + p2(cm % 60); } }
+    out.push({ id: 'b' + off + '_' + m, m, time, name: NAMES[(h >>> 3) % NAMES.length], dept, ref: 'ML-' + (h.toString(36).toUpperCase() + 'XXXXXX').slice(0, 6).replace(/[0O1I]/g, 'K'),
+      phone: h % 3 === 0 ? '' : '+218 9' + (h % 5) + ' ' + String(h % 1000).padStart(3, '0') + ' ' + String((h >>> 4) % 10000).padStart(4, '0'),
+      visit: h % 2 ? 'vNew' : 'vFu', first: h % 3 ? 'no' : 'yes', status, src, checkin, pending: false, hist: [] });
+    i++;
+  }
+  return out;
+}
+
+class Component extends DCLogic {
+  state = { lang: null, phase: 0, user: '', pw: '', showPw: false, caps: false, busy: false, err: '', attempts: 0, signedIn: false, forgot: false, offline: null,
+    w: typeof window !== 'undefined' ? window.innerWidth : 1280, day: 0, days: {}, filter: 'all', deptF: '', q: '', selId: null, corrTo: null, reason: '', dOff: false, syncing: false, banner: '', liveDone: false };
+
+  componentDidMount() {
+    this.onResize = () => this.setState({ w: window.innerWidth }); window.addEventListener('resize', this.onResize);
+    if (this.props.startSignedIn) { this.timers = [setTimeout(() => this.liveScan(), 7000)]; return this.setState({ phase: 5, signedIn: true }); }
+    this.play();
+  }
+  componentWillUnmount() { (this.timers || []).forEach(clearTimeout); window.removeEventListener('resize', this.onResize); }
+  reduced() { return this.props.reducedMotion || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
+  play() {
+    (this.timers || []).forEach(clearTimeout);
+    this.setState({ phase: 0 });
+    // phases: 1 khatib in · 2 khatib out · 3 medlink in · 4 splash fade · 5 login only
+    const seq = this.reduced() ? [[50, 3], [700, 4], [1150, 5]] : [[80, 1], [1250, 2], [1650, 3], [2700, 4], [3150, 5]];
+    this.timers = seq.map(([ms, p]) => setTimeout(() => this.setState({ phase: p }), ms));
+  }
+  L() { return this.state.lang || this.props.defaultLang || 'ar'; }
+  isOffline() { return this.state.offline ?? !!this.props.simulateOffline; }
+
+  submit = () => {
+    const s = this.state, t = T[this.L()];
+    if (s.busy || this.isOffline() || s.attempts >= 5 || !s.user.trim() || !s.pw) return;
+    this.setState({ busy: true, err: '' });
+    setTimeout(() => {
+      if (s.pw === 'wrong' || s.pw.length < 8) {
+        const a = this.state.attempts + 1;
+        return this.setState({ busy: false, attempts: a, pw: '', err: a >= 5 ? t.errLocked : t.errBad(5 - a) });
+      }
+      this.setState({ busy: false, signedIn: true, pw: '', attempts: 0 });
+      this.timers.push(setTimeout(() => this.liveScan(), 7000));
+    }, 900);
+  };
+
+  dayData(off) { return this.state.days[off] || genDay(off); }
+  setDay(off, fn) { this.setState(s => ({ days: { ...s.days, [off]: fn((s.days[off] || genDay(off)).map(b => ({ ...b, hist: [...b.hist] }))) } })); }
+  nowStr() { return p2(Math.floor(NOW_MIN / 60)) + ':' + p2(NOW_MIN % 60); }
+  liveScan() {
+    if (!this.state.signedIn || this.state.dOff || this.state.liveDone) return;
+    const b = this.dayData(0).find(x => x.status === 'waiting' && x.m > NOW_MIN - 20 && x.id !== this.conflictId());
+    if (!b) return;
+    this.setDay(0, list => list.map(x => x.id === b.id ? { ...x, status: 'arrived', src: 'qr', checkin: this.nowStr(), hist: [...x.hist, { time: this.nowStr(), key: 'hQr' }] } : x));
+    this.setState({ liveDone: true, banner: D[this.L()].live(b.name) });
+  }
+  conflictId() { const w = genDay(0).filter(x => x.status === 'waiting'); return w.length ? w[0].id : null; }
+  goOnline() {
+    this.setState({ syncing: true, dOff: false });
+    this.timers.push(setTimeout(() => {
+      const d = D[this.L()]; let n = 0, conf = null;
+      const days = {};
+      Object.entries(this.state.days).forEach(([off, list]) => {
+        days[off] = list.map(b => {
+          if (!b.pending) return b; n++;
+          if (b.id === this.conflictId() && b.src === 'reception') { conf = b; const ct = p2(Math.floor((b.m - 6) / 60)) + ':' + p2((b.m - 6) % 60); return { ...b, pending: false, src: 'qr', checkin: ct, hist: [...b.hist, { time: ct, key: 'hConf' }] }; }
+          return { ...b, pending: false };
+        });
+      });
+      const ct = conf ? p2(Math.floor((conf.m - 6) / 60)) + ':' + p2((conf.m - 6) % 60) : '';
+      this.setState({ days, syncing: false, banner: conf ? d.conflict(conf.name, ct) : n ? d.synced(n) : '' });
+    }, 1200));
+  }
+
+  renderVals() {
+    const s = this.state, L = this.L(), t = T[L], p = s.phase, reduced = this.reduced();
+    const off = this.isOffline(), locked = s.attempts >= 5;
+    const cant = s.busy || off || locked || !s.user.trim() || !s.pw;
+    const tr = (y, sc) => reduced ? 'none' : 'translateY(' + y + 'px) scale(' + sc + ')';
+    const d = D[L], li = { ar: 1, en: 2, tr: 3 }[L];
+    const deptName = id => (DEPTS.find(x => x[0] === id) || [])[li] || '';
+    const all = s.signedIn ? this.dayData(s.day) : [];
+    const chip = st => ({ waiting: ['#eef1fc', '#1a2d99'], arrived: ['#e7f6ee', '#13795b'], noshow: ['#fdecea', '#8a1c12'] })[st];
+    const ql = s.q.trim().toLowerCase();
+    const base = all.filter(b => (!s.deptF || b.dept === s.deptF) && (!ql || b.name.toLowerCase().includes(ql) || b.ref.toLowerCase().includes(ql)));
+    const rows = base.filter(b => s.filter === 'all' || b.status === s.filter).map(b => ({ time: b.time, name: b.name, dept: deptName(b.dept), ref: b.ref,
+      status: d[b.status], chipBg: chip(b.status)[0], chipColor: chip(b.status)[1], pending: b.pending, checkin: b.checkin || '—',
+      bg: s.selId === b.id ? '#eef1fc' : '#ffffff', open: () => this.setState({ selId: b.id, corrTo: null, reason: '' }) }));
+    const pendingN = Object.values(s.days).flat().filter(b => b.pending).length;
+    const sb = all.find(b => b.id === s.selId);
+    const dt = new Date(); dt.setDate(dt.getDate() + s.day);
+    const dayLabel = dt.toLocaleDateString(L === 'ar' ? 'ar-u-nu-latn' : L === 'tr' ? 'tr-TR' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+    const histText = x => x.key === 'hCorr' ? d.hCorr(d[x.to], x.reason) : d[x.key];
+    const sel = sb ? { name: sb.name, ref: sb.ref, status: d[sb.status], chipBg: chip(sb.status)[0], chipColor: chip(sb.status)[1],
+      srcText: sb.src ? d.src[sb.src] + (sb.checkin ? ' · ' + sb.checkin : '') : '',
+      facts: [[d.date, sb.time], [d.dept, deptName(sb.dept)], [d.phone, sb.phone || '—'], [d.visit, d[sb.visit]], [d.first, d[sb.first]]].map(([k, v]) => ({ k, v })),
+      canArrive: sb.status === 'waiting' && s.day === 0, canCorrect: sb.status !== 'waiting',
+      hist: [{ time: '—', text: d.hBooked }, ...(sb.src === 'auto' ? [{ time: p2(Math.floor((sb.m + 30) / 60)) + ':' + p2((sb.m + 30) % 60), text: d.hAuto }] : sb.src && !sb.hist.length ? [{ time: sb.checkin, text: d[sb.src === 'qr' ? 'hQr' : 'hRec'] }] : []), ...sb.hist.map(x => ({ time: x.time, text: histText(x) }))] } : null;
+    const corrChoices = sb ? ['waiting', 'arrived', 'noshow'].filter(x => x !== sb.status) : [];
+    const cantCorr = !s.corrTo || s.reason.trim().length < 5;
+    const offNow = s.dOff;
+    return {
+      sideW: s.w < 1100 ? '168px' : '208px', sideLogoW: s.w < 1100 ? '104px' : '128px', panelW: s.w < 1100 ? '290px' : '340px',
+      d, showDash: s.signedIn, dnav: d.nav.map((label, i) => ({ label, badge: i === 2 && pendingN ? String(pendingN) : '', bg: i === 0 ? '#e3e8fb' : 'transparent', color: i === 0 ? '#1a2d99' : '#1c2340', weight: i === 0 ? 600 : 400 })),
+      prevArrow: L === 'ar' ? '›' : '‹', nextArrow: L === 'ar' ? '‹' : '›',
+      prevDay: () => this.setState({ day: s.day - 1, selId: null }), nextDay: () => this.setState({ day: s.day + 1, selId: null }), goToday: () => this.setState({ day: 0, selId: null }),
+      dayLabel, q: s.q, onQ: e => this.setState({ q: e.target.value }),
+      syncText: s.syncing ? d.syncing : offNow ? (pendingN ? d.pendingN(pendingN) : d.offline) : d.online,
+      syncBg: offNow ? '#fff4e5' : s.syncing ? '#eef1fc' : '#e7f6ee', syncColor: offNow ? '#7a4300' : s.syncing ? '#1a2d99' : '#0d5a43', syncDot: offNow ? '#e8a317' : s.syncing ? '#2b41c5' : '#13795b',
+      toggleDashNet: () => { if (s.syncing) return; if (offNow) this.goOnline(); else this.setState({ dOff: true, banner: '' }); },
+      dashOffline: offNow, banner: s.banner, closeBanner: () => this.setState({ banner: '' }),
+      ftabs: ['all', 'waiting', 'arrived', 'noshow'].map(f => { const on = s.filter === f; return { label: d[f], n: f === 'all' ? base.length : base.filter(b => b.status === f).length,
+        border: on ? '#2b41c5' : '#dde2f0', bg: on ? '#2b41c5' : '#ffffff', color: on ? '#ffffff' : '#1c2340', pick: () => this.setState({ filter: f }) }; }),
+      deptF: s.deptF, onDept: e => this.setState({ deptF: e.target.value }), deptOpts: [{ v: '', label: d.allDepts }, ...DEPTS.map(x => ({ v: x[0], label: x[li] }))],
+      rows, noRows: !rows.length, sel, closeSel: () => this.setState({ selId: null }),
+      markArrived: () => { const tm = this.nowStr(); this.setDay(s.day, list => list.map(x => x.id === sb.id ? { ...x, status: 'arrived', src: 'reception', checkin: tm, pending: offNow, hist: [...x.hist, { time: tm, key: 'hRec' }] } : x)); },
+      corrOpts: corrChoices.map(c => ({ label: d[c], border: s.corrTo === c ? '#2b41c5' : '#dde2f0', bg: s.corrTo === c ? '#eef1fc' : '#ffffff', color: s.corrTo === c ? '#1a2d99' : '#1c2340', pick: () => this.setState({ corrTo: c }) })),
+      reason: s.reason, onReason: e => this.setState({ reason: e.target.value }), cantCorr, corrBg: cantCorr ? '#9aa6d8' : '#2b41c5',
+      saveCorr: () => { if (cantCorr) return; const tm = this.nowStr(), to = s.corrTo, r = s.reason.trim();
+        this.setDay(s.day, list => list.map(x => x.id === sb.id ? { ...x, status: to, src: 'corr', checkin: to === 'arrived' ? (x.checkin || tm) : '', pending: offNow, hist: [...x.hist, { time: tm, key: 'hCorr', to, reason: r }] } : x));
+        this.setState({ corrTo: null, reason: '' }); },
+      t, dir: L === 'ar' ? 'rtl' : 'ltr',
+      langs: [['ar', 'عربي'], ['en', 'EN'], ['tr', 'TR']].map(([id, label]) => ({ label, bg: L === id ? '#2b41c5' : 'transparent', color: L === id ? '#ffffff' : '#1a2d99', pick: () => this.setState({ lang: id }) })),
+      replay: () => { this.setState({ signedIn: false, err: '', forgot: false }); this.play(); },
+      showSplash: p < 5, showLogin: p >= 4 && !s.signedIn,
+      splashOpacity: p >= 4 ? 0 : 1,
+      khOpacity: p === 1 ? 1 : 0, khTransform: p === 0 ? tr(10, 0.96) : p === 1 ? tr(0, 1) : tr(-14, 1.02),
+      mlOpacity: p >= 3 ? 1 : 0, mlTransform: p < 3 ? tr(14, 0.96) : tr(0, 1),
+      barOpacity: p >= 1 && p < 4 ? 1 : 0, barW: p >= 3 ? '100%' : p >= 2 ? '62%' : p >= 1 ? '28%' : '0%',
+      signedOut: !s.signedIn, signedIn: s.signedIn,
+      netText: off ? t.offline : t.online, netBg: off ? '#fff4e5' : '#e7f6ee', netColor: off ? '#7a4300' : '#0d5a43', netDot: off ? '#e8a317' : '#13795b',
+      offline: off, errMsg: s.err,
+      user: s.user, onUser: e => this.setState({ user: e.target.value, err: locked ? s.err : '' }),
+      pw: s.pw, onPw: e => this.setState({ pw: e.target.value }),
+      onKey: e => { this.setState({ caps: !!(e.getModifierState && e.getModifierState('CapsLock')) }); if (e.key === 'Enter') this.submit(); },
+      capsHint: s.caps, pwType: s.showPw ? 'text' : 'password', pwToggleLabel: s.showPw ? t.hide : t.show,
+      togglePw: () => this.setState({ showPw: !s.showPw }),
+      submit: this.submit, cantSubmit: cant, submitBg: cant ? '#9aa6d8' : '#2b41c5', submitCursor: cant ? 'not-allowed' : 'pointer',
+      submitLabel: s.busy ? t.submitting : t.submit,
+      openForgot: () => this.setState({ forgot: true }), closeForgot: () => this.setState({ forgot: false }), forgotOpen: s.forgot,
+      waMsg: t.waMsg(s.user.trim()), waHref: 'https://wa.me/4368181700732?text=' + encodeURIComponent(t.waMsg(s.user.trim())),
+      toggleNet: () => this.setState({ offline: !off }),
+      signOut: () => this.setState({ signedIn: false, user: '', pw: '', selId: null })
+    };
+  }
+}
+</script>
+</body>
+</html>

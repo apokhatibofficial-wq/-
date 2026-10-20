@@ -70,6 +70,7 @@ public static class AuthEndpoints
                 : Results.Json(new
                 {
                     purpose = info.Purpose,
+                    scope = info.Scope,
                     email = info.Email,
                     totpRequired = info.TotpRequired,
                     totpUri = info.TotpUri,

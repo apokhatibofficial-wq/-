@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#f4f6fb;-webkit-font-smoothing:antialiased}
+a{color:#2b41c5}a:hover{color:#1a2d99}
+input,textarea,button,select{font-family:inherit}
+</style>
+</helmet>
+<div dir="{{ dir }}" style="min-height:100vh;background:#f4f6fb;color:#1c2340;font-family:'IBM Plex Sans','IBM Plex Sans Arabic',system-ui,sans-serif;display:flex">
+
+  <sc-if value="{{ wide }}" hint-placeholder-val="{{ true }}">
+    <aside style="width:236px;flex-shrink:0;background:#0f1a4a;color:#ffffff;display:flex;flex-direction:column;gap:24px;padding:22px 14px;box-sizing:border-box;min-height:100vh;position:sticky;top:0;align-self:flex-start">
+      <div style="display:flex;flex-direction:column;gap:2px;padding:0 8px">
+        <img src="assets/medlink-logo-white.svg" alt="MEDLINK" style="width:150px;height:auto">
+        <div style="font-size:11px;color:#b9c2f0;margin-top:6px">{{ t.logoNote }}</div>
+      </div>
+      <nav style="display:flex;flex-direction:column;gap:2px">
+        <sc-for list="{{ nav }}" as="n" hint-placeholder-count="5">
+          <div style="padding:10px 12px;border-radius:8px;font-size:14px;font-weight:{{ n.weight }};background:{{ n.bg }};color:{{ n.color }}">{{ n.label }}</div>
+        </sc-for>
+      </nav>
+      <div style="flex:1"></div>
+      <div style="padding:12px;border-radius:10px;background:#1a2d99;display:flex;flex-direction:column;gap:2px">
+        <div style="font-size:13px;font-weight:600">{{ hospital }}</div>
+        <div style="font-size:12px;color:#d6dcff">user@example.com</div>
+      </div>
+    </aside>
+  </sc-if>
+
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+    <sc-if value="{{ narrow }}">
+      <div style="background:#0f1a4a;color:#ffffff;padding:12px 14px;display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+          <img src="assets/medlink-logo-white.svg" alt="MEDLINK" style="height:34px;width:auto">
+          <div style="font-size:12px;color:#d6dcff">{{ hospital }}</div>
+        </div>
+        <nav style="display:flex;gap:4px;overflow-x:auto">
+          <sc-for list="{{ nav }}" as="n">
+            <div style="padding:8px 12px;border-radius:8px;font-size:13px;white-space:nowrap;font-weight:{{ n.weight }};background:{{ n.bg }};color:{{ n.color }}">{{ n.label }}</div>
+          </sc-for>
+        </nav>
+      </div>
+    </sc-if>
+
+    <main style="width:100%;max-width:1120px;margin:0 auto;padding:clamp(14px,3vw,28px);box-sizing:border-box;display:flex;flex-direction:column;gap:18px">
+
+      <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap">
+        <div style="flex:1 1 320px;min-width:0;display:flex;flex-direction:column;gap:4px">
+          <h1 style="margin:0;font-size:clamp(20px,4vw,26px);font-weight:600;color:#0f1a4a">{{ t.title }}</h1>
+          <div style="font-size:14px;color:#5b6380">{{ t.titleSub }}</div>
+        </div>
+        <div style="display:flex;gap:2px;padding:3px;border:1px solid #dde2f0;border-radius:999px;background:#ffffff">
+          <sc-for list="{{ langs }}" as="l" hint-placeholder-count="3">
+            <button onClick="{{ l.pick }}" style="min-width:44px;height:34px;border:none;border-radius:999px;background:{{ l.bg }};color:{{ l.color }};font-size:13px;font-weight:600;cursor:pointer;padding:0 10px">{{ l.label }}</button>
+          </sc-for>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button onClick="{{ openPreviewDraft }}" style="height:44px;border:1px solid #c9cfe3;background:#ffffff;color:#1a2d99;border-radius:10px;padding:0 18px;font-size:14px;font-weight:600;cursor:pointer" style-hover="background:#eef1fc">{{ t.preview }}</button>
+          <button onClick="{{ openPublish }}" disabled="{{ cantPublish }}" style="height:44px;border:none;background:{{ publishBg }};color:#ffffff;border-radius:10px;padding:0 20px;font-size:14px;font-weight:600;cursor:{{ publishCursor }}">{{ t.publish }}</button>
+        </div>
+      </div>
+
+      <div style="background:#ffffff;border:1px solid #dde2f0;border-radius:12px;padding:12px 16px;display:flex;gap:10px 22px;flex-wrap:wrap;align-items:center;font-size:14px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="width:8px;height:8px;border-radius:50%;background:#13795b"></span>
+          <span style="font-weight:600">{{ liveText }}</span>
+          <span style="color:#5b6380">{{ liveMeta }}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="width:8px;height:8px;border-radius:50%;background:{{ draftDot }}"></span>
+          <span style="color:#1c2340">{{ draftText }}</span>
+          <sc-if value="{{ dirty }}">
+            <button onClick="{{ discard }}" style="border:none;background:none;color:#2b41c5;font-size:14px;font-weight:500;cursor:pointer;padding:0">{{ t.discard }}</button>
+          </sc-if>
+        </div>
+        <div style="flex:1"></div>
+        <span dir="ltr" style="font-size:13px;color:#5b6380">medlink.website/book/al-noor</span>
+      </div>
+
+      <sc-if value="{{ failed }}">
+        <div style="background:#fdecea;border:1px solid #f1b4ae;color:#8a1c12;border-radius:10px;padding:12px 14px;font-size:14px;line-height:1.5;display:flex;gap:12px;align-items:flex-start">
+          <div style="flex:1"><strong>{{ t.failTitle }}</strong> {{ failBody }}</div>
+          <button onClick="{{ dismissFail }}" style="border:none;background:none;color:#8a1c12;font-size:18px;cursor:pointer;line-height:1">×</button>
+        </div>
+      </sc-if>
+
+      <div style="display:flex;gap:4px;border-bottom:1px solid #dde2f0">
+        <sc-for list="{{ tabs }}" as="tb" hint-placeholder-count="2">
+          <button onClick="{{ tb.pick }}" style="height:44px;border:none;background:none;border-bottom:2px solid {{ tb.line }};color:{{ tb.color }};font-size:15px;font-weight:600;padding:0 14px;cursor:pointer;margin-bottom:-1px">{{ tb.label }}</button>
+        </sc-for>
+      </div>
+
+      <sc-if value="{{ isEditor }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start">
+          <div style="flex:1 1 560px;min-width:0;display:flex;flex-direction:column;gap:10px">
+            <sc-for list="{{ qs }}" as="q" hint-placeholder-count="4">
+              <div draggable="true" onDragStart="{{ q.dragStart }}" onDragOver="{{ q.dragOver }}" onDrop="{{ q.drop }}" onDragEnd="{{ q.dragEnd }}" style="background:#ffffff;border:1.5px solid {{ q.border }};border-radius:12px;opacity:{{ q.opacity }}">
+                <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;flex-wrap:wrap">
+                  <span title="{{ t.drag }}" style="cursor:grab;color:#8a91a8;font-size:18px;letter-spacing:-3px;user-select:none">⋮⋮</span>
+                  <span style="width:26px;height:26px;border-radius:50%;background:#eef1fc;color:#1a2d99;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0">{{ q.num }}</span>
+                  <div style="flex:1 1 200px;min-width:0;display:flex;flex-direction:column;gap:4px">
+                    <div style="font-size:15px;font-weight:500;color:{{ q.labelColor }};overflow-wrap:anywhere">{{ q.label }}</div>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap">
+                      <span style="font-size:12px;padding:2px 8px;border-radius:999px;background:#f4f6fb;color:#5b6380">{{ q.typeLabel }}</span>
+                      <span style="font-size:12px;padding:2px 8px;border-radius:999px;background:{{ q.reqBg }};color:{{ q.reqColor }}">{{ q.reqText }}</span>
+                      <sc-if value="{{ q.tag }}"><span style="font-size:12px;padding:2px 8px;border-radius:999px;background:#fff4d6;color:#7a5200;font-weight:600">{{ q.tag }}</span></sc-if>
+                      <sc-if value="{{ q.missing }}"><span style="font-size:12px;padding:2px 8px;border-radius:999px;background:#fdecea;color:#8a1c12">{{ q.missing }}</span></sc-if>
+                    </div>
+                  </div>
+                  <div style="display:flex;gap:4px">
+                    <button onClick="{{ q.up }}" disabled="{{ q.first }}" title="{{ t.moveUp }}" style="width:36px;height:36px;border:1px solid #dde2f0;background:#ffffff;border-radius:8px;cursor:pointer;color:#1a2d99;font-size:14px">↑</button>
+                    <button onClick="{{ q.down }}" disabled="{{ q.last }}" title="{{ t.moveDown }}" style="width:36px;height:36px;border:1px solid #dde2f0;background:#ffffff;border-radius:8px;cursor:pointer;color:#1a2d99;font-size:14px">↓</button>
+                    <button onClick="{{ q.toggle }}" style="height:36px;border:1px solid #dde2f0;background:{{ q.editBg }};border-radius:8px;cursor:pointer;color:#1a2d99;font-size:13px;font-weight:600;padding:0 12px">{{ q.editLabel }}</button>
+                    <button onClick="{{ q.remove }}" title="{{ t.delete }}" style="width:36px;height:36px;border:1px solid #f1b4ae;background:#ffffff;border-radius:8px;cursor:pointer;color:#b42318;font-size:16px">×</button>
+                  </div>
+                </div>
+                <sc-if value="{{ q.open }}">
+                  <div style="border-top:1px solid #eef0f6;padding:16px;display:flex;flex-direction:column;gap:16px;background:#fafbfe;border-radius:0 0 12px 12px">
+                    <div style="display:flex;flex-direction:column;gap:8px">
+                      <div style="font-size:13px;font-weight:600;color:#5b6380">{{ t.answerType }}</div>
+                      <div style="display:flex;gap:6px;flex-wrap:wrap">
+                        <sc-for list="{{ q.types }}" as="ty">
+                          <button onClick="{{ ty.pick }}" style="height:36px;border:1.5px solid {{ ty.border }};background:{{ ty.bg }};color:{{ ty.color }};border-radius:999px;padding:0 14px;font-size:13px;font-weight:500;cursor:pointer">{{ ty.label }}</button>
+                        </sc-for>
+                      </div>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:8px">
+                      <div style="font-size:13px;font-weight:600;color:#5b6380">{{ t.questionText }}</div>
+                      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:8px">
+                        <sc-for list="{{ q.fields }}" as="f">
+                          <label style="display:flex;flex-direction:column;gap:4px">
+                            <span style="font-size:12px;color:#5b6380">{{ f.tag }}</span>
+                            <input value="{{ f.value }}" onChange="{{ f.onChange }}" dir="{{ f.dir }}" maxlength="140" style="height:42px;border:1px solid #c9cfe3;border-radius:8px;padding:0 12px;font-size:15px;color:#1c2340;background:#ffffff;outline:none" style-focus="border-color:#2b41c5;box-shadow:0 0 0 3px rgba(43,65,197,.15)">
+                          </label>
+                        </sc-for>
+                      </div>
+                    </div>
+                    <sc-if value="{{ q.hasOpts }}">
+                      <div style="display:flex;flex-direction:column;gap:8px">
+                        <div style="font-size:13px;font-weight:600;color:#5b6380">{{ t.options }}</div>
+                        <sc-for list="{{ q.optRows }}" as="o">
+                          <div style="display:flex;gap:8px;align-items:flex-end">
+                            <span style="font-size:13px;color:#5b6380;padding-bottom:12px;min-width:16px">{{ o.n }}</span>
+                            <div style="flex:1;min-width:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:6px">
+                              <sc-for list="{{ o.fields }}" as="f">
+                                <input value="{{ f.value }}" onChange="{{ f.onChange }}" dir="{{ f.dir }}" placeholder="{{ f.tag }}" maxlength="80" style="height:40px;border:1px solid #c9cfe3;border-radius:8px;padding:0 10px;font-size:14px;color:#1c2340;background:#ffffff;outline:none;min-width:0" style-focus="border-color:#2b41c5">
+                              </sc-for>
+                            </div>
+                            <button onClick="{{ o.remove }}" title="{{ t.delete }}" style="width:40px;height:40px;flex-shrink:0;border:1px solid #dde2f0;background:#ffffff;border-radius:8px;cursor:pointer;color:#b42318;font-size:16px">×</button>
+                          </div>
+                        </sc-for>
+                        <button onClick="{{ q.addOpt }}" style="align-self:flex-start;height:36px;border:1px dashed #9aa6d8;background:#ffffff;color:#1a2d99;border-radius:8px;padding:0 14px;font-size:13px;font-weight:600;cursor:pointer">+ {{ t.addOption }}</button>
+                      </div>
+                    </sc-if>
+                    <button onClick="{{ q.toggleReq }}" style="align-self:flex-start;display:flex;align-items:center;gap:10px;border:none;background:none;cursor:pointer;padding:0;font-size:14px;color:#1c2340">
+                      <span style="width:40px;height:24px;border-radius:999px;background:{{ q.swBg }};display:flex;align-items:center;padding:2px;box-sizing:border-box;justify-content:{{ q.swJustify }}"><span style="width:20px;height:20px;border-radius:50%;background:#ffffff;box-shadow:0 1px 2px rgba(0,0,0,.2)"></span></span>
+                      {{ t.requiredQ }}
+                    </button>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-for>
+            <sc-if value="{{ empty }}">
+              <div style="background:#ffffff;border:1.5px dashed #c9cfe3;border-radius:12px;padding:28px;text-align:center;color:#5b6380;font-size:14px">{{ t.empty }}</div>
+            </sc-if>
+          </div>
+
+          <div style="flex:1 1 260px;display:flex;flex-direction:column;gap:14px">
+            <div style="background:#ffffff;border:1px solid #dde2f0;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px">
+              <div style="font-size:15px;font-weight:600;color:#0f1a4a">{{ t.addQuestion }}</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+                <sc-for list="{{ addTypes }}" as="a" hint-placeholder-count="6">
+                  <button onClick="{{ a.add }}" style="min-height:44px;border:1px solid #dde2f0;background:#ffffff;color:#1a2d99;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;padding:6px 8px;text-align:start" style-hover="background:#eef1fc;border-color:#2b41c5">+ {{ a.label }}</button>
+                </sc-for>
+              </div>
+            </div>
+            <div style="background:#fff8e6;border:1px solid #f0d48a;border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:6px">
+              <div style="font-size:14px;font-weight:600;color:#6b4a00">{{ t.privacyTitle }}</div>
+              <div style="font-size:13px;color:#6b4a00;line-height:1.55;text-wrap:pretty">{{ t.privacyBody }}</div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isVersions }}">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="font-size:14px;color:#5b6380">{{ t.versionsSub }}</div>
+          <sc-for list="{{ versions }}" as="v" hint-placeholder-count="3">
+            <div style="background:#ffffff;border:1px solid {{ v.border }};border-radius:12px;padding:14px 16px;display:flex;gap:14px;align-items:center;flex-wrap:wrap">
+              <div style="width:48px;height:48px;border-radius:10px;background:{{ v.badgeBg }};color:{{ v.badgeColor }};display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0">v{{ v.v }}</div>
+              <div style="flex:1 1 240px;min-width:0;display:flex;flex-direction:column;gap:4px">
+                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                  <span style="font-size:15px;font-weight:600">{{ v.summary }}</span>
+                  <sc-if value="{{ v.live }}"><span style="font-size:12px;padding:2px 8px;border-radius:999px;background:#e7f6ee;color:#13795b;font-weight:600">{{ t.live }}</span></sc-if>
+                </div>
+                <div style="font-size:13px;color:#5b6380">{{ v.meta }}</div>
+              </div>
+              <div style="display:flex;gap:6px">
+                <button onClick="{{ v.preview }}" style="height:38px;border:1px solid #c9cfe3;background:#ffffff;color:#1a2d99;border-radius:8px;padding:0 14px;font-size:13px;font-weight:600;cursor:pointer">{{ t.preview }}</button>
+                <sc-if value="{{ v.canRestore }}">
+                  <button onClick="{{ v.restore }}" style="height:38px;border:none;background:#eef1fc;color:#1a2d99;border-radius:8px;padding:0 14px;font-size:13px;font-weight:600;cursor:pointer" style-hover="background:#dfe4fb">{{ t.restore }}</button>
+                </sc-if>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+    </main>
+  </div>
+
+  <sc-if value="{{ modalPublish }}">
+    <div style="position:fixed;inset:0;background:rgba(15,26,74,.45);display:flex;align-items:center;justify-content:center;padding:16px;z-index:20">
+      <div role="dialog" style="width:100%;max-width:460px;background:#ffffff;border-radius:16px;padding:24px;box-sizing:border-box;display:flex;flex-direction:column;gap:18px;box-shadow:0 20px 50px rgba(15,26,74,.25)">
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <div style="font-size:20px;font-weight:600;color:#0f1a4a">{{ modalTitle }}</div>
+          <div style="font-size:14px;color:#5b6380;line-height:1.5">{{ modalBody }}</div>
+        </div>
+        <sc-if value="{{ showCounts }}">
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+            <sc-for list="{{ counts }}" as="c">
+              <div style="border:1px solid #dde2f0;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:2px;align-items:center">
+                <div style="font-size:24px;font-weight:700;color:{{ c.color }}">{{ c.n }}</div>
+                <div style="font-size:12px;color:#5b6380;text-align:center">{{ c.label }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+        <div style="display:flex;justify-content:space-between;align-items:center;background:#f4f6fb;border-radius:10px;padding:12px 14px;font-size:14px">
+          <span style="color:#5b6380">{{ t.newVersion }}</span>
+          <span style="font-weight:700;color:#1a2d99">{{ newVLabel }}</span>
+        </div>
+        <sc-if value="{{ blockers }}">
+          <div style="background:#fdecea;border:1px solid #f1b4ae;color:#8a1c12;border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.5">{{ blockers }}</div>
+        </sc-if>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button onClick="{{ closeModal }}" disabled="{{ busy }}" style="flex:1 1 140px;height:46px;border:1px solid #c9cfe3;background:#ffffff;color:#1a2d99;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer">{{ t.backToEdit }}</button>
+          <button onClick="{{ confirmModal }}" disabled="{{ confirmDisabled }}" style="flex:1 1 140px;height:46px;border:none;background:{{ confirmBg }};color:#ffffff;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer">{{ confirmLabel }}</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ previewOpen }}">
+    <div style="position:fixed;inset:0;background:rgba(15,26,74,.6);display:flex;flex-direction:column;z-index:30">
+      <div style="background:#0f1a4a;color:#ffffff;padding:10px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <div style="flex:1 1 200px;display:flex;flex-direction:column">
+          <span style="font-size:15px;font-weight:600">{{ previewTitle }}</span>
+          <span style="font-size:12px;color:#d6dcff">{{ t.previewBanner }}</span>
+        </div>
+        <div style="display:flex;gap:2px;padding:3px;border-radius:999px;background:#1a2d99">
+          <sc-for list="{{ devices }}" as="d">
+            <button onClick="{{ d.pick }}" style="height:34px;border:none;border-radius:999px;background:{{ d.bg }};color:{{ d.color }};font-size:13px;font-weight:600;padding:0 14px;cursor:pointer">{{ d.label }}</button>
+          </sc-for>
+        </div>
+        <button onClick="{{ closePreview }}" style="height:36px;border:1px solid #4a5aa8;background:none;color:#ffffff;border-radius:8px;padding:0 14px;font-size:13px;font-weight:600;cursor:pointer">{{ t.close }}</button>
+      </div>
+      <div style="flex:1;overflow:auto;padding:20px 12px;display:flex;justify-content:center;align-items:flex-start">
+        <div style="width:100%;max-width:{{ frameW }};background:#f4f6fb;border-radius:{{ frameR }};border:{{ frameBorder }};overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.3)">
+          <div style="background:#ffffff;border-bottom:1px solid #dde2f0;padding:12px 16px;display:flex;align-items:center;gap:12px">
+            <div style="width:40px;height:40px;border-radius:10px;background:#eef1fc;border:1px dashed #9aa6d8;flex-shrink:0"></div>
+            <div style="display:flex;flex-direction:column">
+              <span style="font-size:15px;font-weight:600;color:#0f1a4a">{{ hospital }}</span>
+              <span style="font-size:12px;color:#5b6380">{{ t.bookTitle }}</span>
+            </div>
+          </div>
+          <div style="padding:16px;display:flex;flex-direction:column;gap:14px">
+            <div style="display:flex;gap:6px">
+              <sc-for list="{{ pSteps }}" as="s">
+                <div style="flex:1;height:4px;border-radius:2px;background:{{ s.bar }}"></div>
+              </sc-for>
+            </div>
+            <div style="background:#ffffff;border:1px solid #dde2f0;border-radius:14px;padding:clamp(16px,4vw,24px);display:flex;flex-direction:column;gap:18px">
+              <div style="display:flex;flex-direction:column;gap:4px">
+                <div style="font-size:20px;font-weight:600;color:#0f1a4a">{{ t.pTitle }}</div>
+                <div style="font-size:14px;color:#5b6380">{{ t.pSub }}</div>
+              </div>
+              <sc-for list="{{ pQs }}" as="q">
+                <div style="display:flex;flex-direction:column;gap:10px;padding-bottom:16px;border-bottom:1px solid #eef0f6">
+                  <div style="font-size:15px;font-weight:500;line-height:1.4">{{ q.label }} <span style="color:{{ q.reqColor }};font-weight:400;font-size:13px">{{ q.reqText }}</span></div>
+                  <sc-if value="{{ q.isChoice }}">
+                    <div style="display:flex;flex-wrap:wrap;gap:8px">
+                      <sc-for list="{{ q.opts }}" as="o">
+                        <button onClick="{{ o.pick }}" style="min-height:44px;border:1.5px solid {{ o.border }};background:{{ o.bg }};color:{{ o.color }};border-radius:999px;padding:0 18px;font-size:15px;font-weight:500;cursor:pointer">{{ o.mark }}{{ o.label }}</button>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                  <sc-if value="{{ q.isShort }}">
+                    <input value="{{ q.value }}" onChange="{{ q.onText }}" style="height:46px;border:1px solid #c9cfe3;border-radius:10px;padding:0 14px;font-size:16px;outline:none" style-focus="border-color:#2b41c5">
+                  </sc-if>
+                  <sc-if value="{{ q.isLong }}">
+                    <textarea value="{{ q.value }}" onChange="{{ q.onText }}" rows="3" style="border:1px solid #c9cfe3;border-radius:10px;padding:10px 14px;font-size:16px;outline:none;resize:vertical" style-focus="border-color:#2b41c5"></textarea>
+                  </sc-if>
+                  <sc-if value="{{ q.isDate }}">
+                    <input type="date" value="{{ q.value }}" onChange="{{ q.onText }}" style="height:46px;border:1px solid #c9cfe3;border-radius:10px;padding:0 14px;font-size:16px;outline:none;max-width:240px">
+                  </sc-if>
+                  <sc-if value="{{ q.err }}"><span style="font-size:13px;color:#b42318">{{ q.err }}</span></sc-if>
+                </div>
+              </sc-for>
+              <sc-if value="{{ pDone }}">
+                <div style="background:#e7f6ee;border:1px solid #9fd8bf;color:#0d5a43;border-radius:10px;padding:12px 14px;font-size:14px">{{ t.pDone }}</div>
+              </sc-if>
+              <div style="display:flex;justify-content:flex-end">
+                <button onClick="{{ pNext }}" style="height:46px;min-width:150px;border:none;background:#2b41c5;color:#ffffff;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer">{{ t.continue }}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ toast }}">
+    <div style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#0f1a4a;color:#ffffff;border-radius:10px;padding:12px 18px;font-size:14px;z-index:40;box-shadow:0 10px 30px rgba(15,26,74,.3);max-width:calc(100% - 32px);box-sizing:border-box">{{ toast }}</div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;defaultLang&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;ar&quot;,&quot;en&quot;,&quot;tr&quot;],&quot;default&quot;:&quot;ar&quot;,&quot;tsType&quot;:&quot;'ar'|'en'|'tr'&quot;},&quot;simulatePublishFailure&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;}}">
+const LANGS = ['ar', 'en', 'tr'];
+const LANG_TAG = { ar: 'العربية', en: 'English', tr: 'Türkçe' };
+const LOC = { ar: 'ar-u-nu-latn', en: 'en-GB', tr: 'tr-TR' };
+const T = {
+  ar: {
+    logoNote: 'لوحة المستشفى', nav: ['المواعيد', 'الحجوزات', 'تخصيص نموذج الحجز', 'الأقسام', 'الإعدادات'],
+    title: 'تخصيص نموذج الحجز', titleSub: 'Booking Form Builder · الأسئلة الإضافية التي يجيب عنها المريض بعد اختيار القسم',
+    preview: 'معاينة النموذج', publish: 'نشر النموذج', live: 'منشور', liveV: v => 'الإصدار المنشور v' + v, by: 'بواسطة',
+    draftN: n => 'مسودة: ' + n + ' تغيير غير منشور', noChanges: 'المسودة مطابقة للنسخة المنشورة', discard: 'تجاهل المسودة',
+    tabs: ['المحرر', 'الإصدارات'], drag: 'اسحب لإعادة الترتيب', moveUp: 'تحريك لأعلى', moveDown: 'تحريك لأسفل', delete: 'حذف',
+    edit: 'تعديل', done: 'تم', tagNew: 'جديد', tagEdited: 'معدّل', untitled: 'سؤال بلا عنوان', missing: 'ترجمة ناقصة',
+    required: 'إلزامي', optional: 'اختياري', requiredQ: 'سؤال إلزامي', answerType: 'نوع الإجابة', questionText: 'نص السؤال',
+    options: 'خيارات الإجابة', addOption: 'إضافة خيار', addQuestion: 'إضافة سؤال', empty: 'لا توجد أسئلة. أضف سؤالًا من القائمة.',
+    types: { short: 'نص قصير', long: 'نص طويل', single: 'اختيار واحد', multi: 'اختيار متعدد', yesno: 'نعم / لا', date: 'تاريخ' },
+    privacyTitle: 'لا تجمع بيانات طبية', privacyBody: 'لا تُضف أسئلة عن التشخيص أو الأعراض أو الأدوية أو الملفات الطبية. جمع أي بيانات صحية حساسة يتطلب موافقة مسبقة من KHATIB TECHNICAL SOLUTIONS ومراجعة الخصوصية.',
+    publishTitle: 'تأكيد نشر النموذج', publishBody: 'سيظهر هذا الإصدار للمرضى على رابط الحجز فور نجاح النشر. المرضى الذين بدأوا الحجز يكملونه على الإصدار الذي فتحوه.',
+    added: 'مضاف', modified: 'معدّل', removed: 'محذوف', newVersion: 'رقم الإصدار الجديد', confirmPublish: 'تأكيد النشر', backToEdit: 'العودة للتعديل',
+    publishing: 'جارٍ النشر…', failTitle: 'فشل النشر.', failBody: v => 'لم يتغير شيء: الإصدار v' + v + ' ما زال منشورًا، ومسودتك محفوظة. حاول مرة أخرى.',
+    toast: v => 'تم نشر الإصدار v' + v + ' على رابط الحجز.', errLabel: n => 'السؤال ' + n + ': أدخل النص العربي.', errOpts: n => 'السؤال ' + n + ': أضف خيارين على الأقل.',
+    versionsSub: 'كل إصدار منشور محفوظ ولا يُعدّل. الاستعادة تنشر محتوى الإصدار القديم كإصدار جديد.',
+    restore: 'استعادة', restoredFrom: v => 'استعادة من v' + v, initial: 'النموذج الأول',
+    sum: (a, e, r, o) => [a && ('+' + a + ' مضاف'), e && (e + ' معدّل'), r && (r + ' محذوف'), o && 'إعادة ترتيب'].filter(Boolean).join(' · ') || 'بدون تغييرات',
+    restoreTitle: v => 'استعادة الإصدار v' + v, restoreBody: (v, n) => 'سيُنشر محتوى v' + v + ' كإصدار جديد v' + n + '. تبقى كل الإصدارات السابقة في السجل.',
+    draftReplace: 'ستُستبدل تغييرات المسودة غير المنشورة.', confirmRestore: 'تأكيد الاستعادة',
+    previewDraft: 'معاينة المسودة', previewV: v => 'معاينة الإصدار v' + v, previewBanner: 'وضع المعاينة: لن يُنشأ أي حجز ولن تُحفظ أي بيانات.',
+    phone: 'هاتف', desktop: 'كمبيوتر', close: 'إغلاق', bookTitle: 'حجز موعد', pTitle: 'أسئلة من المستشفى', pSub: 'تساعد موظف الاستقبال على الاستعداد لزيارتك.',
+    continue: 'متابعة', pDone: 'اكتملت المعاينة. في الصفحة الحقيقية ينتقل المريض إلى اختيار التاريخ والوقت.', errReq: 'هذا السؤال إلزامي.', yes: 'نعم', no: 'لا'
+  },
+  en: {
+    logoNote: 'Hospital console', nav: ['Appointments', 'Bookings', 'Booking Form Builder', 'Departments', 'Settings'],
+    title: 'Booking Form Builder', titleSub: 'تخصيص نموذج الحجز · Extra questions patients answer after choosing a department',
+    preview: 'Preview form', publish: 'Publish form', live: 'Live', liveV: v => 'Live version v' + v, by: 'by',
+    draftN: n => 'Draft: ' + n + ' unpublished change' + (n === 1 ? '' : 's'), noChanges: 'Draft matches the live version', discard: 'Discard draft',
+    tabs: ['Editor', 'Versions'], drag: 'Drag to reorder', moveUp: 'Move up', moveDown: 'Move down', delete: 'Delete',
+    edit: 'Edit', done: 'Done', tagNew: 'New', tagEdited: 'Edited', untitled: 'Untitled question', missing: 'Missing translation',
+    required: 'Required', optional: 'Optional', requiredQ: 'Required question', answerType: 'Answer type', questionText: 'Question text',
+    options: 'Answer options', addOption: 'Add option', addQuestion: 'Add a question', empty: 'No questions yet. Add one from the panel.',
+    types: { short: 'Short text', long: 'Long text', single: 'Single choice', multi: 'Multiple choice', yesno: 'Yes / No', date: 'Date' },
+    privacyTitle: 'Don’t collect medical data', privacyBody: 'Don’t add questions about diagnoses, symptoms, medication or medical records. Collecting sensitive health data requires prior approval from KHATIB TECHNICAL SOLUTIONS and a privacy review.',
+    publishTitle: 'Confirm publish', publishBody: 'Patients will see this version on the booking link as soon as publishing succeeds. Patients already mid-booking finish on the version they opened.',
+    added: 'Added', modified: 'Edited', removed: 'Removed', newVersion: 'New version number', confirmPublish: 'Confirm publish', backToEdit: 'Back to editing',
+    publishing: 'Publishing…', failTitle: 'Publish failed.', failBody: v => 'Nothing changed: v' + v + ' is still live and your draft is saved. Try again.',
+    toast: v => 'Version v' + v + ' is live on the booking link.', errLabel: n => 'Question ' + n + ': enter the Arabic text.', errOpts: n => 'Question ' + n + ': add at least two options.',
+    versionsSub: 'Every published version is kept and never edited. Restoring publishes an old version’s content as a new version.',
+    restore: 'Restore', restoredFrom: v => 'Restored from v' + v, initial: 'Initial form',
+    sum: (a, e, r, o) => [a && ('+' + a + ' added'), e && (e + ' edited'), r && (r + ' removed'), o && 'reordered'].filter(Boolean).join(' · ') || 'No changes',
+    restoreTitle: v => 'Restore version v' + v, restoreBody: (v, n) => 'The content of v' + v + ' will be published as new version v' + n + '. All earlier versions stay in history.',
+    draftReplace: 'Your unpublished draft changes will be replaced.', confirmRestore: 'Confirm restore',
+    previewDraft: 'Previewing draft', previewV: v => 'Previewing v' + v, previewBanner: 'Preview mode: no booking is created and nothing is saved.',
+    phone: 'Phone', desktop: 'Desktop', close: 'Close', bookTitle: 'Book an appointment', pTitle: 'A few questions from the hospital', pSub: 'These help reception prepare for your visit.',
+    continue: 'Continue', pDone: 'Preview complete. On the real page the patient continues to date & time.', errReq: 'This question is required.', yes: 'Yes', no: 'No'
+  },
+  tr: {
+    logoNote: 'Hastane paneli', nav: ['Randevular', 'Rezervasyonlar', 'Randevu Formu Düzenleyici', 'Bölümler', 'Ayarlar'],
+    title: 'Randevu Formu Düzenleyici', titleSub: 'Booking Form Builder · Hastaların bölüm seçtikten sonra yanıtladığı ek sorular',
+    preview: 'Formu önizle', publish: 'Formu yayınla', live: 'Yayında', liveV: v => 'Yayındaki sürüm v' + v, by: '·',
+    draftN: n => 'Taslak: ' + n + ' yayınlanmamış değişiklik', noChanges: 'Taslak yayındaki sürümle aynı', discard: 'Taslağı at',
+    tabs: ['Düzenleyici', 'Sürümler'], drag: 'Sıralamak için sürükleyin', moveUp: 'Yukarı taşı', moveDown: 'Aşağı taşı', delete: 'Sil',
+    edit: 'Düzenle', done: 'Tamam', tagNew: 'Yeni', tagEdited: 'Düzenlendi', untitled: 'Başlıksız soru', missing: 'Eksik çeviri',
+    required: 'Zorunlu', optional: 'İsteğe bağlı', requiredQ: 'Zorunlu soru', answerType: 'Yanıt türü', questionText: 'Soru metni',
+    options: 'Yanıt seçenekleri', addOption: 'Seçenek ekle', addQuestion: 'Soru ekle', empty: 'Henüz soru yok. Panelden ekleyin.',
+    types: { short: 'Kısa metin', long: 'Uzun metin', single: 'Tek seçim', multi: 'Çoklu seçim', yesno: 'Evet / Hayır', date: 'Tarih' },
+    privacyTitle: 'Tıbbi veri toplamayın', privacyBody: 'Teşhis, belirti, ilaç veya tıbbi kayıtlarla ilgili soru eklemeyin. Hassas sağlık verisi toplamak için KHATIB TECHNICAL SOLUTIONS onayı ve gizlilik incelemesi gerekir.',
+    publishTitle: 'Yayınlamayı onaylayın', publishBody: 'Yayınlama başarılı olduğunda hastalar bu sürümü randevu bağlantısında görür. Randevu almaya başlamış hastalar açtıkları sürümle devam eder.',
+    added: 'Eklendi', modified: 'Düzenlendi', removed: 'Silindi', newVersion: 'Yeni sürüm numarası', confirmPublish: 'Yayınlamayı onayla', backToEdit: 'Düzenlemeye dön',
+    publishing: 'Yayınlanıyor…', failTitle: 'Yayınlama başarısız.', failBody: v => 'Hiçbir şey değişmedi: v' + v + ' hâlâ yayında ve taslağınız kayıtlı. Tekrar deneyin.',
+    toast: v => 'v' + v + ' sürümü randevu bağlantısında yayında.', errLabel: n => 'Soru ' + n + ': Arapça metni girin.', errOpts: n => 'Soru ' + n + ': en az iki seçenek ekleyin.',
+    versionsSub: 'Yayınlanan her sürüm saklanır ve değiştirilmez. Geri yükleme, eski sürümün içeriğini yeni bir sürüm olarak yayınlar.',
+    restore: 'Geri yükle', restoredFrom: v => 'v' + v + ' sürümünden geri yüklendi', initial: 'İlk form',
+    sum: (a, e, r, o) => [a && ('+' + a + ' eklendi'), e && (e + ' düzenlendi'), r && (r + ' silindi'), o && 'yeniden sıralandı'].filter(Boolean).join(' · ') || 'Değişiklik yok',
+    restoreTitle: v => 'v' + v + ' sürümünü geri yükle', restoreBody: (v, n) => 'v' + v + ' içeriği yeni sürüm v' + n + ' olarak yayınlanacak. Önceki tüm sürümler geçmişte kalır.',
+    draftReplace: 'Yayınlanmamış taslak değişiklikleriniz değiştirilecek.', confirmRestore: 'Geri yüklemeyi onayla',
+    previewDraft: 'Taslak önizleniyor', previewV: v => 'v' + v + ' önizleniyor', previewBanner: 'Önizleme modu: randevu oluşturulmaz ve hiçbir veri kaydedilmez.',
+    phone: 'Telefon', desktop: 'Bilgisayar', close: 'Kapat', bookTitle: 'Randevu al', pTitle: 'Hastaneden birkaç soru', pSub: 'Bu bilgiler kayıt biriminin ziyaretinize hazırlanmasına yardımcı olur.',
+    continue: 'Devam', pDone: 'Önizleme tamamlandı. Gerçek sayfada hasta tarih ve saat seçimine geçer.', errReq: 'Bu soru zorunludur.', yes: 'Evet', no: 'Hayır'
+  }
+};
+const Q_VISIT = { id: 'visit', type: 'single', req: true, label: { ar: 'نوع الزيارة', en: 'Visit type', tr: 'Ziyaret türü' },
+  opts: [{ id: 'new', label: { ar: 'استشارة جديدة', en: 'New consultation', tr: 'Yeni muayene' } }, { id: 'fu', label: { ar: 'متابعة', en: 'Follow-up', tr: 'Kontrol' } }] };
+const Q_FIRST = { id: 'first', type: 'yesno', req: true, label: { ar: 'هل هذه زيارتك الأولى لهذا المستشفى؟', en: 'Is this your first visit to this hospital?', tr: 'Bu hastaneye ilk ziyaretiniz mi?' }, opts: [] };
+const Q_ASSIST = { id: 'assist', type: 'multi', req: false, label: { ar: 'هل تحتاج إلى مساعدة عند الوصول؟', en: 'Do you need any assistance on arrival?', tr: 'Varışta yardıma ihtiyacınız var mı?' },
+  opts: [{ id: 'wc', label: { ar: 'كرسي متحرك', en: 'Wheelchair', tr: 'Tekerlekli sandalye' } }, { id: 'int', label: { ar: 'مترجم', en: 'Interpreter', tr: 'Tercüman' } }, { id: 'comp', label: { ar: 'دخول مرافق', en: 'Companion access', tr: 'Refakatçi girişi' } }] };
+const Q_NOTE = { id: 'note', type: 'short', req: false, label: { ar: 'ملاحظة لموظف الاستقبال (غير طبية)', en: 'Note for reception (non-medical)', tr: 'Kayıt birimi için not (tıbbi olmayan)' }, opts: [] };
+const clone = o => JSON.parse(JSON.stringify(o));
+const VERSIONS = [
+  { v: 1, date: '2026-08-02T10:14:00', by: 'user@example.com', sum: null, from: null, qs: [Q_VISIT, Q_FIRST] },
+  { v: 2, date: '2026-09-10T09:02:00', by: 'user@example.com', sum: [1, 0, 0, 0], from: null, qs: [Q_VISIT, Q_FIRST, Q_ASSIST] },
+  { v: 3, date: '2026-10-05T13:40:00', by: 'user@example.com', sum: [1, 0, 0, 0], from: null, qs: [Q_VISIT, Q_FIRST, Q_ASSIST, Q_NOTE] }
+];
+const hasOpts = ty => ty === 'single' || ty === 'multi';
+const lbl = (o, L) => (o && (o[L] || o.ar || o.en || o.tr)) || '';
+const uid = p => p + Math.random().toString(36).slice(2, 8);
+
+class Component extends DCLogic {
+  state = { lang: null, tab: 'editor', versions: clone(VERSIONS), draft: clone(VERSIONS[2].qs), openId: null,
+    dragId: null, overId: null, modal: null, busy: false, failed: false, toast: '', preview: null, device: 'phone',
+    pAns: {}, pErr: {}, pDone: false, w: typeof window !== 'undefined' ? window.innerWidth : 1200 };
+
+  componentDidMount() { this.onResize = () => this.setState({ w: window.innerWidth }); window.addEventListener('resize', this.onResize); }
+  componentWillUnmount() { window.removeEventListener('resize', this.onResize); clearTimeout(this.tt); }
+
+  L() { return this.state.lang || this.props.defaultLang || 'ar'; }
+  live() { const v = this.state.versions; return v[v.length - 1]; }
+  diff(qs, base) {
+    const bm = Object.fromEntries(base.map(q => [q.id, JSON.stringify(q)]));
+    const dm = Object.fromEntries(qs.map(q => [q.id, true]));
+    const a = qs.filter(q => !(q.id in bm)).length;
+    const e = qs.filter(q => q.id in bm && bm[q.id] !== JSON.stringify(q)).length;
+    const r = base.filter(q => !dm[q.id]).length;
+    const common = qs.filter(q => q.id in bm).map(q => q.id), bc = base.filter(q => dm[q.id]).map(q => q.id);
+    const o = common.join() !== bc.join() ? 1 : 0;
+    return [a, e, r, o];
+  }
+  upd(id, fn) { this.setState(s => ({ draft: s.draft.map(q => q.id === id ? fn(clone(q)) : q) })); }
+  move(i, j) { this.setState(s => { const d = [...s.draft]; if (j < 0 || j >= d.length) return null; const [x] = d.splice(i, 1); d.splice(j, 0, x); return { draft: d }; }); }
+  flash(msg) { clearTimeout(this.tt); this.setState({ toast: msg }); this.tt = setTimeout(() => this.setState({ toast: '' }), 4000); }
+
+  blockers(qs) {
+    const t = T[this.L()], out = [];
+    qs.forEach((q, i) => {
+      if (!(q.label.ar || '').trim()) out.push(t.errLabel(i + 1));
+      if (hasOpts(q.type) && q.opts.filter(o => (o.label.ar || '').trim()).length < 2) out.push(t.errOpts(i + 1));
+    });
+    return out;
+  }
+
+  doPublish(qs, sum, from) {
+    if (this.state.busy) return;
+    this.setState({ busy: true, failed: false });
+    setTimeout(() => {
+      if (this.props.simulatePublishFailure) return this.setState({ busy: false, modal: null, failed: true });
+      const n = this.live().v + 1;
+      const ver = { v: n, date: new Date().toISOString(), by: 'user@example.com', sum, from, qs: clone(qs) };
+      this.setState(s => ({ busy: false, modal: null, versions: [...s.versions, ver], draft: clone(qs), openId: null }));
+      this.flash(T[this.L()].toast(n));
+    }, 1300);
+  }
+
+  openPreview(src) { this.setState({ preview: src, pAns: {}, pErr: {}, pDone: false }); }
+
+  renderVals() {
+    const s = this.state, L = this.L(), t = T[L], live = this.live();
+    const sel = on => ({ border: on ? '#2b41c5' : '#dde2f0', bg: on ? '#eef1fc' : '#ffffff', color: on ? '#1a2d99' : '#1c2340' });
+    const fmt = iso => new Date(iso).toLocaleString(LOC[L], { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const d = this.diff(s.draft, live.qs), nChanges = d[0] + d[1] + d[2] + d[3], dirty = nChanges > 0;
+    const liveMap = Object.fromEntries(live.qs.map(q => [q.id, JSON.stringify(q)]));
+
+    const qs = s.draft.map((q, i) => {
+      const open = s.openId === q.id;
+      const tag = !(q.id in liveMap) ? t.tagNew : liveMap[q.id] !== JSON.stringify(q) ? t.tagEdited : '';
+      const missingLang = LANGS.some(l => !(q.label[l] || '').trim()) || (hasOpts(q.type) && q.opts.some(o => LANGS.some(l => !(o.label[l] || '').trim())));
+      const label = lbl(q.label, L);
+      return {
+        num: i + 1, label: label || t.untitled, labelColor: label ? '#1c2340' : '#8a91a8', typeLabel: t.types[q.type],
+        reqText: q.req ? t.required : t.optional, reqBg: q.req ? '#fdecea' : '#f4f6fb', reqColor: q.req ? '#8a1c12' : '#5b6380',
+        tag, missing: missingLang ? t.missing : '', open, editLabel: open ? t.done : t.edit, editBg: open ? '#eef1fc' : '#ffffff',
+        border: s.overId === q.id && s.dragId !== q.id ? '#2b41c5' : open ? '#9aa6d8' : '#dde2f0', opacity: s.dragId === q.id ? 0.5 : 1,
+        first: i === 0, last: i === s.draft.length - 1,
+        up: () => this.move(i, i - 1), down: () => this.move(i, i + 1),
+        toggle: () => this.setState({ openId: open ? null : q.id }),
+        remove: () => this.setState(st => ({ draft: st.draft.filter(x => x.id !== q.id), openId: st.openId === q.id ? null : st.openId })),
+        dragStart: e => { e.dataTransfer.effectAllowed = 'move'; this.setState({ dragId: q.id }); },
+        dragOver: e => { e.preventDefault(); if (s.overId !== q.id) this.setState({ overId: q.id }); },
+        drop: e => { e.preventDefault(); const from = this.state.draft.findIndex(x => x.id === this.state.dragId); if (from >= 0) this.move(from, i); this.setState({ dragId: null, overId: null }); },
+        dragEnd: () => this.setState({ dragId: null, overId: null }),
+        types: Object.keys(t.types).map(ty => ({ label: t.types[ty], ...sel(q.type === ty),
+          pick: () => this.upd(q.id, x => { x.type = ty; if (hasOpts(ty) && x.opts.length < 2) x.opts = [...x.opts, ...[0, 1].slice(x.opts.length).map(() => ({ id: uid('o'), label: { ar: '', en: '', tr: '' } }))]; if (!hasOpts(ty)) x.opts = []; return x; }) })),
+        fields: LANGS.map(l => ({ tag: LANG_TAG[l], value: q.label[l] || '', dir: l === 'ar' ? 'rtl' : 'ltr',
+          onChange: e => { const v = e.target.value; this.upd(q.id, x => { x.label[l] = v; return x; }); } })),
+        hasOpts: hasOpts(q.type),
+        optRows: q.opts.map((o, oi) => ({ n: oi + 1,
+          remove: () => this.upd(q.id, x => { x.opts.splice(oi, 1); return x; }),
+          fields: LANGS.map(l => ({ tag: LANG_TAG[l], value: o.label[l] || '', dir: l === 'ar' ? 'rtl' : 'ltr',
+            onChange: e => { const v = e.target.value; this.upd(q.id, x => { x.opts[oi].label[l] = v; return x; }); } })) })),
+        addOpt: () => this.upd(q.id, x => { x.opts.push({ id: uid('o'), label: { ar: '', en: '', tr: '' } }); return x; }),
+        toggleReq: () => this.upd(q.id, x => { x.req = !x.req; return x; }),
+        swBg: q.req ? '#2b41c5' : '#c9cfe3', swJustify: q.req ? 'flex-end' : 'flex-start'
+      };
+    });
+
+    const addTypes = Object.keys(t.types).map(ty => ({ label: t.types[ty], add: () => {
+      const id = uid('q');
+      const q = { id, type: ty, req: false, label: { ar: '', en: '', tr: '' }, opts: hasOpts(ty) ? [0, 1].map(() => ({ id: uid('o'), label: { ar: '', en: '', tr: '' } })) : [] };
+      this.setState(st => ({ draft: [...st.draft, q], openId: id, tab: 'editor' }));
+    } }));
+
+    const versions = [...s.versions].reverse().map(v => {
+      const isLive = v.v === live.v;
+      const summary = v.from ? t.restoredFrom(v.from) : v.sum ? t.sum(...v.sum) : t.initial;
+      return { v: v.v, live: isLive, summary, meta: fmt(v.date) + ' · ' + v.by + ' · ' + v.qs.length + ' Q' + (v.v > 1 ? ' · ← v' + (v.v - 1) : ''),
+        border: isLive ? '#9fd8bf' : '#dde2f0', badgeBg: isLive ? '#e7f6ee' : '#eef1fc', badgeColor: isLive ? '#13795b' : '#1a2d99',
+        canRestore: !isLive, preview: () => this.openPreview(v.v), restore: () => this.setState({ modal: { kind: 'restore', v: v.v }, failed: false }) };
+    });
+
+    const m = s.modal, nextV = live.v + 1;
+    let modalTitle = '', modalBody = '', blockers = '', confirmLabel = '', counts = [];
+    if (m && m.kind === 'publish') {
+      modalTitle = t.publishTitle; modalBody = t.publishBody;
+      blockers = this.blockers(s.draft).join(' · ');
+      counts = [[d[0], t.added, '#13795b'], [d[1], t.modified, '#1a2d99'], [d[2], t.removed, '#b42318']].map(([n, label, color]) => ({ n, label, color }));
+      confirmLabel = s.busy ? t.publishing : t.confirmPublish;
+    }
+    if (m && m.kind === 'restore') {
+      modalTitle = t.restoreTitle(m.v); modalBody = t.restoreBody(m.v, nextV) + (dirty ? ' ' + t.draftReplace : '');
+      confirmLabel = s.busy ? t.publishing : t.confirmRestore;
+    }
+    const confirmDisabled = s.busy || !!blockers;
+
+    let pQs = [], previewTitle = '';
+    if (s.preview != null) {
+      const src = s.preview === 'draft' ? s.draft : s.versions.find(v => v.v === s.preview).qs;
+      previewTitle = s.preview === 'draft' ? t.previewDraft : t.previewV(s.preview);
+      pQs = src.map(q => {
+        const v = s.pAns[q.id];
+        const setA = val => this.setState(st => ({ pAns: { ...st.pAns, [q.id]: val }, pErr: { ...st.pErr, [q.id]: null }, pDone: false }));
+        let opts = q.type === 'yesno' ? [{ id: 'yes', label: t.yes }, { id: 'no', label: t.no }] : q.opts.map(o => ({ id: o.id, label: lbl(o.label, L) || '…' }));
+        opts = opts.map(o => { const on = q.type === 'multi' ? (v || []).includes(o.id) : v === o.id;
+          return { ...o, ...sel(on), mark: q.type === 'multi' ? (on ? '☑ ' : '☐ ') : '',
+            pick: () => q.type === 'multi' ? setA(on ? (v || []).filter(x => x !== o.id) : [...(v || []), o.id]) : setA(o.id) }; });
+        return { label: lbl(q.label, L) || t.untitled, reqText: q.req ? t.required : t.optional, reqColor: q.req ? '#b42318' : '#5b6380',
+          isChoice: ['single', 'multi', 'yesno'].includes(q.type), isShort: q.type === 'short', isLong: q.type === 'long', isDate: q.type === 'date',
+          opts, value: v || '', onText: e => setA(e.target.value), err: s.pErr[q.id] || '' };
+      });
+      this._pSrc = src;
+    }
+    const pNext = () => {
+      const err = {};
+      (this._pSrc || []).forEach(q => { const v = this.state.pAns[q.id]; if (q.req && (v == null || v === '' || (Array.isArray(v) && !v.length))) err[q.id] = t.errReq; });
+      this.setState({ pErr: err, pDone: !Object.keys(err).length });
+    };
+
+    const wide = s.w >= 860;
+    return {
+      t, dir: L === 'ar' ? 'rtl' : 'ltr', wide, narrow: !wide, hospital: { ar: 'مستشفى النور العام', en: 'Al-Noor General Hospital', tr: 'Al-Noor Devlet Hastanesi' }[L],
+      nav: t.nav.map((label, i) => ({ label, bg: i === 2 ? '#2b41c5' : 'transparent', color: i === 2 ? '#ffffff' : '#c9d0f5', weight: i === 2 ? 600 : 400 })),
+      langs: [['ar', 'عربي'], ['en', 'EN'], ['tr', 'TR']].map(([id, label]) => ({ label, bg: L === id ? '#2b41c5' : 'transparent', color: L === id ? '#ffffff' : '#1a2d99', pick: () => this.setState({ lang: id }) })),
+      openPreviewDraft: () => this.openPreview('draft'),
+      openPublish: () => this.setState({ modal: { kind: 'publish' }, failed: false }),
+      cantPublish: !dirty, publishBg: dirty ? '#2b41c5' : '#9aa6d8', publishCursor: dirty ? 'pointer' : 'not-allowed',
+      liveText: t.liveV(live.v), liveMeta: fmt(live.date) + ' · ' + live.by,
+      dirty, draftText: dirty ? t.draftN(nChanges) : t.noChanges, draftDot: dirty ? '#e8a317' : '#c9cfe3',
+      discard: () => this.setState({ draft: clone(live.qs), openId: null }),
+      failed: s.failed, failBody: t.failBody(live.v), dismissFail: () => this.setState({ failed: false }),
+      tabs: [['editor', t.tabs[0]], ['versions', t.tabs[1] + ' (' + s.versions.length + ')']].map(([id, label]) => ({ label,
+        line: s.tab === id ? '#2b41c5' : 'transparent', color: s.tab === id ? '#1a2d99' : '#5b6380', pick: () => this.setState({ tab: id }) })),
+      isEditor: s.tab === 'editor', isVersions: s.tab === 'versions', qs, empty: !s.draft.length, addTypes, versions,
+      modalPublish: !!m, modalTitle, modalBody, showCounts: m && m.kind === 'publish', counts, newVLabel: 'v' + nextV, blockers,
+      busy: s.busy, confirmDisabled, confirmBg: confirmDisabled ? '#9aa6d8' : '#2b41c5', confirmLabel,
+      closeModal: () => this.setState({ modal: null }),
+      confirmModal: () => {
+        if (m.kind === 'publish') this.doPublish(s.draft, d, null);
+        else this.doPublish(s.versions.find(v => v.v === m.v).qs, null, m.v);
+      },
+      previewOpen: s.preview != null, previewTitle, closePreview: () => this.setState({ preview: null }),
+      devices: [['phone', t.phone], ['desktop', t.desktop]].map(([id, label]) => ({ label, bg: s.device === id ? '#ffffff' : 'transparent', color: s.device === id ? '#1a2d99' : '#ffffff', pick: () => this.setState({ device: id }) })),
+      frameW: s.device === 'phone' ? '390px' : '960px', frameR: s.device === 'phone' ? '28px' : '12px', frameBorder: s.device === 'phone' ? '8px solid #0f1a4a' : '1px solid #dde2f0',
+      pSteps: [0, 1, 2, 3, 4].map(i => ({ bar: i <= 2 ? '#2b41c5' : '#dde2f0' })), pQs, pNext, pDone: s.pDone,
+      toast: s.toast
+    };
+  }
+}
+</script>
+</body>
+</html>

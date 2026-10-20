@@ -14,7 +14,7 @@ public sealed record LoginResult(LoginOutcome Outcome, string? Token = null, Pri
 
 public sealed record IssuedLink(EmailMessage Mail, string Url);
 
-public sealed record LinkInfo(string Purpose, string Email, bool TotpRequired, string? TotpUri, string? TotpSecret);
+public sealed record LinkInfo(string Purpose, string Scope, string Email, bool TotpRequired, string? TotpUri, string? TotpSecret);
 
 public enum LinkOutcome { Ok, InvalidOrExpired, BadPassword, BadTotp }
 
@@ -239,7 +239,7 @@ public sealed class AuthService(Db db, PasswordHasher hasher, TotpService totp, 
             var l = await FindLinkAsync(conn, tx, token);
             if (l is null) return null;
             var required = Roles.RequiresTotp(l.Roles) || l.StaffTotpRequired;
-            if (!required) return new LinkInfo(l.Purpose, l.Email, false, null, null);
+            if (!required) return new LinkInfo(l.Purpose, l.Scope, l.Email, false, null, null);
             byte[] secret;
             if (l.PendingTotpEnc is null)
             {
@@ -248,7 +248,7 @@ public sealed class AuthService(Db db, PasswordHasher hasher, TotpService totp, 
                     new { id = l.Id, enc = totp.Encrypt(secret) }, tx);
             }
             else secret = totp.Decrypt(l.PendingTotpEnc);
-            return new LinkInfo(l.Purpose, l.Email, true, totp.ProvisioningUri(secret, l.Email), TotpService.Base32(secret));
+            return new LinkInfo(l.Purpose, l.Scope, l.Email, true, totp.ProvisioningUri(secret, l.Email), TotpService.Base32(secret));
         }, ct);
 
     /// <summary>Sets the password (and TOTP) and consumes the link. All existing sessions are revoked.</summary>

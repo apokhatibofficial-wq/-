@@ -22,8 +22,12 @@ public sealed class SecretsAndLogsTests(MedLinkFixture fx) : IDisposable
         await adminClient.Post("/auth/logout", new { });
         await owner.Post("/auth/logout", new { });
 
-        Assert.NotEmpty(fx.Logs.Lines);
+        // The capture must have seen real traffic (request handling and SQL), or the check below means nothing.
         var all = string.Join("\n", fx.Logs.Lines);
+        Assert.True(fx.Logs.Lines.Count > 100, $"only {fx.Logs.Lines.Count} log lines captured");
+        Assert.Contains("Microsoft.AspNetCore.Routing", all);
+        Assert.Contains("Npgsql", all);
+        Assert.Contains("/auth/login", all);
         foreach (var secret in fx.Secrets)
             Assert.DoesNotContain(secret, all);
         Assert.DoesNotContain(ownerUser.Email, all, StringComparison.OrdinalIgnoreCase);

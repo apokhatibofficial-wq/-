@@ -1,0 +1,26 @@
+# HTTPS for the API with automatic Let's Encrypt certificates.
+# The web front-ends are static builds on Cloudflare Pages, not served from this VM.
+{
+	email {$ACME_EMAIL}
+}
+
+{$API_DOMAIN} {
+	encode zstd gzip
+	# Cloudflare passes the real client IP in CF-Connecting-IP. The VM firewall must only accept
+	# 80/443 from Cloudflare's published IP ranges, otherwise this header could be forged.
+	reverse_proxy api:8080 {
+		header_up X-Forwarded-For {http.request.header.CF-Connecting-IP}
+	}
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+	}
+	request_body {
+		max_size 1MB
+	}
+	# Caddy redacts Cookie and Authorization headers in access logs by default (log_credentials off).
+	log {
+		output stdout
+		format json
+	}
+}

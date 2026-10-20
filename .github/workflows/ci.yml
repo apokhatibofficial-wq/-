@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  api:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - run: dotnet restore
+      # Warnings are errors, so a NuGet package with a known vulnerability fails the build (NU1902+).
+      - run: dotnet build --no-restore -c Release
+      - name: Vulnerable packages (including transitive)
+        run: |
+          dotnet list package --vulnerable --include-transitive | tee vuln.txt
+          if grep -q "has the following vulnerable packages" vuln.txt; then exit 1; fi
+      # Testcontainers starts a disposable PostgreSQL 16; all test credentials are generated at runtime.
+      - run: dotnet test --no-build -c Release --logger "trx;LogFileName=results.trx" --logger "console;verbosity=normal"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: api-test-results
+          path: api/tests/**/TestResults/*.trx
+
+  web-admin:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: web/admin
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/admin/package-lock.json
+      - run: npm ci
+      - run: npm audit --audit-level=low
+      - run: npm run typecheck
+      - run: npm test
+      - run: npx vite build
+
+  secrets:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: gitleaks (full history)
+        run: |
+          curl -sSL https://github.com/gitleaks/gitleaks/releases/download/v8.28.0/gitleaks_8.28.0_linux_x64.tar.gz | tar xz gitleaks
+          ./gitleaks git . --redact --no-banner

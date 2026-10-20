@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#f4f6fb;-webkit-font-smoothing:antialiased}a{color:#2b41c5}a:hover{color:#1a2d99}</style>
+</helmet>
+<div dir="rtl" style="min-height:100vh;background:#f4f6fb;color:#1c2340;font-family:'IBM Plex Sans Arabic','IBM Plex Sans',system-ui,sans-serif;padding:clamp(16px,4vw,40px) clamp(12px,4vw,24px)">
+<article style="max-width:920px;margin:0 auto;background:#ffffff;border:1px solid #dde2f0;border-radius:16px;padding:clamp(20px,5vw,48px);box-sizing:border-box;display:flex;flex-direction:column;gap:36px;line-height:1.75;font-size:15px">
+
+<header style="display:flex;flex-direction:column;gap:14px;border-bottom:1px solid #e3e6ef;padding-bottom:24px">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap">
+    <img src="assets/medlink-logo.svg" alt="MEDLINK" style="height:64px;width:auto">
+    <img src="assets/khatib-logo.svg" alt="KHATIB TECHNICAL SOLUTIONS" style="height:36px;width:auto">
+  </div>
+  <h1 style="margin:0;font-size:clamp(24px,4vw,32px);font-weight:700;color:#0f1a4a;line-height:1.3">المرحلة الثالثة: البنية التقنية وقاعدة البيانات</h1>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:13px">
+    <span style="padding:3px 10px;border-radius:999px;background:#fff4e5;color:#7a4300;font-weight:600">مسودة · بانتظار الموافقة</span>
+    <span style="padding:3px 10px;border-radius:999px;background:#f4f6fb;color:#5b6380">20 أكتوبر 2026</span>
+  </div>
+  <p style="margin:0;color:#5b6380;text-wrap:pretty">هذه الوثيقة مقترح. القرارات المعلّمة «مقترح» لا تُعتمد قبل موافقتك. الأسعار والحدود المذكورة تقريبية ويجب التحقق منها من الصفحات الرسمية لحظة الاعتماد لأنها تتغير.</p>
+</header>
+
+<section style="display:flex;flex-direction:column;gap:14px">
+  <h2 style="margin:0;font-size:22px;font-weight:600;color:#0f1a4a">1. القرارات</h2>
+  <div style="display:flex;flex-direction:column;border:1px solid #dde2f0;border-radius:12px;overflow:hidden">
+    <div style="display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid #eef0f6;flex-wrap:wrap"><span style="flex:0 0 180px;font-weight:600">النطاق</span><span style="flex:1 1 260px"><bdi dir="ltr">medlink.website</bdi></span><span style="font-size:12px;font-weight:600;color:#13795b">معتمد</span></div>
+    <div style="display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid #eef0f6;flex-wrap:wrap"><span style="flex:0 0 180px;font-weight:600">اللغات</span><span style="flex:1 1 260px">العربية افتراضيًا، الإنجليزية، التركية</span><span style="font-size:12px;font-weight:600;color:#13795b">معتمد</span></div>
+    <div style="display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid #eef0f6;flex-wrap:wrap"><span style="flex:0 0 180px;font-weight:600">الحجم المتوقع</span><span style="flex:1 1 260px">20–100 مستشفى في السنة الأولى</span><span style="font-size:12px;font-weight:600;color:#13795b">معتمد</span></div>
+    <div style="display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid #eef0f6;flex-wrap:wrap"><span style="flex:0 0 180px;font-weight:600">الاحتفاظ بالبيانات</span><span style="flex:1 1 260px">افتراضيًا 24 شهرًا، ثم حذف اسم المريض وهاتفه وإجاباته وإبقاء الإحصاءات المجمّعة. يستطيع كل مستشفى تعديل المدة</span><span style="font-size:12px;font-weight:600;color:#13795b">معتمد</span></div>
+    <div style="display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid #eef0f6;flex-wrap:wrap"><span style="flex:0 0 180px;font-weight:600">إعادة عرض التأكيد</span><span style="flex:1 1 260px">لا إعادة عرض؛ يحفظ المريض الصورة</span><span style="font-size:12px;font-weight:600;color:#13795b">معتمد</span></div>
+    <div style="display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid #eef0f6;flex-wrap:wrap"><span style="flex:0 0 180px;font-weight:600">الخادم</span><span style="flex:1 1 260px"><bdi dir="ltr">ASP.NET Core</bdi> على خادم <bdi dir="ltr">Oracle Cloud Always Free</bdi></span><span style="font-size:12px;font-weight:600;color:#13795b">معتمد</span></div>
+    <div style="display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid #eef0f6;flex-wrap:wrap"><span style="flex:0 0 180px;font-weight:600">القاعدة المركزية</span><span style="flex:1 1 260px"><bdi dir="ltr">PostgreSQL</bdi> على نفس الخادم، مع نسخ يومي مشفّر إلى <bdi dir="ltr">R2</bdi></span><span style="font-size:12px;font-weight:600;color:#13795b">معتمد</span></div>
+    <div style="display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid #eef0f6;flex-wrap:wrap"><span style="flex:0 0 180px;font-weight:600">تطبيق Windows</span><span style="flex:1 1 260px"><bdi dir="ltr">.NET 8 + WPF</bdi> مع قاعدة <bdi dir="ltr">SQLite</bdi> مشفّرة بـ <bdi dir="ltr">SQLCipher</bdi>، وتثبيت عبر <bdi dir="ltr">MSIX</bdi>، بدون شهادة توقيع</span><span style="font-size:12px;font-weight:600;color:#13795b">معتمد</span></div>
+    <div style="display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid #eef0f6;flex-wrap:wrap"><span style="flex:0 0 180px;font-weight:600">تعارض الحضور</span><span style="flex:1 1 260px">«حضر» بالوقت الأسبق يغلب، و«حضر» يغلب «لم يحضر» التلقائي، والتصحيح اليدوي يغلب الآلي. عند تعارض تصحيحين يدويين يُعتمد الأحدث ويُعلَّم الحجز للمراجعة. لا يُحذف أي سجل</span><span style="font-size:12px;font-weight:600;color:#13795b">معتمد</span></div>
+    <div style="display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid #eef0f6;flex-wrap:wrap"><span style="flex:0 0 180px;font-weight:600">تغيير مسار الرابط</span><span style="flex:1 1 260px">تحويل تلقائي 90 يومًا، ثم صفحة «تغيّر الرابط». المسار القديم محجوز للأبد، والتغيير مرة كل 30 يومًا كحد أقصى</span><span style="font-size:12px;font-weight:600;color:#13795b">معتمد</span></div>
+
+    <div style="display:flex;gap:12px;padding:12px 16px;flex-wrap:wrap"><span style="flex:0 0 180px;font-weight:600">رقم واتساب الدعم</span><span style="flex:1 1 260px"><bdi dir="ltr">+43 681 81700732</bdi> (النمسا)</span><span style="font-size:12px;font-weight:600;color:#13795b">معتمد</span></div>
+  </div>
+</section>
+
+<section style="display:flex;flex-direction:column;gap:14px">
+  <h2 style="margin:0;font-size:22px;font-weight:600;color:#0f1a4a">2. المكونات</h2>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:10px">
+    <div style="border:1px solid #dde2f0;border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:4px"><strong style="color:#1a2d99">موقع الحجز</strong><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:13px;text-align:right">medlink.website/book/{slug}</span><span style="font-size:14px;color:#5b6380">صفحات ثابتة على <bdi dir="ltr">Cloudflare Pages</bdi>، تقرأ النموذج المنشور من الـ API.</span></div>
+    <div style="border:1px solid #dde2f0;border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:4px"><strong style="color:#1a2d99">لوحة الشركة</strong><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:13px;text-align:right">admin.medlink.website</span><span style="font-size:14px;color:#5b6380">نطاق منفصل، دخول بكلمة مرور + تحقق ثنائي إلزامي.</span></div>
+    <div style="border:1px solid #dde2f0;border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:4px"><strong style="color:#1a2d99">لوحة المستشفى + ماسح QR</strong><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:13px;text-align:right">app.medlink.website</span><span style="font-size:14px;color:#5b6380">منشئ النماذج والإعدادات، وصفحة الماسح للهاتف (HTTPS لازم للكاميرا).</span></div>
+    <div style="border:1px solid #dde2f0;border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:4px"><strong style="color:#1a2d99">الـ API المركزي</strong><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:13px;text-align:right">api.medlink.website</span><span style="font-size:14px;color:#5b6380">خدمة <bdi dir="ltr">ASP.NET Core</bdi> واحدة: المصادقة، الصلاحيات، الحجز، الإصدارات، الحضور، المزامنة، التدقيق.</span></div>
+    <div style="border:1px solid #dde2f0;border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:4px"><strong style="color:#1a2d99">المهام المجدولة</strong><span style="font-size:14px;color:#5b6380">خدمة خلفية داخل الخادم (<bdi dir="ltr">Hosted Service</bdi>) كل دقيقة: تسجيل «لم يحضر» بعد المهلة، تنظيف المفاتيح المنتهية، تطبيق سياسة الاحتفاظ ليلًا.</span></div>
+    <div style="border:1px solid #dde2f0;border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:4px"><strong style="color:#1a2d99">تطبيق Windows</strong><span style="font-size:14px;color:#5b6380">نسخة محلية مشفّرة من حجوزات المستشفى (من أمس إلى +30 يومًا) وصندوق صادر لتحديثات الحضور.</span></div>
+  </div>
+  <div style="background:#f4f6fb;border-radius:10px;padding:12px 16px;font-size:14px;text-wrap:pretty"><strong>مبدأ الصلاحيات:</strong> معرّف المستشفى يُؤخذ من الجلسة الموقّعة على الخادم فقط، ولا يُقبل من الـ URL أو جسم الطلب. كل استعلام يمر عبر دالة تضيف شرط <span dir="ltr" style="font-family:'IBM Plex Mono',monospace">hospital_id</span>، ويُضاف <bdi dir="ltr">Row-Level Security</bdi> في Postgres كطبقة ثانية.</div>
+</section>
+
+<section style="display:flex;flex-direction:column;gap:14px">
+  <h2 style="margin:0;font-size:22px;font-weight:600;color:#0f1a4a">3. مخطط قاعدة البيانات المركزية</h2>
+  <p style="margin:0;color:#5b6380">مسودة للمراجعة، وليست نهائية. المعرّفات ULID، وكل جدول تابع لمستشفى يحمل <span dir="ltr" style="font-family:'IBM Plex Mono',monospace">hospital_id</span>.</p>
+  <pre dir="ltr" style="margin:0;background:#0f1a4a;color:#e6e9f7;border-radius:12px;padding:18px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;line-height:1.65;overflow:auto;text-align:left;white-space:pre">hospitals        id PK · name_ar/en/tr · status(active|suspended|pending)
+                 no_show_grace_min DEFAULT 30 · retention_months · timezone
+hospital_slugs   slug PK · hospital_id FK · is_primary · redirect_until
+                 -- old slugs stay reserved; UNIQUE(slug) blocks reuse
+users            id PK · scope(company|hospital) · hospital_id FK NULL
+                 email UNIQUE · password_hash(argon2id) · totp_secret_enc
+                 status · failed_attempts · locked_until
+roles / user_roles   role in (owner,support,viewer,hosp_admin,reception,scanner)
+sessions         id PK · user_id · token_hash · expires_at · revoked_at
+departments      id PK · hospital_id · name_ar/en/tr · active · sort
+schedules        id PK · department_id · weekday · start · end · slot_min · capacity
+closures         hospital_id · department_id NULL · date · reason
+form_versions    id PK · hospital_id · version · schema_json · published_by
+                 published_at · restored_from_version NULL · change_summary
+                 UNIQUE(hospital_id, version) -- immutable after insert
+form_drafts      hospital_id PK · schema_json · updated_by · base_version
+hospital_active_form  hospital_id PK · version_id FK  -- swapped atomically
+bookings         id PK · hospital_id · ref UNIQUE · department_id
+                 slot_start · patient_name · phone NULL · form_version_id
+                 status(waiting|arrived|no_show|cancelled) · arrived_at
+                 qr_token_hash UNIQUE · idempotency_key
+                 UNIQUE(hospital_id, department_id, slot_start, seat_no)
+                 UNIQUE(hospital_id, idempotency_key)
+booking_answers  booking_id · question_id · value_json
+attendance_events  id · booking_id · type · source(qr|reception|auto|correction)
+                 at · actor_id · reason · device_id · client_event_id UNIQUE
+audit_log        id · at · actor_id · hospital_id · action · target · meta_json
+                 -- append-only: INSERT granted, UPDATE/DELETE revoked
+sync_cursors     device_id · hospital_id · last_seq</pre>
+</section>
+
+<section style="display:flex;flex-direction:column;gap:14px">
+  <h2 style="margin:0;font-size:22px;font-weight:600;color:#0f1a4a">4. آليات حرجة</h2>
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <div style="border:1px solid #dde2f0;border-radius:12px;padding:14px 16px"><strong style="color:#1a2d99">منع الحجز المزدوج.</strong> كل موعد له رقم مقعد (<span dir="ltr" style="font-family:'IBM Plex Mono',monospace">seat_no</span> من 1 إلى السعة). التأكيد يتم في معاملة واحدة: إدراج بأول مقعد فارغ، والقيد الفريد يرفض أي تزامن. عند الامتلاء يرجع الخادم <span dir="ltr">409</span> برسالة «امتلأ الموعد».</div>
+    <div style="border:1px solid #dde2f0;border-radius:12px;padding:14px 16px"><strong style="color:#1a2d99">منع التكرار عند إعادة الإرسال.</strong> المتصفح يولّد <span dir="ltr" style="font-family:'IBM Plex Mono',monospace">Idempotency-Key</span> عند فتح المراجعة. الطلب المكرر بنفس المفتاح يرجع نفس الحجز دون إنشاء جديد.</div>
+    <div style="border:1px solid #dde2f0;border-radius:12px;padding:14px 16px"><strong style="color:#1a2d99">رمز <bdi>QR</bdi>:</strong> قيمة عشوائية بطول 128 بت، يُحفظ مجزّأً (SHA-256) فقط، ولا يحتوي اسمًا أو بيانات. الماسح يرسل الرمز، والخادم يتحقق من المستشفى والتاريخ والحالة ويسجل الحضور بشرط <span dir="ltr" style="font-family:'IBM Plex Mono',monospace">status='waiting'</span> لمنع التكرار.</div>
+    <div style="border:1px solid #dde2f0;border-radius:12px;padding:14px 16px"><strong style="color:#1a2d99">نشر النماذج.</strong> في معاملة واحدة: إدراج إصدار جديد غير قابل للتعديل ثم تبديل مؤشر الإصدار النشط. الفشل يلغي الاثنين فيبقى المنشور كما هو. قفل استشاري على المستشفى يمنع النشر المتزامن. الحجز يحمل رقم الإصدار الذي بدأ عليه المريض، والإجابات تُتحقق مقابله (مقبول لمدة ساعتين بعد النشر).</div>
+    <div style="border:1px solid #dde2f0;border-radius:12px;padding:14px 16px"><strong style="color:#1a2d99">المزامنة.</strong> كل تحديث حضور محلي يُكتب في صندوق صادر بمعرّف فريد ويُرسل عند الاتصال؛ الخادم يتجاهل المكرر. التطبيق يسحب التغييرات بعد آخر رقم تسلسلي. التعارض يُحل على الخادم وفق السياسة المقترحة ويُسجَّل.</div>
+    <div style="border:1px solid #dde2f0;border-radius:12px;padding:14px 16px"><strong style="color:#1a2d99">عدم الحضور.</strong> المهمة المجدولة تحدّث <span dir="ltr" style="font-family:'IBM Plex Mono',monospace">waiting → no_show</span> بعد <span dir="ltr">slot_start + grace</span> مع حدث من نوع <span dir="ltr">auto</span>. التصحيح اليدوي يتطلب سببًا ويُسجَّل.</div>
+  </div>
+</section>
+
+<section style="display:flex;flex-direction:column;gap:14px;border:2px solid #2b41c5;border-radius:16px;padding:clamp(16px,3vw,24px)">
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><h2 style="margin:0;font-size:22px;font-weight:600;color:#0f1a4a">5. الخطة المجانية بالكامل</h2><span style="font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;background:#e7f6ee;color:#13795b">معتمد · 20 أكتوبر 2026</span></div>
+  <p style="margin:0;text-wrap:pretty">التشغيل المجاني ممكن، لكن ليس بالتصميم السابق. في الخطة المجانية لـ <bdi dir="ltr">Cloudflare Workers</bdi> لكل طلب 10 ميلي ثانية فقط من وقت المعالج، وهذا لا يكفي لتجزئة كلمات المرور بـ <bdi dir="ltr">Argon2id</bdi> كما تشترط متطلباتك. والخطة المجانية لـ <bdi dir="ltr">Neon</bdi> تتوقف بعد 5 دقائق خمول، والمهمة المجدولة كل 5 دقائق ستستهلك ساعات الحوسبة المجانية. لذلك أقترح:</p>
+  <div style="display:flex;flex-direction:column;border:1px solid #dde2f0;border-radius:12px;overflow:hidden;font-size:14px">
+    <div style="display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid #eef0f6;flex-wrap:wrap"><strong style="flex:0 0 170px">الخادم والقاعدة</strong><span style="flex:1 1 300px">خادم <bdi dir="ltr">Oracle Cloud Always Free</bdi> (معالج ARM ومساحة ذاكرة سخية) يشغّل <bdi dir="ltr">ASP.NET Core</bdi> مع <bdi dir="ltr">PostgreSQL</bdi> على نفس الخادم. لغة واحدة مع تطبيق Windows، ولا حدود على وقت المعالجة، وتعمل <bdi dir="ltr">Argon2id</bdi> والمهام المجدولة بلا قيود. <span style="color:#7a4300">(شروط الخطة المجانية تحتاج تحققًا لحظة التسجيل)</span></span></div>
+    <div style="display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid #eef0f6;flex-wrap:wrap"><strong style="flex:0 0 170px">الواجهات</strong><span style="flex:1 1 300px"><bdi dir="ltr">Cloudflare Pages</bdi> المجاني لموقع الحجز ولوحات الويب، و<bdi dir="ltr">Cloudflare</bdi> المجاني للـ DNS والحماية من الهجمات أمام الخادم.</span></div>
+    <div style="display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid #eef0f6;flex-wrap:wrap"><strong style="flex:0 0 170px">HTTPS</strong><span style="flex:1 1 300px">شهادات <bdi dir="ltr">Let's Encrypt</bdi> مجانية تتجدد تلقائيًا عبر <bdi dir="ltr">Caddy</bdi>.</span></div>
+    <div style="display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid #eef0f6;flex-wrap:wrap"><strong style="flex:0 0 170px">النسخ الاحتياطي</strong><span style="flex:1 1 300px">نسخة يومية مشفّرة إلى <bdi dir="ltr">Cloudflare R2</bdi> (الخطة المجانية تتضمن 10 GB) في حساب منفصل، مع اختبار استعادة شهري.</span></div>
+    <div style="display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid #eef0f6;flex-wrap:wrap"><strong style="flex:0 0 170px">البريد</strong><span style="flex:1 1 300px">خطة مجانية لخدمة إرسال (مثل <bdi dir="ltr">Resend</bdi>) لرسائل التفعيل والاستعادة فقط. الحد اليومي محدود ويكفي هذا الاستخدام. <span style="color:#7a4300">(يحتاج تحققًا)</span></span></div>
+    <div style="display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid #eef0f6;flex-wrap:wrap"><strong style="flex:0 0 170px">تطبيق Windows</strong><span style="flex:1 1 300px">بدون شهادة توقيع، لأنه لا يوجد توقيع مجاني للبرامج التجارية. سيظهر تحذير <bdi dir="ltr">SmartScreen</bdi> عند التثبيت، والحل أن يثبّته قسم تقنية المعلومات في المستشفى مع إضافة استثناء. التحديث يُتحقق منه بتوقيع خاص بنا داخل التطبيق.</span></div>
+    <div style="display:flex;gap:12px;padding:12px 16px;background:#f7f8fc;flex-wrap:wrap"><strong style="flex:0 0 170px">التكلفة</strong><span style="flex:1 1 300px"><strong>0$ شهريًا</strong>. التكلفة الوحيدة الحتمية هي تجديد النطاق <bdi dir="ltr">medlink.website</bdi> سنويًا.</span></div>
+  </div>
+  <div style="background:#fff8e6;border:1px solid #f0d48a;border-radius:10px;padding:12px 16px;font-size:14px;color:#6b4a00;display:flex;flex-direction:column;gap:6px">
+    <strong>ثمن المجانية (يجب أن تقبله صراحة):</strong>
+    <span>• لا يوجد ضمان لاستمرار الخدمة: قد تتغير شروط الخطة المجانية أو يُسترد الخادم، ويصبح الحل حينها النقل من النسخة الاحتياطية.</span>
+    <span>• خادم واحد يعني أن عطله يوقف الحجز والماسح حتى الإصلاح. تطبيق Windows يستمر في العمل دون اتصال.</span>
+    <span>• أنت مسؤول عن تحديثات نظام الخادم الأمنية؛ أجهّز لها سكربتات تلقائية.</span>
+    <span>• الانتقال لاحقًا إلى خطة مدفوعة لا يحتاج إعادة كتابة الكود.</span>
+  </div>
+</section>
+
+<section style="display:flex;flex-direction:column;gap:14px">
+  <h2 style="margin:0;font-size:22px;font-weight:600;color:#0f1a4a">6. البديل المدفوع (للمقارنة)</h2>
+  <p style="margin:0;color:#5b6380;text-wrap:pretty">أسعار Neon من مصادر عامة بتاريخ أكتوبر 2026. أسعار Cloudflare من معرفتي العامة ولم أتحقق منها اليوم. كلها تُراجع من الصفحات الرسمية قبل الاعتماد.</p>
+  <div style="display:flex;flex-direction:column;border:1px solid #dde2f0;border-radius:12px;overflow:hidden;font-size:14px">
+    <div style="display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid #eef0f6;flex-wrap:wrap"><strong style="flex:0 0 170px">Neon (مجاني)</strong><span style="flex:1 1 300px">100 ساعة حوسبة شهريًا لكل مشروع، و1 GB تخزين لكل مشروع، وتتوقف القاعدة بعد 5 دقائق خمول. عند امتلاء التخزين تفشل عمليات الكتابة. <strong>غير مناسب للإنتاج:</strong> لا يوجد SLA، والاستعادة لآخر 6 ساعات فقط.</span></div>
+    <div style="display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid #eef0f6;flex-wrap:wrap"><strong style="flex:0 0 170px"><bdi dir="ltr">Neon Launch</bdi> (إنتاج)</strong><span style="flex:1 1 300px">الدفع حسب الاستخدام: نحو 0.106$ لكل ساعة حوسبة و0.35$ لكل GB تخزين شهريًا. التطبيق الصغير يكلّف عادة نحو 15$ شهريًا. التكلفة الفعلية تحددها عدد ساعات بقاء القاعدة نشطة، لا عدد الاستعلامات.</span></div>
+    <div style="display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid #eef0f6;flex-wrap:wrap"><strong style="flex:0 0 170px">Cloudflare Workers</strong><span style="flex:1 1 300px">الخطة المجانية تكفي للتطوير. للإنتاج: <bdi dir="ltr">Workers Paid</bdi> بنحو 5$ شهريًا، وهي ضرورية للمهام المجدولة الموثوقة وحدود المعالجة الأعلى. <span style="color:#7a4300">(يحتاج تحققًا)</span></span></div>
+    <div style="display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid #eef0f6;flex-wrap:wrap"><strong style="flex:0 0 170px">النطاق والبريد</strong><span style="flex:1 1 300px">medlink.website مملوك لك. بريد التفعيل والاستعادة يحتاج خدمة إرسال (<bdi dir="ltr">Resend</bdi> أو <bdi dir="ltr">Postmark</bdi>)، بخطط مجانية محدودة أو نحو 10–20$ شهريًا.</span></div>
+    <div style="display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid #eef0f6;flex-wrap:wrap"><strong style="flex:0 0 170px">توقيع تطبيق Windows</strong><span style="flex:1 1 300px">شهادة توقيع الكود ضرورية لتجنب تحذيرات <bdi dir="ltr">SmartScreen</bdi> ولتحديثات آمنة. تكلفة سنوية تتراوح عادة بين 100 و400$ حسب المزوّد.</span></div>
+    <div style="display:flex;gap:12px;padding:12px 16px;background:#f7f8fc;flex-wrap:wrap"><strong style="flex:0 0 170px">التقدير الشهري</strong><span style="flex:1 1 300px"><strong>20 مستشفى: نحو 20–35$. 100 مستشفى: نحو 40–90$</strong>، إضافة إلى شهادة التوقيع سنويًا. تقدير أولي يتطلب قياسًا فعليًا بعد التشغيل التجريبي.</span></div>
+  </div>
+</section>
+
+<section style="display:flex;flex-direction:column;gap:14px">
+  <h2 style="margin:0;font-size:22px;font-weight:600;color:#0f1a4a">7. النسخ الاحتياطي والمخاطر</h2>
+  <ul style="margin:0;padding-inline-start:20px;display:flex;flex-direction:column;gap:8px">
+    <li><strong>النسخ:</strong> نسخة <bdi dir="ltr">pg_dump</bdi> كل 6 ساعات مشفّرة بأداة <bdi dir="ltr">age</bdi> إلى <bdi dir="ltr">Cloudflare R2</bdi> في حساب منفصل، يُحتفظ بها 35 يومًا. مفتاح فك التشفير محفوظ خارج الخادم.</li>
+    <li><strong>اختبار الاستعادة:</strong> شهريًا إلى فرع مؤقت مع تحقق آلي من عدد السجلات.</li>
+    <li><strong>توقف الخدمة:</strong> تطبيق Windows يستمر بالعرض وتسجيل الحضور محليًا. صفحة الحجز والماسح يتوقفان مع رسالة واضحة. لا يوجد SLA على الخطط المنخفضة.</li>
+    <li><strong>الاعتماد على مزوّد:</strong> كل المكونات قياسية (<bdi dir="ltr">Docker</bdi> و<bdi dir="ltr">PostgreSQL</bdi> و<bdi dir="ltr">ASP.NET Core</bdi>)، فالنقل إلى أي خادم آخر يتم بالنسخة الاحتياطية دون تعديل الكود.</li>
+    <li><strong>مخاطر متبقية:</strong> حماية الأجهزة في المستشفيات، وأمان بريد المسؤولين، والمتطلبات القانونية المحلية لبيانات المرضى. هذه تحتاج مراجعة خارج نطاق الكود.</li>
+  </ul>
+</section>
+
+<section style="display:flex;flex-direction:column;gap:14px;border-top:1px solid #e3e6ef;padding-top:24px">
+  <h2 style="margin:0;font-size:22px;font-weight:600;color:#0f1a4a">8. المطلوب منك</h2>
+  <ol style="margin:0;padding-inline-start:20px;display:flex;flex-direction:column;gap:6px">
+    
+    
+    
+    
+    <li>مراجعة مخطط القاعدة في القسم 3.</li>
+  </ol>
+  <p style="margin:0;color:#5b6380;text-wrap:pretty">بعد الموافقة تبدأ المرحلة الرابعة: المصادقة والصلاحيات ولوحة الشركة. التنفيذ وتشغيل الاختبارات الفعلية يحتاجان بيئة تطوير مثل <bdi dir="ltr">Claude Code</bdi>، وأستطيع تجهيز حزمة تسليم تحتوي التصاميم وهذه الوثيقة.</p>
+</section>
+
+</article>
+</div>
+</x-dc>
+</body>
+</html>
