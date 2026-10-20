@@ -15,3 +15,11 @@ test('booking strings exist in all three languages', () => {
   assert.equal(keys(B.ar), keys(B.en));
   assert.equal(keys(B.tr), keys(B.en));
 });
+
+test('phone rule matches the server', async () => {
+  const { validPhone, normalizePhone } = await import('./text.ts');
+  assert.equal(normalizePhone('+963 (944) 123-456'), '+963944123456');
+  assert.ok(validPhone('0944 123 456'));
+  assert.ok(!validPhone('12ab345'));
+  assert.ok(!validPhone('123456'));
+});

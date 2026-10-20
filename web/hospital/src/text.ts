@@ -9,6 +9,7 @@ export const H = {
     subs: {
       departments: 'الأقسام التي تظهر للمرضى، وجداول المواعيد الأسبوعية، وأيام الإغلاق',
       settings: 'رابط الحجز، وقواعد المستشفى، والمستخدمون',
+      bookings: 'حجوزات اليوم بتوقيت المستشفى، والبحث برقم الحجز، والإلغاء بسبب',
       soon: 'هذا القسم قيد البناء في مرحلة لاحقة.',
     },
     soonBody: { appointments: 'لوحة مواعيد اليوم وتسجيل الحضور تأتي مع تطبيق Windows وماسح QR.', bookings: 'البحث في الحجوزات يأتي مع نظام الحجز (المرحلة 6).', form: 'منشئ نموذج الحجز وإصداراته يأتي في المرحلة 6.' },
@@ -47,6 +48,7 @@ export const H = {
     subs: {
       departments: 'Departments patients can book, weekly timetables and closed days',
       settings: 'Booking link, hospital rules and users',
+      bookings: 'The day’s bookings in hospital time, lookup by booking number, and cancellation with a reason',
       soon: 'This section is built in a later phase.',
     },
     soonBody: { appointments: 'Today’s appointments and check-in come with the Windows app and the QR scanner.', bookings: 'Booking search comes with online booking (phase 6).', form: 'The booking form builder and its versions come in phase 6.' },
@@ -83,6 +85,7 @@ export const H = {
     subs: {
       departments: 'Hastaların seçebileceği bölümler, haftalık programlar ve kapalı günler',
       settings: 'Randevu bağlantısı, hastane kuralları ve kullanıcılar',
+      bookings: 'Hastane saatiyle günün randevuları, numarayla arama ve gerekçeli iptal',
       soon: 'Bu bölüm sonraki bir aşamada geliştirilecek.',
     },
     soonBody: { appointments: 'Günün randevuları ve giriş kaydı Windows uygulaması ve QR tarayıcı ile gelir.', bookings: 'Rezervasyon arama çevrim içi randevu ile gelir (aşama 6).', form: 'Randevu formu düzenleyici ve sürümleri aşama 6’da gelir.' },

@@ -7,9 +7,13 @@ import { Shell, Toast, useToast, type NavItem } from '@medlink/shared/Shell';
 import { H, nameIn } from './text';
 import { Departments } from './Departments';
 import { Settings } from './Settings';
+import { FormBuilder } from './FormBuilder';
+import { Bookings } from './Bookings';
+import { FT } from './formText';
 
 type Page = 'appointments' | 'bookings' | 'form' | 'departments' | 'settings';
-const SOON: Page[] = ['appointments', 'bookings', 'form'];
+// Appointments (today's check-in board) arrives with the Windows app and the QR scanner.
+const SOON: Page[] = ['appointments'];
 
 export function App() {
   const [lang, setLang] = useState<Lang>(loadLang);
@@ -71,9 +75,11 @@ export function App() {
         email={me.email} roleLabel={me.roles.map(r => t.roles[r] ?? r).join(' · ') + (isAdmin ? ' · 2FA' : '')}
         onSignOut={signOut}
         title={t.nav[current]}
-        subtitle={SOON.includes(current) ? t.subs.soon : current === 'departments' ? t.subs.departments : t.subs.settings}
+        subtitle={SOON.includes(current) ? t.subs.soon : current === 'departments' ? t.subs.departments : current === 'form' ? FT[lang].titleSub : current === 'bookings' ? t.subs.bookings : t.subs.settings}
       >
-        {SOON.includes(current) && <div className="card empty" style={{ lineHeight: 1.6 }}>{t.soonBody[current as 'appointments' | 'bookings' | 'form']}</div>}
+        {SOON.includes(current) && <div className="card empty" style={{ lineHeight: 1.6 }}>{t.soonBody.appointments}</div>}
+        {current === 'form' && <FormBuilder lang={lang} slug={hospital?.slug ?? null} flash={setToast} />}
+        {current === 'bookings' && <Bookings lang={lang} canCancel={me.permissions.includes('AttendanceCorrect')} flash={setToast} />}
         {current === 'departments' && <Departments lang={lang} canEdit={me.permissions.includes('HospitalSettings')} flash={setToast} />}
         {current === 'settings' && hospital && <Settings lang={lang} me={me} hospital={hospital} reload={loadHospital} flash={setToast} />}
       </Shell>

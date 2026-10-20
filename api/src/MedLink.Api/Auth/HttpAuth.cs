@@ -34,6 +34,13 @@ public static class HttpAuth
     /// </summary>
     public static async Task Middleware(HttpContext ctx, RequestDelegate next)
     {
+        // Anonymous endpoints never use the session, so a session cookie sent along (the browser is signed in
+        // elsewhere) is ignored there instead of tripping the CSRF check.
+        if (IsAnonymousPath(ctx.Request.Path))
+        {
+            await next(ctx);
+            return;
+        }
         var o = ctx.RequestServices.GetRequiredService<MedLinkOptions>();
         var auth = ctx.RequestServices.GetRequiredService<AuthService>();
 
@@ -63,6 +70,10 @@ public static class HttpAuth
         }
         await next(ctx);
     }
+
+    public static bool IsAnonymousPath(PathString path) =>
+        path.StartsWithSegments("/public") || path.StartsWithSegments("/auth/login") || path.StartsWithSegments("/auth/link")
+        || path.StartsWithSegments("/health");
 
     /// <summary>Requires a signed-in caller of the permission's scope who holds the permission. Checked on the server for every request.</summary>
     public static TBuilder Require<TBuilder>(this TBuilder b, Permission permission) where TBuilder : IEndpointConventionBuilder =>

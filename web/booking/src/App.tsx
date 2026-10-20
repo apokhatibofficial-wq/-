@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { LangPill } from '@medlink/shared/LangPill';
 import { loadLang, saveLang, type Lang } from '@medlink/shared/text';
 import { B, slugFromPath } from './text';
+import { BookingFlow } from './BookingFlow';
 
 type Names = { ar: string; en: string | null; tr: string | null };
 type Info = { state: 'active'; slug: string; name: Names; acceptingBookings: boolean; departments: { id: string; name: Names }[] };
@@ -68,25 +69,9 @@ export function App() {
         {view.kind === 'ok' && (
           !view.info.acceptingBookings
             ? <Message title={t.notAcceptingTitle} body={t.notAcceptingBody} tone="warn" />
-            : (
-              <Card>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <h1 style={{ margin: 0, fontSize: 'clamp(20px,5.5vw,24px)', fontWeight: 600, color: 'var(--ink)' }}>{t.s1Title}</h1>
-                  <p style={{ margin: 0, fontSize: 14, color: 'var(--muted)', lineHeight: 1.55 }}>{t.s1Sub}</p>
-                </div>
-                {view.info.departments.length === 0
-                  ? <div className="note">{t.noDepts}</div>
-                  : (
-                    <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(min(100%,200px),1fr))', gap: 10 }}>
-                      {view.info.departments.map(d => (
-                        <li key={d.id} style={{ minHeight: 64, border: '1px solid var(--border)', borderRadius: 12, padding: '0 16px', display: 'flex', alignItems: 'center', fontSize: 15, fontWeight: 500, background: '#fff' }}>{nameIn(d.name, lang)}</li>
-                      ))}
-                    </ul>
-                  )}
-                <div className="alert alert-warn" role="status"><strong>{t.soonTitle}</strong><br />{t.soonBody}</div>
-                <p className="note" style={{ margin: 0 }}>{t.privacy}</p>
-              </Card>
-            )
+            : view.info.departments.length === 0
+              ? <Message title={t.s1Title} body={t.noDepts} />
+              : <BookingFlow lang={lang} slug={view.info.slug} hospital={view.info.name} departments={view.info.departments} />
         )}
       </main>
 

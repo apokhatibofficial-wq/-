@@ -7,15 +7,15 @@
 ## نظرة عامة
 MEDLINK نظام مواعيد للمستشفيات يتكوّن من: لوحة تحكم الشركة، وتطبيق Windows للمستشفى، وموقع حجز للمرضى برابط خاص لكل مستشفى، وصفحة جوال لمسح QR، وخادم مركزي.
 
-**الحالة:** اكتملت المرحلة 5 (إدارة المستشفيات والروابط الخاصة)، وهي بانتظار مراجعة المالك.
-- التقارير: [`docs/phase-5-report.md`](docs/phase-5-report.md) و[`docs/phase-4-report.md`](docs/phase-4-report.md)
+**الحالة:** اكتملت المرحلة 6 (الحجز الإلكتروني ومنشئ النموذج وإصداراته)، وهي بانتظار مراجعة المالك.
+- التقارير: [`docs/phase-6-report.md`](docs/phase-6-report.md) و[`docs/phase-5-report.md`](docs/phase-5-report.md) و[`docs/phase-4-report.md`](docs/phase-4-report.md)
 - نتائج الاختبارات الفعلية: [`docs/test-results.md`](docs/test-results.md)
 
 | المجلد | المحتوى |
 |---|---|
 | `api/` | الخادم: ASP.NET Core 8، وترحيلات SQL، والاختبارات |
 | `web/admin/` | لوحة تحكم الشركة (React + Vite + TypeScript) |
-| `web/hospital/` | ويب المستشفى: الأقسام والجداول والإعدادات والمستخدمون |
+| `web/hospital/` | ويب المستشفى: منشئ النموذج، والحجوزات، والأقسام والجداول، والإعدادات والمستخدمون |
 | `web/booking/` | موقع الحجز للمرضى `/book/{slug}` |
 | `web/shared/` | المكوّنات المشتركة بين المواقع الثلاثة |
 | `windows/` | تطبيق Windows بـ WPF (المرحلة 8) |
@@ -57,8 +57,8 @@ cd web && npm test && npm run typecheck
 
 MEDLINK is a hospital appointment system with five parts: a company console, a hospital Windows app, a patient booking site (one link per hospital), a phone QR check-in page, and a central API.
 
-**Status:** Phase 5 (hospital management and unique links) is complete and waiting for the owner's review.
-- Reports: [`docs/phase-5-report.md`](docs/phase-5-report.md), [`docs/phase-4-report.md`](docs/phase-4-report.md)
+**Status:** Phase 6 (online booking, form builder and versions) is complete and waiting for the owner's review.
+- Reports: [`docs/phase-6-report.md`](docs/phase-6-report.md), [`docs/phase-5-report.md`](docs/phase-5-report.md), [`docs/phase-4-report.md`](docs/phase-4-report.md)
 - Real test results: [`docs/test-results.md`](docs/test-results.md)
 - Design handoff: [`docs/design/`](docs/design/)
 

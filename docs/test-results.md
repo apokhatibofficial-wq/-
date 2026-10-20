@@ -4,6 +4,82 @@ Real runs only. Re-run the commands to reproduce. Newest phase first.
 
 ---
 
+# Phase 6 — online booking, form builder and versions (2026-10-20)
+
+## 1. API tests (xUnit + Testcontainers, PostgreSQL 16)
+`cd api && dotnet build -c Release && dotnet test --no-build -c Release`
+
+**Result: 59 passed, 0 failed** (3 min 59 s). That is 44 earlier tests plus 15 new ones.
+
+| Acceptance test (BACKEND-SPEC §7) | Test | Result |
+|---|---|---|
+| 5. Book an available slot | `Acceptance 5/8: book an available slot; the QR is an opaque 128-bit token, stored only as a hash` | ✅ |
+| 6. The same slot cannot be booked twice at once | `Acceptance 6: … 10 parallel requests, capacity 1 and 2` (exactly 1 and exactly 2 succeed; seats 1..n) | ✅ |
+| 7. Re-submitting does not duplicate | `Acceptance 7: re-sending the same request returns the original booking` (5 parallel replays → same ref and QR, 1 row) | ✅ |
+| 8. Generate the QR code | covered by 5/8: `MLK1.` + 22 base64url chars; only its SHA-256 in the DB. (Verification by the scanner is phase 9) | ✅ |
+| 12. A newly published question appears on the booking link | `Acceptance 12/14` | ✅ |
+| 13. Required and optional fields behave correctly | `Acceptance 13: … checked on the server against the published version` | ✅ |
+| 14. Previewing/saving the draft doesn't affect the live form | `Acceptance 12/14` | ✅ |
+| 15. Publishing requires confirmation | `Acceptance 15: publishing is blocked until …` (server blockers) + browser step (confirmation dialog) | ✅ |
+| 16. A failed publish keeps the live version | `Acceptance 16: a publish that fails inside the database keeps the live version and the draft` (a real DB trigger forces the failure) | ✅ |
+| 17. Restoring publishes a new version | `Acceptance 17: restoring an old version publishes it as a new version; old versions stay` | ✅ |
+| 18. Forms open during a publish | `Acceptance 18: a form opened before a publish is accepted for 2 hours, then the patient must reload` | ✅ |
+
+Other new tests:
+- Availability rules: 14 days, 30-minute notice, closures, the Damascus time zone, and per-hospital overrides.
+- Reception cancels with a reason and the seat is freed; scanners and other hospitals cannot.
+- Suspended hospitals take no bookings; the per-phone limit works only when switched on.
+- RLS on bookings, answers and forms.
+- Published versions can't be updated in the database.
+- **A signed-in browser can still open one-time links and sign in again** (a bug the browser run found; see below).
+
+**Mutation check:** three bugs were introduced on purpose: seats beyond the capacity, no full-slot check, and a 1000-hour grace for old forms. 3 tests failed as expected. A fourth mutation removed the cookie fix, and its test failed too. All code was restored.
+
+## 2. Web (npm workspace)
+| Check | Result |
+|---|---|
+| `npm audit` | ✅ 0 vulnerabilities |
+| `tsc` × 4 | ✅ 0 errors |
+| Unit tests | ✅ shared 3/3 · hospital 5/5 (form diff and publish blockers) · booking 5/5 (phone rule, Pages 301 function) |
+| `vite build` × 3 | ✅ admin 252 kB · hospital 271 kB · booking 207 kB |
+
+## 3. Browser end-to-end on the real stack (Phase 6 run)
+**10 of 10 steps passed.**
+```
+PASS owner and hospital admin set up (hospital in Asia/Damascus)
+PASS form builder: add a required choice question and an optional note, publish v1 with confirmation
+PASS preview shows the draft and validates required questions without sending anything
+PASS patient books: details → department → questions → date/time → review → confirmation ticket with QR
+PASS the booked time is no longer offered to the next patient
+PASS two patients pick the same last seat: the second gets the conflict banner and is sent back to pick a time
+PASS a form published while a patient is booking: the patient finishes on the version they opened
+PASS a publish that fails in the database shows the red banner and keeps v2 live
+PASS versions tab: restore v1 publishes it as v3
+PASS reception finds the booking by number, sees the answers, and cancels it with a reason
+```
+Also checked in that run:
+- The **saved ticket PNG** (1080×1500) was decoded with a QR reader (`jsQR`). It contains a token of the form `MLK1.` + 22 characters, and its SHA-256 matches the stored `qr_token_hash` of booking `ML-YSL55X`.
+- **API container log** (549 lines): 0 matches for patient names, the phone number, `MLK1.`, `#t=` or test emails.
+- No horizontal scrolling at 390 px on the ticket page.
+
+**Regression runs after Phase 6:**
+- Phase 4: 16/16.
+- Phase 5: 16/16. Its booking-site steps were updated on purpose, because departments are now step 2 of the booking flow.
+- System settings: 7/7.
+
+Bugs the browser run found (fixed):
+1. **Session cookie blocking anonymous pages.** A browser already signed in to the console sent its session cookie to `/auth/link/inspect`. Without a CSRF header, the server refused the request, so the activation link looked "invalid". The same would have blocked signing in again. Anonymous routes (`/auth/login`, `/auth/link/*`, `/public/*`) now ignore the session cookie. A test covers it and fails without the fix.
+2. The test script itself had a few wrong assumptions (a guessed error text, an option label equal to the "Continue" button). These were corrected in the test, not the product.
+
+Screenshots: `docs/screenshots/phase-6/`.
+
+## Not tested yet
+- Printing: the print button opens a new window with the ticket image; the browser's print dialog was not driven by the test.
+- The scanner verifying the QR (phase 9), no-show marking (phase 10), and the Windows app (phases 7–8).
+- The same infrastructure limits as earlier phases still apply.
+
+---
+
 # Phase 5 addendum — System settings in the company console (2026-10-20)
 
 The owner asked for these values to be editable in the company console, not fixed in code: default time zone (Syria), booking window (14 days), minimum notice (30 min), patient cancellation (off), and the per-phone limit (none).

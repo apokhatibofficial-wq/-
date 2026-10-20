@@ -83,6 +83,22 @@ public sealed class AuthorizationTests(MedLinkFixture fx) : IDisposable
         Assert.Equal(HttpStatusCode.Created, (await owner.Post("/admin/hospitals", body)).Status);
     }
 
+    [Fact(DisplayName = "A browser that is already signed in can still open one-time links, sign in again and book (anonymous routes ignore the cookie)")]
+    public async Task SignedInBrowserOnAnonymousRoutes()
+    {
+        var (owner, ownerUser) = await api.CompanyUserAsync(Roles.Owner);
+        var adminEmail = TestApi.NewEmail("hadmin");
+        await owner.Post("/admin/hospitals", new { nameAr = "م", nameEn = "Cookie Hospital", adminEmail, slug = "ck-" + Guid.NewGuid().ToString("N")[..8] });
+        var token = CapturingEmailSender.TokenFrom(fx.Email.LastTo(adminEmail));
+        fx.Secrets.Add(token);
+        // Same browser: the owner's session cookie is sent, without a CSRF header (a plain form on another page).
+        Assert.Equal(HttpStatusCode.OK, (await owner.Post("/auth/link/inspect", new { token }, csrf: false)).Status);
+        await api.AllowNextTotpAsync(ownerUser.Email);
+        Assert.Equal(HttpStatusCode.OK, (await owner.LoginAsync(ownerUser.Email, ownerUser.Password, ownerUser.TotpSecret)).Status);
+        // Protected routes still demand the CSRF token.
+        Assert.Equal(HttpStatusCode.Forbidden, (await owner.Post("/admin/hospitals", new { nameAr = "x", nameEn = "x", adminEmail = "a@b.co", slug = "zz-zz" }, csrf: false)).Status);
+    }
+
     [Fact(DisplayName = "Suspending a hospital revokes its sessions and blocks sign-in; reactivating restores it")]
     public async Task SuspendAndReactivate()
     {
