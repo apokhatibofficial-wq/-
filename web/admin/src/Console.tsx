@@ -10,7 +10,8 @@ import { LangPill } from '@medlink/shared/LangPill';
 const BOOK_BASE = 'medlink.website/book/';
 type SlugState = '' | 'ok' | 'bad' | 'taken' | 'checking';
 type Tab = 0 | 1 | 2 | 3 | 4;
-const DEFAULT_TZ = 'Africa/Tripoli';
+/** Owner's decision (2026-10-20): new hospitals default to Syria. */
+const DEFAULT_TZ = 'Asia/Damascus';
 
 const nameIn = (n: Names, l: Lang) => (l === 'tr' ? n.tr || n.en : n[l]);
 

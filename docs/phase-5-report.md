@@ -7,7 +7,7 @@ Real test results: [`test-results.md`](test-results.md) (Phase 5 section). Scree
 ## Phase 4 open questions — what I did (the owner said "start Phase 5", so I used my recommendations)
 | Question | What was built |
 |---|---|
-| Hospital time zone | A time-zone list in the create dialog and the edit drawer (company), and in hospital settings. The server accepts only real IANA zones. The dialog defaults to **Africa/Tripoli**; the API's fallback stays `DEFAULT_HOSPITAL_TIMEZONE` |
+| Hospital time zone | A time-zone list in the create dialog and the edit drawer (company), and in hospital settings. The server accepts only real IANA zones. The dialog and the API fallback (`DEFAULT_HOSPITAL_TIMEZONE`) default to **Asia/Damascus** (owner's decision, 2026-10-20) |
 | Company staff accounts | A **Team** tab (Owner only): invite Owner/Support/Viewer by a 24-hour activation link, change roles, disable/enable, resend links. Nobody can change their own account, and at least one active Owner always remains, even if two Owners demote each other at the same moment |
 | Company user loses access | Another Owner sends a reset link from the Team tab. If there is only one Owner: `medlink reset-company-user --email …` on the server (revokes sessions, prints a 1-hour link) |
 | Maximum session age | Hard limit of 7 days, on top of the 8 h / 12 h idle timeouts |
@@ -44,7 +44,7 @@ Real test results: [`test-results.md`](test-results.md) (Phase 5 section). Scree
 1. **Weekday numbering:** 0 = Sunday … 6 = Saturday. Times are stored as minutes in the hospital's own time zone. A block may end at 24:00.
 2. **Staff roles a hospital admin can give:** reception and scanner only. Hospital admins are created and recovered by the company.
 3. **Departments are hidden, never deleted**, because future bookings will reference them.
-4. **Default time zone in the create dialog: Africa/Tripoli** (the design's example email is `.ly`). Tell me if most hospitals are elsewhere.
+4. **Default time zone: Asia/Damascus (Syria)**, confirmed by the owner. It is first in the list; each hospital can still choose another zone.
 5. **Production URL:** `HOSPITAL_WEB_URL` should now be `https://app.medlink.website`. The Phase 4 workaround (pointing it at the console) is no longer needed.
 
 ## Known limits

@@ -58,7 +58,7 @@ services:
       CORS_ORIGINS: ${CORS_ORIGINS}
       TRUSTED_PROXIES: 172.30.0.0/24
       COOKIE_SECURE: "true"
-      DEFAULT_HOSPITAL_TIMEZONE: ${DEFAULT_HOSPITAL_TIMEZONE:-UTC}
+      DEFAULT_HOSPITAL_TIMEZONE: ${DEFAULT_HOSPITAL_TIMEZONE:-Asia/Damascus}
     read_only: true
     tmpfs: [/tmp]
     security_opt: ["no-new-privileges:true"]

@@ -100,12 +100,16 @@ public sealed class TeamAndSessionTests(MedLinkFixture fx) : IDisposable
         Assert.Equal(HttpStatusCode.Unauthorized, (await client.Get("/auth/me")).Status);
     }
 
-    [Fact(DisplayName = "Hospital time zone is chosen at creation and can be edited; unknown zones are refused")]
+    [Fact(DisplayName = "Hospital time zone: defaults to Asia/Damascus, can be chosen at creation and edited; unknown zones are refused")]
     public async Task HospitalTimezone()
     {
         var (owner, _) = await api.CompanyUserAsync(Roles.Owner);
         object Body(string tz) => new { nameAr = "م", nameEn = "Tz Hospital", adminEmail = TestApi.NewEmail("tz"), slug = "tz-" + Guid.NewGuid().ToString("N")[..8], timezone = tz };
         Assert.Equal((HttpStatusCode)422, (await owner.Post("/admin/hospitals", Body("Not/AZone"))).Status);
+        // No zone given → the owner's default, Syria.
+        var plain = await owner.Post("/admin/hospitals", new { nameAr = "م", nameEn = "Default Tz", adminEmail = TestApi.NewEmail("tz"), slug = "tz-" + Guid.NewGuid().ToString("N")[..8] });
+        Assert.Equal(HttpStatusCode.Created, plain.Status);
+        Assert.Equal("Asia/Damascus", (await owner.Get($"/admin/hospitals/{plain.Body.GetProperty("id").GetString()}")).Body.GetProperty("hospital").GetProperty("timezone").GetString());
         var r = await owner.Post("/admin/hospitals", Body("Europe/Istanbul"));
         Assert.Equal(HttpStatusCode.Created, r.Status);
         var id = r.Body.GetProperty("id").GetString();

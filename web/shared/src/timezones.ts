@@ -1,15 +1,15 @@
 /**
  * Time zones offered in the console and hospital settings (the server accepts any IANA zone).
- * The region MEDLINK serves first, then a few common ones.
+ * Syria first (the owner's default, 2026-10-20), then the rest of the region and a few common ones.
  */
 export const TIMEZONES = [
-  'Africa/Tripoli', 'Europe/Istanbul', 'Africa/Cairo', 'Africa/Tunis', 'Africa/Algiers', 'Africa/Casablanca',
+  'Asia/Damascus', 'Africa/Tripoli', 'Europe/Istanbul', 'Africa/Cairo', 'Africa/Tunis', 'Africa/Algiers', 'Africa/Casablanca',
   'Africa/Khartoum', 'Asia/Riyadh', 'Asia/Kuwait', 'Asia/Qatar', 'Asia/Bahrain', 'Asia/Dubai', 'Asia/Muscat',
-  'Asia/Baghdad', 'Asia/Amman', 'Asia/Beirut', 'Asia/Damascus', 'Asia/Gaza', 'Asia/Aden',
+  'Asia/Baghdad', 'Asia/Amman', 'Asia/Beirut', 'Asia/Gaza', 'Asia/Aden',
   'Europe/Vienna', 'Europe/Berlin', 'Europe/London', 'UTC',
 ];
 
-/** "Africa/Tripoli · GMT+02:00", computed by the browser so it follows daylight-saving rules. */
+/** "Asia/Damascus · GMT+03:00", computed by the browser so it follows daylight-saving rules. */
 export function tzLabel(tz: string, at = new Date()): string {
   try {
     const part = new Intl.DateTimeFormat('en', { timeZone: tz, timeZoneName: 'longOffset' })
