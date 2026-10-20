@@ -1,0 +1,32 @@
+# Secrets and local data — never commit these
+.env
+.env.*
+!.env.example
+*.db
+*.sqlite
+*.sqlite3
+backups/
+*.age
+*.pfx
+*.p12
+*.key
+*.pem
+dataprotection-keys/
+
+# .NET
+bin/
+obj/
+TestResults/
+*.user
+.vs/
+
+# Node / web
+node_modules/
+dist/
+*.log
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{51BB24BD-04A9-4EEA-AA4F-743DFA20FED7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MedLink.Api", "src\MedLink.Api\MedLink.Api.csproj", "{61182CB4-0638-4D89-AD3B-BB60BAFADA69}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{64D21287-764F-4786-986D-1A6B2A00ED2D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MedLink.Api.Tests", "tests\MedLink.Api.Tests\MedLink.Api.Tests.csproj", "{7AEBEC3A-3C7B-4003-91F4-5116BC38B11B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{61182CB4-0638-4D89-AD3B-BB60BAFADA69}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{61182CB4-0638-4D89-AD3B-BB60BAFADA69}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{61182CB4-0638-4D89-AD3B-BB60BAFADA69}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{61182CB4-0638-4D89-AD3B-BB60BAFADA69}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7AEBEC3A-3C7B-4003-91F4-5116BC38B11B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7AEBEC3A-3C7B-4003-91F4-5116BC38B11B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7AEBEC3A-3C7B-4003-91F4-5116BC38B11B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7AEBEC3A-3C7B-4003-91F4-5116BC38B11B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{61182CB4-0638-4D89-AD3B-BB60BAFADA69} = {51BB24BD-04A9-4EEA-AA4F-743DFA20FED7}
+		{7AEBEC3A-3C7B-4003-91F4-5116BC38B11B} = {64D21287-764F-4786-986D-1A6B2A00ED2D}
+	EndGlobalSection
+EndGlobal
