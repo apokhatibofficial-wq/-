@@ -123,6 +123,9 @@ public sealed class Strings
     public required string ServerAddress { get; init; }
     public required string ServerNote { get; init; }
     public required string AppVersion { get; init; }
+    /// <summary>{0} = the new version.</summary>
+    public required string UpdateReady { get; init; }
+    public required string UpdateClose { get; init; }
     public required string TestConnection { get; init; }
     public required string ConnOk { get; init; }
     public required string ConnFail { get; init; }
@@ -181,7 +184,7 @@ public sealed class Strings
         SyncTitle = "المزامنة", SyncNow = "مزامنة الآن", PendingCount = "بانتظار المزامنة", LastSync = "آخر مزامنة", Never = "لم تتم بعد",
         RejectedTitle = "تحديثات رفضها الخادم", RejectedNone = "لا توجد تحديثات مرفوضة.",
         SettingsTitle = "الإعدادات", Language = "اللغة", DeviceName = "اسم الجهاز", DeviceId = "معرّف الجهاز", ServerAddress = "عنوان الخادم",
-        ServerNote = "يُضبط عنوان الخادم عند التثبيت ولا يُغيَّر من هنا.", AppVersion = "الإصدار", TestConnection = "اختبار الاتصال",
+        ServerNote = "يُضبط عنوان الخادم عند التثبيت ولا يُغيَّر من هنا.", AppVersion = "الإصدار", UpdateReady = "الإصدار {0} من MEDLINK جاهز، وسيُثبَّت عند إعادة فتح التطبيق. لا تضيع تسجيلات الحضور غير المُرسلة.", UpdateClose = "إغلاق للتحديث", TestConnection = "اختبار الاتصال",
         ConnOk = "الاتصال بالخادم يعمل.", ConnFail = "تعذّر الوصول إلى الخادم.",
         SignOutPending = "توجد تحديثات حضور لم تُرسل بعد. ستبقى محفوظة على هذا الجهاز وتُرسل عند دخولك مرة أخرى.", SignOutConfirm = "تسجيل الخروج على أي حال",
         ReadOnlyDoctor = "عرض فقط: مواعيد أقسامك، بدون أرقام الهواتف.", Loading = "جارٍ التحميل…",
@@ -236,7 +239,7 @@ public sealed class Strings
         SyncTitle = "Sync", SyncNow = "Sync now", PendingCount = "Waiting to sync", LastSync = "Last sync", Never = "Not yet",
         RejectedTitle = "Updates the server rejected", RejectedNone = "No rejected updates.",
         SettingsTitle = "Settings", Language = "Language", DeviceName = "Device name", DeviceId = "Device ID", ServerAddress = "Server address",
-        ServerNote = "The server address is set at installation and can’t be changed here.", AppVersion = "Version", TestConnection = "Test connection",
+        ServerNote = "The server address is set at installation and can’t be changed here.", AppVersion = "Version", UpdateReady = "MEDLINK {0} is ready and will be installed the next time the app opens. Unsent check-ins are kept.", UpdateClose = "Close to update", TestConnection = "Test connection",
         ConnOk = "The server connection works.", ConnFail = "Can’t reach the server.",
         SignOutPending = "Some check-in updates haven’t been sent yet. They stay on this PC and are sent when you sign in again.", SignOutConfirm = "Sign out anyway",
         ReadOnlyDoctor = "View only: your departments’ appointments, without phone numbers.", Loading = "Loading…",
@@ -291,7 +294,7 @@ public sealed class Strings
         SyncTitle = "Senkronizasyon", SyncNow = "Şimdi senkronize et", PendingCount = "Senkronizasyon bekleyen", LastSync = "Son senkronizasyon", Never = "Henüz yok",
         RejectedTitle = "Sunucunun reddettiği güncellemeler", RejectedNone = "Reddedilen güncelleme yok.",
         SettingsTitle = "Ayarlar", Language = "Dil", DeviceName = "Cihaz adı", DeviceId = "Cihaz kimliği", ServerAddress = "Sunucu adresi",
-        ServerNote = "Sunucu adresi kurulumda ayarlanır ve buradan değiştirilemez.", AppVersion = "Sürüm", TestConnection = "Bağlantıyı test et",
+        ServerNote = "Sunucu adresi kurulumda ayarlanır ve buradan değiştirilemez.", AppVersion = "Sürüm", UpdateReady = "MEDLINK {0} hazır; uygulama bir sonraki açılışta güncellenecek. Gönderilmemiş girişler korunur.", UpdateClose = "Güncellemek için kapat", TestConnection = "Bağlantıyı test et",
         ConnOk = "Sunucu bağlantısı çalışıyor.", ConnFail = "Sunucuya ulaşılamıyor.",
         SignOutPending = "Henüz gönderilmemiş giriş güncellemeleri var. Bu bilgisayarda kalır ve tekrar giriş yaptığınızda gönderilir.", SignOutConfirm = "Yine de çıkış yap",
         ReadOnlyDoctor = "Yalnızca görüntüleme: bölümlerinizin randevuları, telefon numaraları olmadan.", Loading = "Yükleniyor…",

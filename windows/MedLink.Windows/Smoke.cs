@@ -149,8 +149,13 @@ internal static class Smoke
             var sealedBytes = protector.Protect(secret);
             Check(protector.Unprotect(sealedBytes).SequenceEqual(secret) && !sealedBytes.AsSpan().SequenceEqual(secret), "DPAPI protects and restores the local key");
 
+            // Signed updates: the fake server publishes an update with a key made for this run; installation is recorded only.
+            var (updatePriv, updatePub) = UpdateSigning.Generate();
+            var installer = new SmokeInstaller();
+            var updater = new Updater(new Uri(server.Url + "/updates/"), updatePub, App.Version, installer, Path.Combine(root, "update"));
+            var quit = false;
             var app = new AppController(new AppPaths(root), protector, new WpfUi(application.Dispatcher), new NoLauncher(), TimeProvider.System,
-                App.Version, serverOverride: server.Url) { LongPollSeconds = 2, RetryDelay = TimeSpan.FromMilliseconds(500) };
+                App.Version, serverOverride: server.Url) { LongPollSeconds = 2, RetryDelay = TimeSpan.FromMilliseconds(500), Updater = updater, Quit = () => quit = true };
             var window = new MainWindow(app, startSplash: false) { Width = 1280, Height = 800, WindowStartupLocation = WindowStartupLocation.Manual, Left = 0, Top = 0 };
             application.MainWindow = window;
             window.Show();
@@ -235,6 +240,19 @@ internal static class Smoke
             await Until(() => server.PushedEvents == 1 && m.PendingCount == 0, 15);
             Check(server.PushedEvents == 1 && m.PendingCount == 0, "pending check-in sent when the connection returned");
 
+            // Update: a forged update.json is refused (no banner); a correctly signed newer version shows the banner.
+            server.PublishUpdate("9.9.9", UpdateSigning.Generate().PrivateKey);
+            var forged = await updater.CheckOnceAsync();
+            Check(forged.Outcome == "rejected" && installer.Installed == 0 && !m.UpdateBanner, "update signed with another key is refused (" + forged.Outcome + ")");
+            server.PublishUpdate("9.9.9", updatePriv);
+            var good = await updater.CheckOnceAsync();
+            await Until(() => m.UpdateBanner, 5);
+            Check(good.Outcome == "ready" && installer.Installed == 1 && m.UpdateBanner, "signed update downloaded, checked and registered (" + good.Outcome + ")");
+            Shows(window, "update banner", string.Format(Strings.Ar.UpdateReady, "9.9.9"), Strings.Ar.UpdateClose);
+            await Shot(window, outDir, "15-update-ready");
+            m.CloseToUpdateCommand!.Execute(null);
+            Check(quit, "\"Close to update\" closes the app");
+
             m.NavCommand.Execute(2); await Shot(window, outDir, "10-sync");
             m.NavCommand.Execute(3); await Shot(window, outDir, "11-settings");
             m.NavCommand.Execute(1); m.Find.Query = row.Ref; m.Find.FindCommand.Execute(null);
@@ -308,6 +326,14 @@ internal static class Smoke
     {
         public void Open(string url) { }
     }
+
+    /// <summary>Records the verified package instead of installing it (the smoke run is not an installed package).</summary>
+    private sealed class SmokeInstaller : IPackageInstaller
+    {
+        public int Installed;
+        public bool IsPackaged => true;
+        public Task InstallOnNextStartAsync(string msixPath, CancellationToken ct) { Installed++; return Task.CompletedTask; }
+    }
 }
 
 /// <summary>A local stand-in for the MEDLINK API with fictional data, for the screenshot run only.</summary>
@@ -321,6 +347,23 @@ internal sealed class FakeServer : IDisposable
     private string? _user;
     public string Url => "http://localhost:" + _port;
     public volatile bool Down;
+    private readonly Dictionary<string, byte[]> _files = new();
+
+    /// <summary>Serves update.json, its signature and a fake package under /updates/, like the real feed.</summary>
+    public void PublishUpdate(string version, byte[] signingKey)
+    {
+        var msix = new byte[300_000];
+        Random.Shared.NextBytes(msix);
+        var m = new UpdateManifest("MEDLINK", version, $"MEDLINK-{version}.msix", msix.Length,
+            Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(msix)).ToLowerInvariant());
+        var json = m.ToBytes();
+        lock (_files)
+        {
+            _files["/updates/" + m.File] = msix;
+            _files["/updates/update.json"] = json;
+            _files["/updates/update.json.sig"] = Encoding.ASCII.GetBytes(UpdateSigning.Sign(json, signingKey));
+        }
+    }
     public int DeviceRegistrations, PushedEvents;
     private long _seq = 100;
 
@@ -348,6 +391,15 @@ internal sealed class FakeServer : IDisposable
         {
             if (Down) { ctx.Response.Abort(); return; }
             var path = ctx.Request.Url!.AbsolutePath;
+            byte[]? file;
+            lock (_files) _files.TryGetValue(path, out file);
+            if (file is not null)
+            {
+                res.StatusCode = 200;
+                await res.OutputStream.WriteAsync(file);
+                res.Close();
+                return;
+            }
             var body = ctx.Request.HasEntityBody ? await new StreamReader(ctx.Request.InputStream).ReadToEndAsync() : "";
             (int Status, object Json) r = path switch
             {

@@ -159,6 +159,17 @@
                 Visibility="{Binding DataContext.OfflineBanner, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource Vis}}">
           <TextBlock Text="{Binding DataContext.S.OfflineBanner, RelativeSource={RelativeSource AncestorType=UserControl}}" Foreground="#6b4a00" FontSize="13" />
         </Border>
+        <!-- A signed update is ready (installed when the app is closed) -->
+        <Border DockPanel.Dock="Top" Background="#eef1fc" BorderBrush="{StaticResource InputBorder}" BorderThickness="0,0,0,1" Padding="16,6"
+                Visibility="{Binding DataContext.UpdateBanner, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource Vis}}">
+          <DockPanel>
+            <Button DockPanel.Dock="Right" Style="{StaticResource Secondary}" Height="30" Padding="12,0" Margin="12,0,0,0"
+                    Content="{Binding DataContext.S.UpdateClose, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                    Command="{Binding DataContext.CloseToUpdateCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+            <TextBlock Text="{Binding DataContext.UpdateText, RelativeSource={RelativeSource AncestorType=UserControl}}" Foreground="{StaticResource BrandDeep}"
+                       FontSize="13" VerticalAlignment="Center" />
+          </DockPanel>
+        </Border>
         <Border DockPanel.Dock="Top" Background="{StaticResource Soft}" BorderBrush="{StaticResource InputBorder}" BorderThickness="0,0,0,1" Padding="16,9"
                 Visibility="{Binding ShowReadOnlyNote, Converter={StaticResource Vis}}">
           <TextBlock Text="{Binding DataContext.S.ReadOnlyDoctor, RelativeSource={RelativeSource AncestorType=UserControl}}" Foreground="{StaticResource BrandDeep}" FontSize="13" />

@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The owner's release tool (runs anywhere .NET 8 runs): makes the Ed25519 key pair once, and signs each release's
+       update.json. The private key never goes into the repository, the server or the app. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AssemblyName>medlink-update</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MedLink.App.Core\MedLink.App.Core.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -36,6 +36,11 @@ public sealed class AppController : Observable
     public int LongPollSeconds { get; init; } = 25;
     public TimeSpan RetryDelay { get; init; } = TimeSpan.FromSeconds(5);
 
+    /// <summary>Signed updates (null in tests and development builds).</summary>
+    public Updater? Updater { get; init; }
+    /// <summary>Closes the app (the window's shutdown); used by "Close to update".</summary>
+    public Action? Quit { get; init; }
+
     public AppSettings Settings { get; }
     public ILauncher Launcher { get; }
     public string Version { get; }

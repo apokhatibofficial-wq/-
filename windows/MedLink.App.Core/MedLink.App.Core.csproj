@@ -12,6 +12,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MedLink.Sync\MedLink.Sync.csproj" />
+    <!-- Ed25519 for verifying updates (.NET 8 has no Ed25519). MIT licence. -->
+    <PackageReference Include="BouncyCastle.Cryptography" Version="2.6.2" />
   </ItemGroup>
 
 </Project>

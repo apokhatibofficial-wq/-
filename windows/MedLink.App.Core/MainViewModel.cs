@@ -63,6 +63,11 @@ public sealed class MainViewModel : Observable
     public Command SignOutCommand { get; }
     public Command CancelSignOutCommand { get; }
 
+    /// <summary>An update was downloaded, checked and registered: Windows installs it when MEDLINK is closed.</summary>
+    public bool UpdateBanner => _app.Updater?.ReadyVersion is not null;
+    public string UpdateText => string.Format(S.UpdateReady, _app.Updater?.ReadyVersion);
+    public Command? CloseToUpdateCommand { get; private set; }
+
     public void Notify(string text) { Toast = text; ToastId++; }
 
     internal void LanguageChanged()
@@ -77,6 +82,10 @@ public sealed class MainViewModel : Observable
 
     internal async Task StartAsync()
     {
+        CloseToUpdateCommand = new Command(() => _app.Quit?.Invoke());
+        Raise(nameof(CloseToUpdateCommand));
+        if (_app.Updater is { } updater)
+            updater.PropertyChanged += (_, _) => _app.Ui.Post(() => { Raise(nameof(UpdateBanner)); Raise(nameof(UpdateText)); });
         HospitalName = LocalHospitalName() ?? _app.Settings.LastHospital ?? "";
         Dashboard.Reload();
         _engine = new SyncEngine(Sync, Store, _app.Clock) { LongPollSeconds = _app.LongPollSeconds, RetryDelay = _app.RetryDelay };

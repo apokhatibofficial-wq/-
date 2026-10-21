@@ -83,6 +83,87 @@ jobs:
           name: windows-screenshots
           path: ${{ runner.temp }}/windows-screenshots
 
+  windows-installer:
+    # The real installer path on Windows: a throw-away signing certificate (same subject as the owner's) and update
+    # key are made for the run; MSIX 0.9.0 is installed with the IT script; a feed signed with another key is refused;
+    # a correctly signed 0.9.1 is downloaded, verified and installed by Windows; the updated, installed app then
+    # passes the whole window check (--smoke).
+    runs-on: windows-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Throw-away signing certificate and update keys
+        shell: pwsh
+        run: |
+          $t = $env:RUNNER_TEMP
+          $pw = [Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(24))
+          "MEDLINK_PFX_PASSWORD=$pw" | Out-File -Append $env:GITHUB_ENV
+          "::add-mask::$pw"
+          $cert = New-SelfSignedCertificate -Type Custom -Subject 'CN=KHATIB TECHNICAL SOLUTIONS' -KeyUsage DigitalSignature -KeyAlgorithm RSA -KeyLength 3072 `
+            -TextExtension @('2.5.29.37={text}1.3.6.1.5.5.7.3.3', '2.5.29.19={text}') -CertStoreLocation 'Cert:\CurrentUser\My'
+          Export-PfxCertificate -Cert $cert -FilePath "$t\test.pfx" -Password (ConvertTo-SecureString $pw -AsPlainText -Force) | Out-Null
+          Export-Certificate -Cert $cert -FilePath "$t\test.cer" | Out-Null
+          dotnet run --project windows/MedLink.UpdateTool -- keygen "$t\update.key" | Tee-Object "$t\keygen.txt"
+          dotnet run --project windows/MedLink.UpdateTool -- keygen "$t\other.key" | Out-Null
+          $pub = (Select-String -Path "$t\keygen.txt" -Pattern 'UPDATE_SIGNING_PUBLIC_KEY=(.+)').Matches[0].Groups[1].Value
+          "UPDATE_PUB=$pub" | Out-File -Append $env:GITHUB_ENV
+      - name: Build MSIX 0.9.0 and 0.9.1
+        shell: pwsh
+        run: |
+          foreach ($v in '0.9.0', '0.9.1') { ./windows/installer/build-msix.ps1 -Version $v -Pfx "$env:RUNNER_TEMP\test.pfx" -UpdatePublicKey $env:UPDATE_PUB -OutDir "$env:RUNNER_TEMP\out" }
+          $t = $env:RUNNER_TEMP
+          dotnet run --project windows/MedLink.UpdateTool -- publish "$t\out\MEDLINK-0.9.1.msix" 0.9.1 "$t\update.key" "$t\feed\good"
+          dotnet run --project windows/MedLink.UpdateTool -- publish "$t\out\MEDLINK-0.9.1.msix" 0.9.1 "$t\other.key" "$t\feed\forged"
+          dotnet run --project windows/MedLink.UpdateTool -- verify "$t\feed\good" $env:UPDATE_PUB
+          dotnet run --project windows/MedLink.UpdateTool -- verify "$t\feed\forged" $env:UPDATE_PUB; if ($LASTEXITCODE -eq 0) { throw 'forged feed verified' } else { $global:LASTEXITCODE = 0 }
+      - name: Install 0.9.0 as hospital IT would
+        shell: pwsh
+        run: |
+          ./windows/installer/install-medlink.ps1 -Cer "$env:RUNNER_TEMP\test.cer" -Msix "$env:RUNNER_TEMP\out\MEDLINK-0.9.0.msix"
+          if ((Get-AppxPackage KhatibTechnicalSolutions.MEDLINK).Version -ne '0.9.0.0') { throw 'not installed' }
+      - name: Updates - a forged feed is refused, a signed one is installed
+        shell: pwsh
+        run: |
+          $t = $env:RUNNER_TEMP
+          $server = Start-Process python -ArgumentList '-m', 'http.server', '8099', '--bind', '127.0.0.1', '--directory', "$t\feed" -PassThru -WindowStyle Hidden
+          Start-Sleep 3
+          $exe = "$env:LOCALAPPDATA\Microsoft\WindowsApps\medlink.exe"
+          function Check-Update($feed, $file) {
+            Remove-Item $file -ErrorAction SilentlyContinue
+            Start-Process $exe -ArgumentList '--update-check', $file, '--update-feed', $feed -Wait
+            for ($i = 0; $i -lt 120 -and -not (Test-Path $file); $i++) { Start-Sleep 1 }
+            $r = Get-Content $file; Write-Host "update check ($feed): $r"; return $r
+          }
+          $r = Check-Update 'http://127.0.0.1:8099/forged/' "$t\forged.txt"
+          if ($r -notmatch '^rejected .*signature packaged=True version=0\.9\.0') { throw "forged feed: $r" }
+          if ((Get-AppxPackage KhatibTechnicalSolutions.MEDLINK).Version -ne '0.9.0.0') { throw 'forged update was installed' }
+          $r = Check-Update 'http://127.0.0.1:8099/good/' "$t\good.txt"
+          if ($r -notmatch '^ready 0\.9\.1 .*packaged=True version=0\.9\.0') { throw "signed feed: $r" }
+          for ($i = 0; $i -lt 60 -and (Get-AppxPackage KhatibTechnicalSolutions.MEDLINK).Version -ne '0.9.1.0'; $i++) { Start-Sleep 2 }
+          $v = (Get-AppxPackage KhatibTechnicalSolutions.MEDLINK).Version
+          Write-Host "installed version after the update: $v"
+          if ($v -ne '0.9.1.0') { throw 'the signed update was not applied' }
+          Stop-Process $server
+      - name: The installed, updated app passes the window check
+        shell: pwsh
+        run: |
+          $out = Join-Path $env:RUNNER_TEMP 'installed-screenshots'
+          Start-Process "$env:LOCALAPPDATA\Microsoft\WindowsApps\medlink.exe" -ArgumentList '--smoke', "`"$out`"" -Wait
+          for ($i = 0; $i -lt 120 -and -not (Test-Path "$out\smoke.txt"); $i++) { Start-Sleep 1 }
+          Get-Content "$out\smoke.txt"
+          if (Select-String -Path "$out\smoke.txt" -Pattern '^FAIL') { exit 1 }
+        timeout-minutes: 5
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-installer
+          path: |
+            ${{ runner.temp }}/out/*.msix
+            ${{ runner.temp }}/installed-screenshots
+
   backups:
     # The real backup scripts on a throw-away Docker stack, with a local S3 mock in place of R2 and an age key pair
     # made for the run: backup, monthly restore test, restore with the private key, then a full disaster recovery.

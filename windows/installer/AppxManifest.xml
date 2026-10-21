@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- MSIX manifest of the MEDLINK Windows app. build-msix.ps1 fills in __VERSION__ and __PUBLISHER__ (the publisher must
+     match the signing certificate's subject exactly). -->
+<Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+         xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+         xmlns:uap5="http://schemas.microsoft.com/appx/manifest/uap/windows10/5"
+         xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+         IgnorableNamespaces="uap uap5 rescap">
+  <Identity Name="KhatibTechnicalSolutions.MEDLINK" Publisher="__PUBLISHER__" Version="__VERSION__" ProcessorArchitecture="x64" />
+  <Properties>
+    <DisplayName>MEDLINK</DisplayName>
+    <PublisherDisplayName>KHATIB TECHNICAL SOLUTIONS</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
+  </Properties>
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.19041.0" MaxVersionTested="10.0.26100.0" />
+  </Dependencies>
+  <Resources>
+    <Resource Language="ar-SY" />
+    <Resource Language="en-US" />
+    <Resource Language="tr-TR" />
+  </Resources>
+  <Applications>
+    <Application Id="MEDLINK" Executable="MEDLINK.exe" EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements DisplayName="MEDLINK" Description="MEDLINK — Smart Hospital Appointment System"
+                          BackgroundColor="transparent" Square150x150Logo="Assets\Square150x150Logo.png" Square44x44Logo="Assets\Square44x44Logo.png" />
+      <Extensions>
+        <!-- "medlink.exe" on the command line (used by IT scripts and the CI install test). -->
+        <uap5:Extension Category="windows.appExecutionAlias" Executable="MEDLINK.exe" EntryPoint="Windows.FullTrustApplication">
+          <uap5:AppExecutionAlias>
+            <uap5:ExecutionAlias Alias="medlink.exe" />
+          </uap5:AppExecutionAlias>
+        </uap5:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+  <Capabilities>
+    <Capability Name="internetClient" />
+    <rescap:Capability Name="runFullTrust" />
+  </Capabilities>
+</Package>
