@@ -53,6 +53,21 @@ internal static class Smoke
         Check(missing.Count == 0, screen + " shows its labels" + (missing.Count > 0 ? " — missing: " + string.Join(" | ", missing) : ""));
     }
 
+    /// <summary>Primary buttons show white text (an app-wide TextBlock style once turned it dark).</summary>
+    private static void PrimaryTextWhite(Window w, string screen)
+    {
+        var primary = (Style)Application.Current.FindResource("Primary");
+        var bad = new List<string>();
+        void Walk(DependencyObject d, bool inPrimary)
+        {
+            if (d is Button { IsVisible: true } b) inPrimary = b.Style == primary || b.Style?.BasedOn == primary;
+            if (inPrimary && d is TextBlock t && t.Foreground is SolidColorBrush c && c.Color != Colors.White) bad.Add(t.Text);
+            for (var i = 0; i < VisualTreeHelper.GetChildrenCount(d); i++) Walk(VisualTreeHelper.GetChild(d, i), inPrimary);
+        }
+        Walk(w, false);
+        Check(bad.Count == 0, screen + ": primary buttons have white text" + (bad.Count > 0 ? " — not white: " + string.Join(" | ", bad) : ""));
+    }
+
     /// <summary>Logos are never mirrored: every SVG must be laid out left to right, even in Arabic.</summary>
     private static void LogosNotMirrored(Window w, string screen)
     {
@@ -110,6 +125,7 @@ internal static class Smoke
             await Shot(window, outDir, "03-signin");
             Shows(window, "sign-in", Strings.Ar.WinTitle, Strings.Ar.SignIn, Strings.Ar.SignInSub, Strings.Ar.Email, Strings.Ar.Password, Strings.Ar.BrandLine);
             LogosNotMirrored(window, "sign-in");
+            PrimaryTextWhite(window, "sign-in");
 
             var vm = app.SignIn;
             vm.Email = FakeServer.Reception; vm.Password = "wrong-password";
@@ -157,6 +173,7 @@ internal static class Smoke
             Shows(window, "dashboard", Strings.Ar.CTime, Strings.Ar.CPatient, Strings.Ar.Today, Strings.Ar.MarkArrived, Strings.Ar.Correct, Strings.Ar.SaveCorr,
                 Strings.Ar.History, Strings.Ar.SignOut, Strings.Ar.Nav[0], Strings.Ar.HBooked);
             LogosNotMirrored(window, "dashboard");
+            PrimaryTextWhite(window, "dashboard");
 
             // Offline: banner, check-in saved locally with the pending mark; sent when the server is back.
             server.Down = true;
@@ -175,7 +192,7 @@ internal static class Smoke
 
             app.SetLanguage(Lang.En);
             await Shot(window, outDir, "12-dashboard-en");
-            Shows(window, "dashboard (English)", Strings.En.CTime, Strings.En.MarkArrived, Strings.En.Nav[0]);
+            Shows(window, "dashboard (English)", Strings.En.CTime, Strings.En.MarkArrived, Strings.En.Nav[0], Strings.En.AllDepts);
             window.Width = 1024;
             await Shot(window, outDir, "13-dashboard-narrow");
             window.Width = 1280;

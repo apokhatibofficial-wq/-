@@ -289,8 +289,11 @@ public sealed class WindowsAppTests(MedLinkFixture fx) : IDisposable
         await Eventually(() => m.Toast == Strings.Ar.Live("ريم تجريبية"), "live QR notice");
         Assert.Equal("arrived", d.Rows.First(r => r.Id == bid3).Status);
 
-        // Language switch re-labels everything.
+        // Language switch re-labels everything; the department filter keeps its items (and so its selection).
+        var allDepts = d.Departments[0];
         app.SetLanguage(Lang.En);
+        Assert.Same(allDepts, d.Departments[0]);
+        Assert.Equal("All departments", d.Departments[0].Name);
         Assert.Equal("Arrived", d.Rows.First(r => r.Id == bid3).StatusLabel);
         Assert.Equal(Strings.En.Nav, m.Nav);
         Assert.False(app.Rtl);

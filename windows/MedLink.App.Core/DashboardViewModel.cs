@@ -8,7 +8,13 @@ public sealed record BookingRow(string Id, string Ref, string Time, string Patie
 
 public sealed record FilterChip(string Key, string Label, int Count, bool Selected);
 
-public sealed record DepartmentOption(string Id, string Name);
+/// <summary>Kept as the same objects across refreshes and language changes, so the filter keeps its selection.</summary>
+public sealed class DepartmentOption(string id, string name) : Observable
+{
+    private string _name = name;
+    public string Id { get; } = id;
+    public string Name { get => _name; set => Set(ref _name, value); }
+}
 
 /// <summary>Ltr: numbers and phone numbers keep their order inside Arabic text.</summary>
 public sealed record Fact(string Label, string Value, bool Ltr = false);
@@ -52,8 +58,21 @@ public sealed class DashboardViewModel : Observable
     public string Search { get => _search; set { if (Set(ref _search, value)) Rebuild(); } }
     public string Filter { get => _filter; set { if (Set(ref _filter, value)) Rebuild(); } }
     public string DepartmentId { get => _department; set { if (Set(ref _department, value ?? "")) Rebuild(); } }
-    public IReadOnlyList<DepartmentOption> Departments =>
-        [new("", S.AllDepts), .. _m.Store.Departments().Select(d => new DepartmentOption(d.Id, Name(d)))];
+    public System.Collections.ObjectModel.ObservableCollection<DepartmentOption> Departments { get; } = [];
+
+    /// <summary>Updates the department list in place: new departments are added, names follow the language.</summary>
+    private void SyncDepartments()
+    {
+        var wanted = new List<(string Id, string Name)> { ("", S.AllDepts) };
+        wanted.AddRange(_m.Store.Departments().Select(d => (d.Id, Name(d))));
+        for (var i = 0; i < wanted.Count; i++)
+        {
+            if (i < Departments.Count && Departments[i].Id == wanted[i].Id) Departments[i].Name = wanted[i].Name;
+            else if (i < Departments.Count) Departments[i] = new DepartmentOption(wanted[i].Id, wanted[i].Name);
+            else Departments.Add(new DepartmentOption(wanted[i].Id, wanted[i].Name));
+        }
+        while (Departments.Count > wanted.Count) Departments.RemoveAt(Departments.Count - 1);
+    }
     public IReadOnlyList<FilterChip> Chips { get; private set; } = [];
     public IReadOnlyList<BookingRow> Rows { get; private set; } = [];
     public bool IsEmpty => Rows.Count == 0;
@@ -76,6 +95,7 @@ public sealed class DashboardViewModel : Observable
         if (_date.Length == 0) _date = _m.Sync.Today();
         _day = _m.Store.Day(_date);
         if (_selected is not null) _selected = _m.Store.ById(_selected.Id);
+        SyncDepartments();
         Rebuild();
     }
 

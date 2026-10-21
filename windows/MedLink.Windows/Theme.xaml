@@ -104,7 +104,10 @@
         <ControlTemplate TargetType="Button">
           <Border x:Name="b" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
                   BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" Padding="{TemplateBinding Padding}">
-            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center">
+              <!-- An empty implicit style: otherwise the app-wide TextBlock style would override the button's text colour. -->
+              <ContentPresenter.Resources><Style TargetType="TextBlock" /></ContentPresenter.Resources>
+            </ContentPresenter>
           </Border>
           <ControlTemplate.Triggers>
             <Trigger Property="IsKeyboardFocused" Value="True">

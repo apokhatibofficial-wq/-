@@ -284,7 +284,8 @@
                               <Style.Triggers>
                                 <DataTrigger Binding="{Binding Ltr}" Value="True">
                                   <Setter Property="FlowDirection" Value="LeftToRight" />
-                                  <Setter Property="HorizontalAlignment" Value="Right" />
+                                  <!-- Left of a left-to-right element = the start of the value column in Arabic. -->
+                                  <Setter Property="HorizontalAlignment" Value="Left" />
                                 </DataTrigger>
                               </Style.Triggers>
                             </Style>
