@@ -4,6 +4,75 @@ Real runs only. Re-run the commands to reproduce. Newest phase first.
 
 ---
 
+# Phase 10 — automatic no-show, cleanup, retention, password recovery (2026-10-21)
+
+## 1. API tests (xUnit + Testcontainers, PostgreSQL 16)
+`cd api && dotnet test tests/MedLink.Api.Tests`
+
+**Result: 96 passed, 0 failed** (7 min 2 s). That is the 90 earlier tests plus 6 new ones. After the last change (the database driver's log level), the log and secrets tests and the job tests were run again: 10/10.
+
+| Test | Result |
+|---|---|
+| `Acceptance 10: no-show is recorded after the grace period (per hospital), once, by the server` (two job runs at the same moment mark it once; in grace, arrived, corrected, cancelled and 6.5-day-old bookings untouched; the event's time = slot + grace; a 60-minute hospital grace is respected; a late QR scan still checks the patient in) | ✅ |
+| `Retention: after the hospital's period, names, phones, answers and reasons are removed; status and times stay` (no name left anywhere, audit log included; a newer booking untouched; the anonymised ticket is refused by the scanner) | ✅ |
+| `Retention: a redacted reason cannot be rewritten, and reasons cannot be edited outside redaction` | ✅ |
+| `Cleanup: old used or expired links and ended sessions are deleted; current ones stay` (the signed-in session still works) | ✅ |
+| `Retention runs nightly after 03:00 Syria time, once per day` | ✅ |
+| `The background service runs the no-show job by itself when enabled` | ✅ |
+
+Test-side mistakes fixed while writing the tests:
+- two test bookings were moved to the same minute, which the one-patient-per-seat rule refused;
+- the cleanup test ended the session it was signed in with;
+- a test session was missing a required column.
+
+**Mutation check (9 seeded bugs, all caught in the end):**
+- corrected bookings no longer skipped;
+- fixed 30-minute grace instead of the hospital's;
+- no 6-day look-back;
+- reasons not cleared;
+- phone kept;
+- no lock between servers;
+- append-only rule removed;
+- retention at any hour;
+- cleanup deleting all sessions.
+
+Two were not caught at first, and both were weak tests, not bugs:
+- **The fixed grace:** I had changed it in one place only. The event time still used the hospital's grace, so the server's "not in the future" check refused the mark. With the grace replaced everywhere, the test fails as it should.
+- **The look-back:** the old test booking was 8 days old, so the separate 7-day limit on events already refused it. It is now 6.5 days old, inside that limit, and the test fails without the look-back.
+
+## 2. Web and Windows
+| Check | Result |
+|---|---|
+| `tsc` × 4 | ✅ 0 errors |
+| Unit tests | ✅ shared 3/3 · hospital 10/10 · booking 5/5 |
+| `vite build` × 3 | ✅ |
+| Windows app build (`EnableWindowsTargeting`) | ✅ 0 warnings. The new dialog line runs on Windows in CI. |
+| gitleaks 8.28.0 | ✅ no leaks |
+
+## 3. End to end on the real stack (Docker images, Chromium)
+Migration `0006_background_jobs` applied. Right after start, the service recorded a run of all three jobs in `job_runs` with no help.
+
+**7 of 7 steps passed:**
+```
+PASS owner signs in; creates a hospital; admin activates and signs in
+PASS admin adds two departments with timetables
+PASS bookings (fictional patients): A 50 min ago, B 10 min ago (grace 30 min), C 40 min ago but checked in
+PASS within a minute the server marks A as no-show by itself (source auto); B and C are untouched
+PASS the hospital web shows A as no-show after a reload
+PASS the patient turns up late: a correction to arrived wins, and the job does not mark it again
+PASS forgot password on the hospital web: WhatsApp to support, and the staff line (ask the hospital admin)
+```
+- The event's time was exactly the slot plus 30 minutes, with no account. After the correction, a further minute passed and there was still exactly one automatic event.
+- **API container log:** 0 matches for patient names, phone numbers, booking numbers, QR codes, `#t=`, test emails or the correction text. The job wrote one line, `job no_show: 1`.
+- **Found by this run:** the database driver logged every SQL statement at the information level. With the minute job that is about 20,000 lines a day; they held no values. They are now logged at warning level only.
+- Test-side slips, fixed: the menu item is «الحجوزات», not «المواعيد»; «حضر» also matched «لم يحضر».
+
+## Not tested yet
+- The Windows forgot dialog with the new line: it builds here, and the Windows CI run opens the dialog.
+- A night of real retention on production data: the logic is covered by the tests above with dates moved into the past.
+
+---
+
 # Phase 9 — phone page and QR scanner (2026-10-21)
 
 ## 1. API tests (xUnit + Testcontainers, PostgreSQL 16)

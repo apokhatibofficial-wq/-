@@ -29,6 +29,7 @@ public sealed class Strings
     public required string ForgotTitle { get; init; }
     public required string ForgotBody { get; init; }
     public required string ForgotWarn { get; init; }
+    public required string ForgotStaff { get; init; }
     public required string OpenWa { get; init; }
     public required string Cancel { get; init; }
     public required Func<string, string, string> WaMsg { get; init; }          // (username, hospital)
@@ -147,6 +148,7 @@ public sealed class Strings
         SignOut = "تسجيل الخروج", ForgotTitle = "استعادة كلمة المرور",
         ForgotBody = "سيُفتح واتساب برسالة جاهزة إلى دعم KHATIB TECHNICAL SOLUTIONS. راجع الرسالة ثم أرسلها بنفسك.",
         ForgotWarn = "لا تُرسل كلمة المرور أو أي رمز عبر واتساب. لن تتغير كلمة المرور إلا بعد التحقق من هويتك، وستصلك خطوات إعادة التعيين بطريقة آمنة.",
+        ForgotStaff = "موظفو الاستقبال والأطباء والمسح: اطلب من مسؤول المستشفى إرسال رابط إعادة تعيين.",
         WaMsg = (u, h) => "مرحبًا، أحتاج إلى استعادة كلمة مرور حساب MEDLINK.\nاسم المستخدم: " + (u.Length > 0 ? u : "—") + "\nالمستشفى: " + (h.Length > 0 ? h : "—"),
         OpenWa = "فتح واتساب", Cancel = "إلغاء",
         Email = "البريد الإلكتروني", TotpTitle = "رمز التحقق", TotpSub = "أدخل الرمز المكوّن من 6 أرقام من تطبيق المصادقة.", TotpLabel = "الرمز",
@@ -201,6 +203,7 @@ public sealed class Strings
         SignOut = "Sign out", ForgotTitle = "Recover your password",
         ForgotBody = "WhatsApp will open with a prepared message to KHATIB TECHNICAL SOLUTIONS support. Review it and send it yourself.",
         ForgotWarn = "Never send your password or any code over WhatsApp. Your password only changes after your identity is verified; reset steps are sent securely.",
+        ForgotStaff = "Reception, doctors and scanner staff: ask your hospital admin to send you a reset link.",
         WaMsg = (u, h) => "Hello, I need to recover my MEDLINK account password.\nUsername: " + (u.Length > 0 ? u : "—") + "\nHospital: " + (h.Length > 0 ? h : "—"),
         OpenWa = "Open WhatsApp", Cancel = "Cancel",
         Email = "Email", TotpTitle = "Verification code", TotpSub = "Enter the 6-digit code from your authenticator app.", TotpLabel = "Code",
@@ -255,6 +258,7 @@ public sealed class Strings
         SignOut = "Çıkış yap", ForgotTitle = "Şifre kurtarma",
         ForgotBody = "WhatsApp, KHATIB TECHNICAL SOLUTIONS desteğine hazır bir mesajla açılacak. Mesajı kontrol edip kendiniz gönderin.",
         ForgotWarn = "Şifrenizi veya herhangi bir kodu WhatsApp ile göndermeyin. Şifreniz yalnızca kimliğiniz doğrulandıktan sonra değişir; sıfırlama adımları güvenli şekilde iletilir.",
+        ForgotStaff = "Kayıt, doktor ve tarayıcı personeli: hastane yöneticinizden sıfırlama bağlantısı isteyin.",
         WaMsg = (u, h) => "Merhaba, MEDLINK hesap şifremi kurtarmam gerekiyor.\nKullanıcı adı: " + (u.Length > 0 ? u : "—") + "\nHastane: " + (h.Length > 0 ? h : "—"),
         OpenWa = "WhatsApp’ı aç", Cancel = "İptal",
         Email = "E-posta", TotpTitle = "Doğrulama kodu", TotpSub = "Kimlik doğrulama uygulamanızdaki 6 haneli kodu girin.", TotpLabel = "Kod",

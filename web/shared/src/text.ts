@@ -133,7 +133,7 @@ export const AH = {
     forgotWarn: 'لا تُرسل كلمة المرور أو أي رمز عبر واتساب. لن تتغير كلمة المرور إلا بعد التحقق من هويتك، وستصلك خطوات إعادة التعيين بطريقة آمنة.',
     waMsg: (u: string) => 'مرحبًا، أحتاج إلى استعادة كلمة مرور حساب MEDLINK.\nاسم المستخدم: ' + (u || '—'),
     openWa: 'فتح واتساب', cancel: 'إلغاء',
-    staffHint: 'موظفو الاستقبال والمسح: اطلب من مسؤول المستشفى إرسال رابط إعادة تعيين.',
+    staffHint: 'موظفو الاستقبال والأطباء والمسح: اطلب من مسؤول المستشفى إرسال رابط إعادة تعيين.',
   },
   en: {
     brandLine: 'Hospital appointments and check-in, connected to the MEDLINK central service.',
@@ -142,7 +142,7 @@ export const AH = {
     forgotWarn: 'Never send your password or any code over WhatsApp. Your password only changes after your identity is verified; reset steps are sent securely.',
     waMsg: (u: string) => 'Hello, I need to recover my MEDLINK account password.\nUsername: ' + (u || '—'),
     openWa: 'Open WhatsApp', cancel: 'Cancel',
-    staffHint: 'Reception and scanner staff: ask your hospital admin to send you a reset link.',
+    staffHint: 'Reception, doctors and scanner staff: ask your hospital admin to send you a reset link.',
   },
   tr: {
     brandLine: 'Hastane randevuları ve giriş kaydı, MEDLINK merkezi hizmetine bağlı.',
@@ -151,7 +151,7 @@ export const AH = {
     forgotWarn: 'Şifrenizi veya herhangi bir kodu WhatsApp ile göndermeyin. Şifreniz yalnızca kimliğiniz doğrulandıktan sonra değişir; sıfırlama adımları güvenli şekilde iletilir.',
     waMsg: (u: string) => 'Merhaba, MEDLINK hesap şifremi kurtarmam gerekiyor.\nKullanıcı adı: ' + (u || '—'),
     openWa: 'WhatsApp’ı aç', cancel: 'İptal',
-    staffHint: 'Kayıt ve tarayıcı personeli: hastane yöneticinizden sıfırlama bağlantısı isteyin.',
+    staffHint: 'Kayıt, doktor ve tarayıcı personeli: hastane yöneticinizden sıfırlama bağlantısı isteyin.',
   },
 };
 
