@@ -86,11 +86,11 @@ internal static class Smoke
         var bad = new List<string>();
         void Walk(DependencyObject d)
         {
-            if (d is SharpVectors.Converters.SvgViewbox { IsVisible: true } v && v.ActualWidth > 0)
+            if (d is Image { IsVisible: true, Source: DrawingImage } v && v.ActualWidth > 0)
             {
                 var r = v.TransformToAncestor(content).TransformBounds(new Rect(0, 0, v.ActualWidth, v.ActualHeight));
                 if (r.Top < -1 || r.Left < -1 || r.Bottom > content.ActualHeight + 1 || r.Right > content.ActualWidth + 1)
-                    bad.Add(v.Source?.ToString() + " at " + r.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                    bad.Add(v.Name + " at " + r.ToString(System.Globalization.CultureInfo.InvariantCulture));
             }
             for (var i = 0; i < VisualTreeHelper.GetChildrenCount(d); i++) Walk(VisualTreeHelper.GetChild(d, i));
         }
@@ -119,7 +119,7 @@ internal static class Smoke
         var bad = 0;
         void Walk(DependencyObject d)
         {
-            if (d is SharpVectors.Converters.SvgViewbox { IsVisible: true } v && v.FlowDirection != FlowDirection.LeftToRight) bad++;
+            if (d is Image { IsVisible: true, Source: DrawingImage } v && v.FlowDirection != FlowDirection.LeftToRight) bad++;
             for (var i = 0; i < VisualTreeHelper.GetChildrenCount(d); i++) Walk(VisualTreeHelper.GetChild(d, i));
         }
         Walk(w);

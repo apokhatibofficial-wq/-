@@ -1,5 +1,5 @@
 <UserControl x:Class="MedLink.Windows.Views.MainView" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:MedLink.Windows"
              Background="{StaticResource Surface}" SizeChanged="OnSize">
   <UserControl.Resources>
     <!-- Nav item: 9px 12px, radius 6; selected #e3e8fb / #1a2d99 / 600 -->
@@ -94,7 +94,7 @@
           </StackPanel>
         </Border>
         <StackPanel>
-          <svgc:SvgViewbox FlowDirection="LeftToRight" x:Name="NavLogo" Source="pack://application:,,,/Assets/medlink-logo.svg" Width="128" HorizontalAlignment="Left" Margin="8,2,8,8" AutomationProperties.Name="MEDLINK" />
+          <Image Stretch="Uniform" FlowDirection="LeftToRight" x:Name="NavLogo" Source="{local:Logo medlink-logo.svg}" Width="128" HorizontalAlignment="Left" Margin="8,2,8,8" AutomationProperties.Name="MEDLINK" />
           <TextBlock Text="{Binding HospitalName}" Style="{StaticResource Note}" Margin="8,0,8,10" />
           <RadioButton Style="{StaticResource NavItem}" GroupName="nav" Command="{Binding NavCommand}" CommandParameter="0"
                        IsChecked="{Binding Page, Converter={StaticResource Equals}, ConverterParameter=0, Mode=OneWay}">

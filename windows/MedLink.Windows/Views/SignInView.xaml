@@ -1,5 +1,5 @@
 <UserControl x:Class="MedLink.Windows.Views.SignInView" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:MedLink.Windows"
              Background="{StaticResource Surface}">
   <Grid>
     <Grid>
@@ -11,13 +11,13 @@
       <Border Background="{StaticResource BrandDeep}" Padding="40">
         <DockPanel>
           <DockPanel DockPanel.Dock="Bottom" LastChildFill="False">
-            <svgc:SvgViewbox FlowDirection="LeftToRight" DockPanel.Dock="Left" Source="pack://application:,,,/Assets/khatib-logo-white.svg" Height="40" AutomationProperties.Name="KHATIB TECHNICAL SOLUTIONS" />
+            <Image Stretch="Uniform" FlowDirection="LeftToRight" DockPanel.Dock="Left" Source="{local:Logo khatib-logo-white.svg}" Height="40" AutomationProperties.Name="KHATIB TECHNICAL SOLUTIONS" />
             <TextBlock DockPanel.Dock="Right" FlowDirection="LeftToRight" Foreground="#b9c2f0" FontSize="12" VerticalAlignment="Bottom">
               <Run Text="v" /><Run Text="{Binding Version, Mode=OneWay}" /><Run Text=" · Windows" />
             </TextBlock>
           </DockPanel>
           <StackPanel>
-            <svgc:SvgViewbox FlowDirection="LeftToRight" Source="pack://application:,,,/Assets/medlink-logo-white.svg" Width="300" HorizontalAlignment="Left" AutomationProperties.Name="MEDLINK" />
+            <Image Stretch="Uniform" FlowDirection="LeftToRight" Source="{local:Logo medlink-logo-white.svg}" Width="300" HorizontalAlignment="Left" AutomationProperties.Name="MEDLINK" />
             <TextBlock Text="{Binding S.BrandLine}" Foreground="#d6dcff" FontSize="16" MaxWidth="340" HorizontalAlignment="Left" Margin="0,18,0,0" LineHeight="26" />
           </StackPanel>
         </DockPanel>
