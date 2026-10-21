@@ -24,7 +24,7 @@ trap cleanup EXIT
 
 step "start the stack and the S3 mock"
 docker run -d --name medlink-s3mock -p 127.0.0.1:9090:9090 -e initialBuckets=medlink-backups "$S3MOCK_IMAGE" >/dev/null
-compose up -d --wait api >/dev/null 2>&1
+compose up -d --wait api mailpit >/dev/null 2>&1
 for _ in $(seq 60); do curl -sf -o /dev/null http://127.0.0.1:9090/medlink-backups && break; sleep 1; done
 compose run --rm -T api bootstrap-admin --email owner@ci.invalid >/dev/null 2>&1   # some data (the link is not kept)
 psql_owner -d "$DB_NAME" -c "SELECT 'users', count(*) FROM users"
@@ -38,6 +38,22 @@ WORK=$tmp s3 s3 ls --recursive s3://medlink-backups/
 
 step "monthly restore test (no private key)"
 "$dir/restore-test.sh"
+[ "$(psql_owner -d "$DB_NAME" -c "SELECT string_agg(name || '=' || ok, ' ' ORDER BY name) FROM ops_checks")" = "backup=true restore_test=true" ] \
+  || fail "the results were not recorded"
+echo "results recorded: backup ok, restore test ok"
+
+step "a failed backup is recorded and the owner gets an email"
+if R2_BUCKET=no-such-bucket "$dir/backup.sh" >/dev/null 2>&1; then fail "a backup to a missing bucket succeeded"; fi
+psql_owner -d "$DB_NAME" -c "SELECT ok, message FROM ops_checks WHERE name = 'backup'"
+compose restart api >/dev/null 2>&1   # the alert job runs at start, then hourly
+mail=""
+for _ in $(seq 60); do
+  mail=$(curl -sf "http://127.0.0.1:8025/api/v1/search?query=subject:%22backup%20failed%22" | grep -o '"Subject":"[^"]*"' | head -n 1 || true)
+  [ -n "$mail" ] && break; sleep 1
+done
+[ -n "$mail" ] || fail "no alert email"
+echo "alert email: $mail"
+"$dir/backup.sh" >/dev/null   # a good backup again for the steps below
 
 step "restore with the private key into a new database: same rows as the live one"
 psql_owner -d "$DB_NAME" -c "$COUNT_SQL" > "$tmp/live"

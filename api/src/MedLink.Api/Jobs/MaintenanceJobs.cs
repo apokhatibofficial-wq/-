@@ -4,6 +4,7 @@ using MedLink.Api.Audit;
 using MedLink.Api.Bookings;
 using MedLink.Api.Config;
 using MedLink.Api.Data;
+using MedLink.Api.Email;
 using Npgsql;
 
 namespace MedLink.Api.Jobs;
@@ -103,6 +104,68 @@ public static class MaintenanceJobs
             return total;
         });
 
+    private sealed class OpsCheck
+    {
+        public string Name { get; set; } = "";
+        public bool Ok { get; set; }
+        public string Message { get; set; } = "";
+        public DateTime At { get; set; }
+        public DateTime LastOkAt { get; set; }
+        public DateTime? AlertedAt { get; set; }
+    }
+
+    /// <summary>How long without a successful run before the owner is told: backups run every 6 hours, the restore test monthly.</summary>
+    public static readonly IReadOnlyDictionary<string, TimeSpan> OpsMaxAge = new Dictionary<string, TimeSpan>
+    {
+        ["backup"] = TimeSpan.FromHours(8),
+        ["restore_test"] = TimeSpan.FromDays(35),
+    };
+
+    /// <summary>
+    /// Emails the owner (ALERT_EMAIL) when a backup script reported a failure (once per failure), or when a check has not
+    /// succeeded for too long (once a day while it lasts). Returns the number of alerts. Without ALERT_EMAIL they are logged.
+    /// </summary>
+    public static Task<int> OpsAlertAsync(Db db, IEmailSender email, string alertEmail, ILogger log, DateTimeOffset now) =>
+        db.RunAsync(DbScope.System, async (c, t) =>
+        {
+            if (!await c.ExecuteScalarAsync<bool>("SELECT pg_try_advisory_xact_lock(@k)", new { k = LockBase + 4 }, t)) return 0;
+            var checks = await c.QueryAsync<OpsCheck>(
+                "SELECT name, ok, message, at, last_ok_at AS lastokat, alerted_at AS alertedat FROM ops_checks ORDER BY name", transaction: t);
+            var sent = 0;
+            foreach (var k in checks)
+            {
+                var at = Utc(k.At); var lastOk = Utc(k.LastOkAt); var alerted = k.AlertedAt is { } a ? Utc(a) : (DateTimeOffset?)null;
+                var what = k.Name == "backup" ? ("النسخ الاحتياطي", "backup") : ("فحص الاستعادة الشهري", "monthly restore test");
+                (string Ar, string En)? problem = null;
+                if (!k.Ok && (alerted is null || alerted < at))
+                    problem = ($"فشل {what.Item1}.", $"The {what.Item2} failed.");
+                else if (now - lastOk > OpsMaxAge[k.Name] && (alerted is null || now - alerted > TimeSpan.FromDays(1)))
+                    problem = ($"لم ينجح {what.Item1} منذ {lastOk:yyyy-MM-dd HH:mm} UTC.", $"No successful {what.Item2} since {lastOk:yyyy-MM-dd HH:mm} UTC.");
+                if (problem is not { } p) continue;
+
+                if (alertEmail.Length == 0)
+                    log.LogWarning("ops alert ({Check}) not emailed: ALERT_EMAIL is not set", k.Name);
+                else
+                    await email.SendAsync(new EmailMessage("ops_alert", alertEmail, "MEDLINK: " + p.En, $"""
+                        تنبيه من خادم MEDLINK:
+                        {p.Ar}
+
+                        MEDLINK server alert:
+                        {p.En}
+
+                        Last report / آخر تقرير ({at:yyyy-MM-dd HH:mm} UTC): {k.Message}
+
+                        راجع /var/log/medlink-backup.log على الخادم، واتبع docs/backup-restore.md.
+                        Check /var/log/medlink-backup.log on the server and follow docs/backup-restore.md.
+                        """));
+                await c.ExecuteAsync("UPDATE ops_checks SET alerted_at = @now WHERE name = @name", new { now = now.UtcDateTime, name = k.Name }, t);
+                sent++;
+            }
+            return sent;
+        });
+
+    private static DateTimeOffset Utc(DateTime d) => new(DateTime.SpecifyKind(d, DateTimeKind.Utc));
+
     private static Task RecordRunAsync(NpgsqlConnection c, NpgsqlTransaction t, string job, DateTimeOffset now, int count) =>
         c.ExecuteAsync("""
             INSERT INTO job_runs (job, last_run_at, last_count) VALUES (@job, @now, @count)
@@ -122,8 +185,8 @@ public static class MaintenanceJobs
     }
 }
 
-/// <summary>Runs the jobs: no-show every minute, cleanup every hour, retention nightly. Disabled with JOBS_ENABLED=false.</summary>
-public sealed class MaintenanceService(Db db, TimeProvider clock, MedLinkOptions options, ILogger<MaintenanceService> log) : BackgroundService
+/// <summary>Runs the jobs: no-show every minute, cleanup and backup alerts every hour, retention nightly. Disabled with JOBS_ENABLED=false.</summary>
+public sealed class MaintenanceService(Db db, IEmailSender email, TimeProvider clock, MedLinkOptions options, ILogger<MaintenanceService> log) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stop)
     {
@@ -137,6 +200,7 @@ public sealed class MaintenanceService(Db db, TimeProvider clock, MedLinkOptions
             if (now - lastCleanup >= TimeSpan.FromHours(1))
             {
                 await RunAsync("cleanup", () => MaintenanceJobs.CleanupAsync(db, now));
+                await RunAsync("ops_alert", () => MaintenanceJobs.OpsAlertAsync(db, email, options.AlertEmail, log, now));
                 lastCleanup = now;
             }
             if (await Safe(() => MaintenanceJobs.RetentionDueAsync(db, now)))
@@ -152,8 +216,9 @@ public sealed class MaintenanceService(Db db, TimeProvider clock, MedLinkOptions
             var n = await run();
             if (n > 0) log.LogInformation("job {Job}: {Count}", job, n);
         }
-        // A failed run is retried at the next tick; the counts only (no personal data) are logged.
-        catch (Exception e) when (e is NpgsqlException or TimeoutException or InvalidOperationException)
+        // A failed run (database, or the mail server for alerts) is retried at the next tick and must never stop the
+        // API, so every error except shutdown is caught. Only the error type is logged (no personal data).
+        catch (Exception e) when (e is not OperationCanceledException)
         {
             log.LogError("job {Job} failed: {Error}", job, e.GetType().Name);
         }

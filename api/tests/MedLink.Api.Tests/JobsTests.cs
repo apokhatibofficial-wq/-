@@ -217,4 +217,80 @@ public sealed class JobsTests(MedLinkFixture fx) : IDisposable
             await Task.Delay(100);
         Assert.Equal("no_show", await db.ExecuteScalarAsync<string>("SELECT status FROM bookings WHERE ref = @reference", new { reference }));
     }
+
+    private sealed class FailingSender : MedLink.Api.Email.IEmailSender
+    {
+        public Task SendAsync(MedLink.Api.Email.EmailMessage message, CancellationToken ct = default) => throw new System.Net.Sockets.SocketException();
+    }
+
+    [Fact(DisplayName = "Alerts: a failed or missing backup emails the owner once per failure, and once a day while backups are missing")]
+    public async Task OpsAlerts()
+    {
+        const string owner = "owner-alerts@medlink.invalid";
+        var log = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance;
+        var now = DateTimeOffset.UtcNow;
+        async Task Set(string name, bool ok, string message, DateTimeOffset at, DateTimeOffset lastOk, bool clearAlert = false)
+        {
+            await using var db = await fx.OwnerAsync();
+            await db.ExecuteAsync("UPDATE ops_checks SET ok = @ok, message = @message, at = @at, last_ok_at = @lastOk" + (clearAlert ? ", alerted_at = NULL" : "") + " WHERE name = @name",
+                new { name, ok, message, at = at.UtcDateTime, lastOk = lastOk.UtcDateTime });
+        }
+        int Mails() => fx.Email.Sent.Count(m => m.To == owner);
+        await Set("restore_test", true, "ok", now, now, clearAlert: true);
+        await Set("backup", true, "uploaded", now, now, clearAlert: true);
+        Assert.Equal(0, await MaintenanceJobs.OpsAlertAsync(Db, fx.Email, owner, log, now));
+
+        // A failed backup: one email, with the script's reason; not repeated for the same failure.
+        await Set("backup", false, "the dump has data for 0 of 22 tables", now, now.AddHours(-1));
+        Assert.Equal(1, await MaintenanceJobs.OpsAlertAsync(Db, fx.Email, owner, log, now.AddMinutes(1)));
+        var m = fx.Email.LastTo(owner);
+        Assert.Contains("The backup failed.", m.Subject);
+        Assert.Contains("فشل النسخ الاحتياطي", m.TextBody);
+        Assert.Contains("the dump has data for 0 of 22 tables", m.TextBody);
+        Assert.Equal(0, await MaintenanceJobs.OpsAlertAsync(Db, fx.Email, owner, log, now.AddMinutes(2)));
+        // The next run fails again: a new email.
+        await Set("backup", false, "upload refused", now.AddHours(6), now.AddHours(-1));
+        Assert.Equal(1, await MaintenanceJobs.OpsAlertAsync(Db, fx.Email, owner, log, now.AddHours(6).AddMinutes(1)));
+
+        // Backups stopped running (no report at all): after 8 hours, an email, then once a day.
+        await Set("backup", true, "uploaded", now.AddHours(-9), now.AddHours(-9), clearAlert: true);
+        var before = Mails();
+        Assert.Equal(1, await MaintenanceJobs.OpsAlertAsync(Db, fx.Email, owner, log, now));
+        Assert.Contains("No successful backup since", fx.Email.LastTo(owner).Subject);
+        Assert.Equal(0, await MaintenanceJobs.OpsAlertAsync(Db, fx.Email, owner, log, now.AddHours(5)));
+        Assert.Equal(1, await MaintenanceJobs.OpsAlertAsync(Db, fx.Email, owner, log, now.AddHours(25)));
+        Assert.Equal(before + 2, Mails());
+
+        // The monthly restore test failing is reported too.
+        await Set("backup", true, "uploaded", now, now, clearAlert: true);
+        await Set("restore_test", false, "row counts differ: bookings", now, now.AddDays(-30));
+        Assert.Equal(1, await MaintenanceJobs.OpsAlertAsync(Db, fx.Email, owner, log, now));
+        Assert.Contains("monthly restore test failed", fx.Email.LastTo(owner).Subject);
+
+        // The mail server is down: nothing is marked, so the next hour tries again.
+        await Set("restore_test", false, "row counts differ: bookings", now.AddMinutes(5), now.AddDays(-30), clearAlert: true);
+        await Assert.ThrowsAnyAsync<Exception>(() => MaintenanceJobs.OpsAlertAsync(Db, new FailingSender(), owner, log, now.AddMinutes(6)));
+        Assert.Equal(1, await MaintenanceJobs.OpsAlertAsync(Db, fx.Email, owner, log, now.AddMinutes(7)));
+
+        // No ALERT_EMAIL configured: nothing is sent (it is logged), and it does not repeat every hour.
+        await Set("restore_test", true, "ok", now, now, clearAlert: true);
+        await Set("backup", false, "upload refused", now.AddMinutes(10), now, clearAlert: true);
+        before = fx.Email.Sent.Count;
+        Assert.Equal(1, await MaintenanceJobs.OpsAlertAsync(Db, fx.Email, "", log, now.AddMinutes(11)));
+        Assert.Equal(0, await MaintenanceJobs.OpsAlertAsync(Db, fx.Email, "", log, now.AddMinutes(12)));
+        Assert.Equal(before, fx.Email.Sent.Count);
+        await Set("backup", true, "uploaded", now, now, clearAlert: true);
+    }
+
+    [Fact(DisplayName = "Alerts: the application role can read the backup results and mark an alert, but not change a result")]
+    public async Task OpsChecksArePrivileged()
+    {
+        await using var app = await fx.AppAsync();
+        await using var t = await app.BeginTransactionAsync();
+        await app.ExecuteAsync("SELECT set_config('app.scope', 'system', true)", transaction: t);
+        Assert.Equal(2, await app.ExecuteScalarAsync<int>("SELECT count(*) FROM ops_checks", transaction: t));
+        await app.ExecuteAsync("UPDATE ops_checks SET alerted_at = alerted_at", transaction: t);
+        var e = await Assert.ThrowsAsync<Npgsql.PostgresException>(() => app.ExecuteAsync("UPDATE ops_checks SET ok = true", transaction: t));
+        Assert.Equal("42501", e.SqlState);
+    }
 }

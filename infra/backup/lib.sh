@@ -39,3 +39,19 @@ s3() {
 # Row counts of every table, one "table count" per line, sorted (the owner role is not limited by row-level security).
 COUNT_SQL="SELECT table_name || ' ' || (xpath('/row/c/text()', query_to_xml(format('SELECT count(*) AS c FROM public.%I', table_name), false, true, '')))[1]::text
   FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE' ORDER BY table_name"
+
+# Records a check's result (backup | restore_test) in the database. The API emails the owner (ALERT_EMAIL) about a
+# failure, or when no run has succeeded for too long. The message is technical, never personal data.
+report() {
+  local name=$1 ok=$2 message=$3
+  psql_owner -d "$DB_NAME" -v name="$name" -v ok="$ok" -v msg="${message:0:500}" >/dev/null <<'SQL' || echo "could not record the result in the database" >&2
+UPDATE ops_checks SET ok = :'ok'::boolean, message = :'msg', at = now(),
+  last_ok_at = CASE WHEN :'ok'::boolean THEN now() ELSE last_ok_at END
+WHERE name = :'name';
+SQL
+}
+# Run on exit: a failure that stopped the script (set -e) is reported too, with FAIL_MESSAGE when one was set.
+report_on_exit() {
+  local rc=$1 name=$2
+  [ "$rc" -eq 0 ] || report "$name" false "${FAIL_MESSAGE:-$(basename "$0") stopped with exit code $rc; see /var/log/medlink-backup.log}"
+}

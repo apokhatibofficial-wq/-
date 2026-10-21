@@ -58,6 +58,14 @@ services:
       CORS_ORIGINS: ${CORS_ORIGINS}
       TRUSTED_PROXIES: 172.30.0.0/24
       COOKIE_SECURE: "true"
+      # Without these lines the values in .env would be ignored (compose passes only what is listed here).
+      AUTH_RATE_PER_IP_PER_MIN: ${AUTH_RATE_PER_IP_PER_MIN:-20}
+      AUTH_RATE_PER_NET24_PER_MIN: ${AUTH_RATE_PER_NET24_PER_MIN:-60}
+      BOOKING_RATE_PER_IP_PER_MIN: ${BOOKING_RATE_PER_IP_PER_MIN:-10}
+      BOOKING_RATE_PER_HOSPITAL_PER_MIN: ${BOOKING_RATE_PER_HOSPITAL_PER_MIN:-120}
+      SCAN_RATE_PER_IP_PER_MIN: ${SCAN_RATE_PER_IP_PER_MIN:-60}
+      JOBS_ENABLED: ${JOBS_ENABLED:-true}
+      ALERT_EMAIL: ${ALERT_EMAIL:-}
     read_only: true
     tmpfs: [/tmp]
     security_opt: ["no-new-privileges:true"]

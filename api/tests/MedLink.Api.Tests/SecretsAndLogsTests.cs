@@ -34,7 +34,7 @@ public sealed class SecretsAndLogsTests(MedLinkFixture fx) : IDisposable
         Assert.DoesNotContain(admin.Email, all, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("#t=", all);
         Assert.DoesNotContain("definitely-wrong-password", all);
-        foreach (var m in fx.Email.Sent)
+        foreach (var m in fx.Email.Sent.Where(m => m.Kind != "ops_alert")) // server alerts carry no link
             Assert.DoesNotContain(CapturingEmailSender.TokenFrom(m), all);
     }
 

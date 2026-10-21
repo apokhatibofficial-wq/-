@@ -11,9 +11,9 @@
 need R2_BUCKET R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY
 WORK=$(mktemp -d)
 target=medlink_restore_test
-cleanup() { psql_owner -d postgres -c "DROP DATABASE IF EXISTS $target" >/dev/null 2>&1 || true; rm -rf "$WORK"; }
+cleanup() { local rc=$?; psql_owner -d postgres -c "DROP DATABASE IF EXISTS $target" >/dev/null 2>&1 || true; rm -rf "$WORK"; report_on_exit $rc restore_test; }
 trap cleanup EXIT
-fail() { echo "RESTORE TEST FAILED: $*" >&2; exit 1; }
+fail() { FAIL_MESSAGE=$*; echo "RESTORE TEST FAILED: $*" >&2; exit 1; }
 stamp=$(date -u +%Y%m%dT%H%M%SZ)
 
 # ---- 1. a fresh dump restores, with every table complete
@@ -49,3 +49,4 @@ monthly=$(s3 s3api list-objects-v2 --bucket "$R2_BUCKET" --prefix "postgres/mont
 [ "$monthly" != "0" ] || fail "no monthly backup for $(date -u +%Y-%m)"
 echo "$stamp restore test: newest backup $key is ${age_h}h old, $(stat -c %s "$WORK/latest.age") bytes, checksum OK; monthly copy present"
 echo "$stamp RESTORE TEST PASSED"
+report restore_test true "fresh dump restored ($tables tables, $rows rows); newest backup ${age_h}h old, checksum OK"

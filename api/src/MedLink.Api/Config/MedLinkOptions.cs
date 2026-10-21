@@ -39,6 +39,8 @@ public sealed class MedLinkOptions
     public int ScanRatePerIp { get; init; } = 60;
     /// <summary>Background jobs (no-show, cleanup, retention). Tests switch them off and call them directly.</summary>
     public bool JobsEnabled { get; init; } = true;
+    /// <summary>The owner's address for server alerts (failed or missing backups). Empty: alerts are only logged.</summary>
+    public string AlertEmail { get; init; } = "";
 
     public static MedLinkOptions FromConfiguration(IConfiguration c, bool requireApp = true, bool requireOwner = false)
     {
@@ -104,8 +106,10 @@ public sealed class MedLinkOptions
             BookingRatePerHospital = int.Parse(Opt("BOOKING_RATE_PER_HOSPITAL_PER_MIN", "120")),
             ScanRatePerIp = int.Parse(Opt("SCAN_RATE_PER_IP_PER_MIN", "60")),
             JobsEnabled = !string.Equals(Opt("JOBS_ENABLED", "true"), "false", StringComparison.OrdinalIgnoreCase),
+            AlertEmail = Opt("ALERT_EMAIL", "").Trim(),
         };
 
+        if (opts.AlertEmail.Length > 0 && (!opts.AlertEmail.Contains('@') || opts.AlertEmail.Length > 254)) errors.Add("ALERT_EMAIL");
         if (errors.Count > 0)
             throw new InvalidOperationException(
                 "Missing or invalid configuration: " + string.Join(", ", errors) +
