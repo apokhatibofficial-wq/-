@@ -9,30 +9,128 @@ public enum Lang { Ar, En, Tr }
 public sealed class Strings
 {
     // ---- design: window, sign-in, forgot password
-    public required string WinTitle, BrandLine, Online, Offline, OfflineNote, SignIn, SignInSub, Password, Show, Hide, Caps,
-        Submit, Submitting, Forgot, ConnSettings, ErrLocked, SignOut, ForgotTitle, ForgotBody, ForgotWarn, OpenWa, Cancel;
-    public required Func<string, string, string> WaMsg;          // (username, hospital)
+    public required string WinTitle { get; init; }
+    public required string BrandLine { get; init; }
+    public required string Online { get; init; }
+    public required string Offline { get; init; }
+    public required string OfflineNote { get; init; }
+    public required string SignIn { get; init; }
+    public required string SignInSub { get; init; }
+    public required string Password { get; init; }
+    public required string Show { get; init; }
+    public required string Hide { get; init; }
+    public required string Caps { get; init; }
+    public required string Submit { get; init; }
+    public required string Submitting { get; init; }
+    public required string Forgot { get; init; }
+    public required string ConnSettings { get; init; }
+    public required string ErrLocked { get; init; }
+    public required string SignOut { get; init; }
+    public required string ForgotTitle { get; init; }
+    public required string ForgotBody { get; init; }
+    public required string ForgotWarn { get; init; }
+    public required string OpenWa { get; init; }
+    public required string Cancel { get; init; }
+    public required Func<string, string, string> WaMsg { get; init; }          // (username, hospital)
     /// <summary>The design's "incorrect username or password" without the attempts count: the server does not reveal it, because a count would show that the account exists.</summary>
-    public required string ErrBad;
+    public required string ErrBad { get; init; }
     // ---- web: sign-in pieces the design did not cover
-    public required string Email, TotpTitle, TotpSub, TotpLabel, Verify, Back, ErrRate, ErrMfaNotEnrolled, ErrSuspended, ErrNetwork, ErrGeneric, Close;
+    public required string Email { get; init; }
+    public required string TotpTitle { get; init; }
+    public required string TotpSub { get; init; }
+    public required string TotpLabel { get; init; }
+    public required string Verify { get; init; }
+    public required string Back { get; init; }
+    public required string ErrRate { get; init; }
+    public required string ErrMfaNotEnrolled { get; init; }
+    public required string ErrSuspended { get; init; }
+    public required string ErrNetwork { get; init; }
+    public required string ErrGeneric { get; init; }
+    public required string Close { get; init; }
     // ---- design: dashboard (D)
-    public required string[] Nav;
-    public required string Today, Search, All, Waiting, Arrived, NoShow, AllDepts, CTime, CPatient, CDept, CRef, CStatus, CIn,
-        PillOnline, PillOffline, Syncing, OfflineBanner, PendingTip, Empty, Phone, Date, Dept, MarkArrived, Correct, ReasonPh, SaveCorr,
-        CorrNote, History, HBooked, HQr, HRec;
-    public required Func<int, string> PendingN, Synced;
-    public required Func<string, string, string> Conflict, HCorr;
-    public required Func<string, string> Live;
-    public required Func<int, string> Grace, HAuto;
-    public required Dictionary<string, string> Src;
+    public required string[] Nav { get; init; }
+    public required string Today { get; init; }
+    public required string Search { get; init; }
+    public required string All { get; init; }
+    public required string Waiting { get; init; }
+    public required string Arrived { get; init; }
+    public required string NoShow { get; init; }
+    public required string AllDepts { get; init; }
+    public required string CTime { get; init; }
+    public required string CPatient { get; init; }
+    public required string CDept { get; init; }
+    public required string CRef { get; init; }
+    public required string CStatus { get; init; }
+    public required string CIn { get; init; }
+    public required string PillOnline { get; init; }
+    public required string PillOffline { get; init; }
+    public required string Syncing { get; init; }
+    public required string OfflineBanner { get; init; }
+    public required string PendingTip { get; init; }
+    public required string Empty { get; init; }
+    public required string Phone { get; init; }
+    public required string Date { get; init; }
+    public required string Dept { get; init; }
+    public required string MarkArrived { get; init; }
+    public required string Correct { get; init; }
+    public required string ReasonPh { get; init; }
+    public required string SaveCorr { get; init; }
+    public required string CorrNote { get; init; }
+    public required string History { get; init; }
+    public required string HBooked { get; init; }
+    public required string HQr { get; init; }
+    public required string HRec { get; init; }
+    public required Func<int, string> PendingN { get; init; }
+    public required Func<int, string> Synced { get; init; }
+    public required Func<string, string, string> Conflict { get; init; }
+    public required Func<string, string, string> HCorr { get; init; }
+    public required Func<string, string> Live { get; init; }
+    public required Func<int, string> Grace { get; init; }
+    public required Func<int, string> HAuto { get; init; }
+    public required Dictionary<string, string> Src { get; init; }
     // ---- new
-    public required string Cancelled, RoleReception, RoleAdmin, RoleScanner, RoleDoctor, NotForWindows, SessionEnded, DeviceRevoked,
-        ReasonMin, NotToday, CheckedIn, CorrSaved, NeedsReview, FindTitle, FindSub, FindPh, FindBtn, FindNone, FindFormat,
-        SyncTitle, SyncNow, PendingCount, LastSync, Never, RejectedTitle, RejectedNone, SettingsTitle, Language, DeviceName, DeviceId,
-        ServerAddress, ServerNote, AppVersion, TestConnection, ConnOk, ConnFail, SignOutPending, SignOutConfirm, ReadOnlyDoctor, Loading;
-    public required Func<int, string> LocalOnly;
-    public required Dictionary<string, string> RejectCodes;
+    public required string Cancelled { get; init; }
+    public required string RoleReception { get; init; }
+    public required string RoleAdmin { get; init; }
+    public required string RoleScanner { get; init; }
+    public required string RoleDoctor { get; init; }
+    public required string NotForWindows { get; init; }
+    public required string SessionEnded { get; init; }
+    public required string DeviceRevoked { get; init; }
+    public required string ReasonMin { get; init; }
+    public required string NotToday { get; init; }
+    public required string CheckedIn { get; init; }
+    public required string CorrSaved { get; init; }
+    public required string NeedsReview { get; init; }
+    public required string FindTitle { get; init; }
+    public required string FindSub { get; init; }
+    public required string FindPh { get; init; }
+    public required string FindBtn { get; init; }
+    public required string FindNone { get; init; }
+    public required string FindFormat { get; init; }
+    public required string SyncTitle { get; init; }
+    public required string SyncNow { get; init; }
+    public required string PendingCount { get; init; }
+    public required string LastSync { get; init; }
+    public required string Never { get; init; }
+    public required string RejectedTitle { get; init; }
+    public required string RejectedNone { get; init; }
+    public required string SettingsTitle { get; init; }
+    public required string Language { get; init; }
+    public required string DeviceName { get; init; }
+    public required string DeviceId { get; init; }
+    public required string ServerAddress { get; init; }
+    public required string ServerNote { get; init; }
+    public required string AppVersion { get; init; }
+    public required string TestConnection { get; init; }
+    public required string ConnOk { get; init; }
+    public required string ConnFail { get; init; }
+    public required string SignOutPending { get; init; }
+    public required string SignOutConfirm { get; init; }
+    public required string ReadOnlyDoctor { get; init; }
+    public required string Loading { get; init; }
+    public required Func<int, string> LocalOnly { get; init; }
+    public required Dictionary<string, string> RejectCodes { get; init; }
 
     public static Strings For(Lang l) => l switch { Lang.En => En, Lang.Tr => Tr, _ => Ar };
 

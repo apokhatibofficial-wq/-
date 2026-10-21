@@ -2,7 +2,9 @@ using System.IO;
 using System.Net;
 using System.Text;
 using System.Text.Json;
+using System.Diagnostics;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
@@ -21,6 +23,48 @@ internal static class Smoke
 {
     private static readonly List<string> Report = [];
     private static int _failures;
+    private static readonly BindingErrors Bindings = new();
+
+    /// <summary>Collects WPF binding errors (a broken binding shows an empty label instead of failing).</summary>
+    private sealed class BindingErrors : TraceListener
+    {
+        public List<string> Errors { get; } = [];
+        public override void Write(string? message) { }
+        public override void WriteLine(string? message) { if (message is not null) lock (Errors) Errors.Add(message); }
+    }
+
+    /// <summary>Every text shown on screen (TextBlock and its runs), to check that labels are really there.</summary>
+    private static List<string> Texts(DependencyObject root)
+    {
+        var list = new List<string>();
+        void Walk(DependencyObject d)
+        {
+            if (d is TextBlock { IsVisible: true } t && !string.IsNullOrEmpty(t.Text)) list.Add(t.Text);
+            for (var i = 0; i < VisualTreeHelper.GetChildrenCount(d); i++) Walk(VisualTreeHelper.GetChild(d, i));
+        }
+        Walk(root);
+        return list;
+    }
+
+    private static void Shows(Window w, string screen, params string[] expected)
+    {
+        var texts = Texts(w);
+        var missing = expected.Where(e => !texts.Contains(e)).ToList();
+        Check(missing.Count == 0, screen + " shows its labels" + (missing.Count > 0 ? " — missing: " + string.Join(" | ", missing) : ""));
+    }
+
+    /// <summary>Logos are never mirrored: every SVG must be laid out left to right, even in Arabic.</summary>
+    private static void LogosNotMirrored(Window w, string screen)
+    {
+        var bad = 0;
+        void Walk(DependencyObject d)
+        {
+            if (d is SharpVectors.Converters.SvgViewbox { IsVisible: true } v && v.FlowDirection != FlowDirection.LeftToRight) bad++;
+            for (var i = 0; i < VisualTreeHelper.GetChildrenCount(d); i++) Walk(VisualTreeHelper.GetChild(d, i));
+        }
+        Walk(w);
+        Check(bad == 0, screen + ": logos not mirrored");
+    }
 
     private static void Check(bool ok, string what)
     {
@@ -33,6 +77,9 @@ internal static class Smoke
         Directory.CreateDirectory(outDir);
         var root = Path.Combine(Path.GetTempPath(), "medlink-smoke-" + Guid.NewGuid().ToString("N"));
         using var server = new FakeServer();
+        PresentationTraceSources.Refresh();
+        PresentationTraceSources.DataBindingSource.Listeners.Add(Bindings);
+        PresentationTraceSources.DataBindingSource.Switch.Level = SourceLevels.Error;
         try
         {
             server.Start();
@@ -61,6 +108,8 @@ internal static class Smoke
             await Until(() => app.SignIn.Online, 5);
             Check(app.SignIn.Online, "sign-in shows 'connected to server'");
             await Shot(window, outDir, "03-signin");
+            Shows(window, "sign-in", Strings.Ar.WinTitle, Strings.Ar.SignIn, Strings.Ar.SignInSub, Strings.Ar.Email, Strings.Ar.Password, Strings.Ar.BrandLine);
+            LogosNotMirrored(window, "sign-in");
 
             var vm = app.SignIn;
             vm.Email = FakeServer.Reception; vm.Password = "wrong-password";
@@ -105,6 +154,9 @@ internal static class Smoke
             var row = m.Dashboard.Rows.First(r => r.Status == "waiting");
             m.Dashboard.SelectCommand.Execute(row);
             await Shot(window, outDir, "08-dashboard");
+            Shows(window, "dashboard", Strings.Ar.CTime, Strings.Ar.CPatient, Strings.Ar.Today, Strings.Ar.MarkArrived, Strings.Ar.Correct, Strings.Ar.SaveCorr,
+                Strings.Ar.History, Strings.Ar.SignOut, Strings.Ar.Nav[0], Strings.Ar.HBooked);
+            LogosNotMirrored(window, "dashboard");
 
             // Offline: banner, check-in saved locally with the pending mark; sent when the server is back.
             server.Down = true;
@@ -123,6 +175,7 @@ internal static class Smoke
 
             app.SetLanguage(Lang.En);
             await Shot(window, outDir, "12-dashboard-en");
+            Shows(window, "dashboard (English)", Strings.En.CTime, Strings.En.MarkArrived, Strings.En.Nav[0]);
             window.Width = 1024;
             await Shot(window, outDir, "13-dashboard-narrow");
             window.Width = 1280;
@@ -151,6 +204,11 @@ internal static class Smoke
         }
         finally
         {
+            lock (Bindings.Errors)
+            {
+                Check(Bindings.Errors.Count == 0, "no WPF binding errors (" + Bindings.Errors.Count + ")");
+                Report.AddRange(Bindings.Errors.Distinct().Take(15).Select(e => "  binding: " + e));
+            }
             File.WriteAllLines(Path.Combine(outDir, "smoke.txt"), Report);
             try { Directory.Delete(root, true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
             application.Shutdown(_failures);

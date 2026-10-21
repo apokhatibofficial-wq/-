@@ -83,11 +83,13 @@ public sealed class WindowsAppTests(MedLinkFixture fx) : IDisposable
         Assert.Equal(-1, r.KhatibInMs);
     }
 
-    [Fact(DisplayName = "Windows app: every string exists in Arabic, English and Turkish")]
+    [Fact(DisplayName = "Windows app: every string exists in Arabic, English and Turkish, as bindable properties")]
     public void StringsComplete()
     {
+        Assert.Empty(typeof(Strings).GetFields(BindingFlags.Public | BindingFlags.Instance));
         foreach (var s in new[] { Strings.Ar, Strings.En, Strings.Tr })
-            foreach (var f in typeof(Strings).GetFields(BindingFlags.Public | BindingFlags.Instance))
+            // Properties, not fields: WPF can only bind to properties (a field-based version showed empty labels on Windows).
+            foreach (var f in typeof(Strings).GetProperties(BindingFlags.Public | BindingFlags.Instance))
             {
                 var v = f.GetValue(s);
                 Assert.NotNull(v);

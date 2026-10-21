@@ -94,7 +94,7 @@
           </StackPanel>
         </Border>
         <StackPanel>
-          <svgc:SvgViewbox x:Name="NavLogo" Source="pack://application:,,,/Assets/medlink-logo.svg" Width="128" HorizontalAlignment="Left" Margin="8,2,8,8" AutomationProperties.Name="MEDLINK" />
+          <svgc:SvgViewbox FlowDirection="LeftToRight" x:Name="NavLogo" Source="pack://application:,,,/Assets/medlink-logo.svg" Width="128" HorizontalAlignment="Left" Margin="8,2,8,8" AutomationProperties.Name="MEDLINK" />
           <TextBlock Text="{Binding HospitalName}" Style="{StaticResource Note}" Margin="8,0,8,10" />
           <RadioButton Style="{StaticResource NavItem}" GroupName="nav" Command="{Binding NavCommand}" CommandParameter="0"
                        IsChecked="{Binding Page, Converter={StaticResource Equals}, ConverterParameter=0, Mode=OneWay}">
@@ -278,7 +278,18 @@
                       <Grid Margin="0,0,0,8">
                         <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" MinWidth="70" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
                         <TextBlock Text="{Binding Label}" FontSize="13" Foreground="{StaticResource Muted}" Margin="0,0,14,0" />
-                        <TextBlock Grid.Column="1" Text="{Binding Value}" FontSize="13" FontWeight="Medium" />
+                        <TextBlock Grid.Column="1" Text="{Binding Value}" FontSize="13" FontWeight="Medium">
+                          <TextBlock.Style>
+                            <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                              <Style.Triggers>
+                                <DataTrigger Binding="{Binding Ltr}" Value="True">
+                                  <Setter Property="FlowDirection" Value="LeftToRight" />
+                                  <Setter Property="HorizontalAlignment" Value="Right" />
+                                </DataTrigger>
+                              </Style.Triggers>
+                            </Style>
+                          </TextBlock.Style>
+                        </TextBlock>
                       </Grid>
                     </DataTemplate>
                   </ItemsControl.ItemTemplate>
@@ -314,10 +325,10 @@
                   <ItemsControl.ItemTemplate>
                     <DataTemplate>
                       <Grid Margin="0,0,0,8">
-                        <Grid.ColumnDefinitions><ColumnDefinition Width="52" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
-                        <TextBlock Text="{Binding Time}" FontSize="12" Foreground="{StaticResource Muted}" FlowDirection="LeftToRight" HorizontalAlignment="Left" />
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="80" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                        <TextBlock Text="{Binding Time}" FontSize="12" Foreground="{StaticResource Muted}" FlowDirection="LeftToRight" HorizontalAlignment="Left" TextWrapping="NoWrap" />
                         <StackPanel Grid.Column="1" Orientation="Horizontal">
-                          <TextBlock Text="{Binding Text}" FontSize="12" LineHeight="17" MaxWidth="240" />
+                          <TextBlock Text="{Binding Text}" FontSize="12" LineHeight="17" MaxWidth="210" />
                           <TextBlock Text=" ⟳" Foreground="#b07a00" FontSize="12" Visibility="{Binding Pending, Converter={StaticResource Vis}}" />
                         </StackPanel>
                       </Grid>

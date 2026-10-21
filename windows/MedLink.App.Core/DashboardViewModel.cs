@@ -10,7 +10,8 @@ public sealed record FilterChip(string Key, string Label, int Count, bool Select
 
 public sealed record DepartmentOption(string Id, string Name);
 
-public sealed record Fact(string Label, string Value);
+/// <summary>Ltr: numbers and phone numbers keep their order inside Arabic text.</summary>
+public sealed record Fact(string Label, string Value, bool Ltr = false);
 
 public sealed record HistoryItem(string Time, string Text, bool Pending);
 
@@ -119,8 +120,8 @@ public sealed class DashboardViewModel : Observable
     public IReadOnlyList<Fact> DFacts => _selected is not { } b ? [] :
     [
         // Doctors' PCs never receive phone numbers, so the line is simply absent.
-        .. b.Phone is { } p ? new[] { new Fact(S.Phone, p) } : [],
-        new(S.Date, b.LocalDate + " " + b.LocalTime),
+        .. b.Phone is { } p ? new[] { new Fact(S.Phone, p, true) } : [],
+        new(S.Date, b.LocalDate + " " + b.LocalTime, true),
         new(S.Dept, _m.Store.Departments().FirstOrDefault(d => d.Id == b.DepartmentId) is { } d ? Name(d) : ""),
     ];
     public bool DCanCheckIn => _selected is { } b && CanCheckInNow(b);

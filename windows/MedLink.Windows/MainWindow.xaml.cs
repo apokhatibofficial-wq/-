@@ -16,7 +16,9 @@ public partial class MainWindow : Window
         DataContext = app;
         ApplyDirection();
         app.PropertyChanged += OnAppChanged;
-        StateChanged += (_, _) => MaxButton.Content = WindowState == WindowState.Maximized ? "" : "";
+        // Maximized: two overlapping squares (restore), otherwise one square.
+        StateChanged += (_, _) => MaxIcon.Data = System.Windows.Media.Geometry.Parse(WindowState == WindowState.Maximized
+            ? "M2.5,0.5 H9.5 V7.5 M0.5,2.5 H7.5 V9.5 H0.5 Z" : "M0.5,0.5 H9.5 V9.5 H0.5 Z");
         Closing += OnClosing;
         if (startSplash) ShowScreen();
     }
