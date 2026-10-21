@@ -46,7 +46,7 @@ Two were not caught at first, and both were weak tests, not bugs:
 | `tsc` × 4 | ✅ 0 errors |
 | Unit tests | ✅ shared 3/3 · hospital 10/10 · booking 5/5 |
 | `vite build` × 3 | ✅ |
-| Windows app build (`EnableWindowsTargeting`) | ✅ 0 warnings. The new dialog line runs on Windows in CI. |
+| Windows app build + Windows CI run (`windows-latest`) | ✅ 0 warnings; CI run 19 green: the real window opens the forgot dialog (screenshot) and fails on any binding error |
 | gitleaks 8.28.0 | ✅ no leaks |
 
 ## 3. End to end on the real stack (Docker images, Chromium)
@@ -68,7 +68,6 @@ PASS forgot password on the hospital web: WhatsApp to support, and the staff lin
 - Test-side slips, fixed: the menu item is «الحجوزات», not «المواعيد»; «حضر» also matched «لم يحضر».
 
 ## Not tested yet
-- The Windows forgot dialog with the new line: it builds here, and the Windows CI run opens the dialog.
 - A night of real retention on production data: the logic is covered by the tests above with dates moved into the past.
 
 ---
