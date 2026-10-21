@@ -42,6 +42,7 @@ public static class Startup
         services.AddSingleton<TotpService>();
         services.AddSingleton<AuthService>();
         services.AddSingleton<MedLink.Api.Bookings.BookingService>();
+        services.AddHostedService<MedLink.Api.Jobs.MaintenanceService>();
         services.AddSingleton<IEmailSender, SmtpEmailSender>();
         services.AddProblemDetails();
 

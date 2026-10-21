@@ -79,10 +79,10 @@ public sealed class TestApi : IDisposable
     public WebApplicationFactory<Program> Factory { get; }
     public HttpClient Http { get; }
 
-    public TestApi(MedLinkFixture fx, int authRate = 10_000, int scanRate = 10_000)
+    public TestApi(MedLinkFixture fx, int authRate = 10_000, int scanRate = 10_000, bool jobs = false)
     {
         Fx = fx;
-        Factory = fx.CreateFactory(authRate, scanRate);
+        Factory = fx.CreateFactory(authRate, scanRate, jobs);
         Http = Factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false, HandleCookies = false });
     }
 

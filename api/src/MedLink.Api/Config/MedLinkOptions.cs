@@ -37,6 +37,8 @@ public sealed class MedLinkOptions
     public int BookingRatePerIp { get; init; } = 10;
     public int BookingRatePerHospital { get; init; } = 120;
     public int ScanRatePerIp { get; init; } = 60;
+    /// <summary>Background jobs (no-show, cleanup, retention). Tests switch them off and call them directly.</summary>
+    public bool JobsEnabled { get; init; } = true;
 
     public static MedLinkOptions FromConfiguration(IConfiguration c, bool requireApp = true, bool requireOwner = false)
     {
@@ -101,6 +103,7 @@ public sealed class MedLinkOptions
             BookingRatePerIp = int.Parse(Opt("BOOKING_RATE_PER_IP_PER_MIN", "10")),
             BookingRatePerHospital = int.Parse(Opt("BOOKING_RATE_PER_HOSPITAL_PER_MIN", "120")),
             ScanRatePerIp = int.Parse(Opt("SCAN_RATE_PER_IP_PER_MIN", "60")),
+            JobsEnabled = !string.Equals(Opt("JOBS_ENABLED", "true"), "false", StringComparison.OrdinalIgnoreCase),
         };
 
         if (errors.Count > 0)

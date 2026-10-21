@@ -51,7 +51,7 @@ public sealed class MedLinkFixture : IAsyncLifetime
 
     public Task DisposeAsync() => _pg.DisposeAsync().AsTask();
 
-    public Dictionary<string, string?> Settings(int authRate = 10_000, int scanRate = 10_000)
+    public Dictionary<string, string?> Settings(int authRate = 10_000, int scanRate = 10_000, bool jobs = false)
     {
         var b = new NpgsqlConnectionStringBuilder(OwnerConnectionString);
         var signing = Secret() + Secret();
@@ -75,6 +75,8 @@ public sealed class MedLinkFixture : IAsyncLifetime
             ["BOOKING_RATE_PER_IP_PER_MIN"] = authRate.ToString(),
             ["BOOKING_RATE_PER_HOSPITAL_PER_MIN"] = authRate.ToString(),
             ["SCAN_RATE_PER_IP_PER_MIN"] = scanRate.ToString(),
+            // Jobs are called directly by the tests, never on a timer.
+            ["JOBS_ENABLED"] = jobs ? "true" : "false",
         };
     }
 
@@ -84,11 +86,11 @@ public sealed class MedLinkFixture : IAsyncLifetime
     /// Program reads configuration from environment variables at startup, so the factory is started
     /// while those variables are set and they are cleared again straight after.
     /// </summary>
-    public WebApplicationFactory<Program> CreateFactory(int authRate = 10_000, int scanRate = 10_000)
+    public WebApplicationFactory<Program> CreateFactory(int authRate = 10_000, int scanRate = 10_000, bool jobs = false)
     {
         lock (EnvLock)
         {
-            var settings = Settings(authRate, scanRate);
+            var settings = Settings(authRate, scanRate, jobs);
             foreach (var (k, v) in settings) Environment.SetEnvironmentVariable(k, v);
             try
             {
