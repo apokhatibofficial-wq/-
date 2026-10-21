@@ -45,6 +45,7 @@ public sealed class MainViewModel : Observable
     public bool IsDoctor => !User.Can("BookingsView");
     public Connection Connection => _engine?.State ?? Connection.Syncing;
     public int PendingCount => Store.PendingCount();
+    public bool HasPending => PendingCount > 0;
     public string PillText => Connection switch
     {
         Connection.Syncing => S.Syncing,
@@ -129,7 +130,7 @@ public sealed class MainViewModel : Observable
             _app.RememberHospital(h, User, Token);
             Raise(nameof(HospitalName));
         }
-        Raise(nameof(Connection)); Raise(nameof(PillText)); Raise(nameof(OfflineBanner)); Raise(nameof(PendingCount));
+        Raise(nameof(Connection)); Raise(nameof(PillText)); Raise(nameof(OfflineBanner)); Raise(nameof(PendingCount)); Raise(nameof(HasPending));
         Dashboard.Reload();
         SyncPage.Reload();
     }
@@ -209,6 +210,7 @@ public sealed class SyncPageViewModel : Observable
     public Command SyncNowCommand { get; }
     public int Pending => _m.Store.PendingCount();
     public string LastSync => _m.LastSyncAt is { } t ? _m.Dashboard.DateTime(t) : _m.S.Never;
+    public bool HasNoRejected => Rejected.Count == 0;
     public IReadOnlyList<RejectedRow> Rejected => _m.Store.Rejected()
         .Select(r => new RejectedRow(r.Ref ?? "—", _m.S.RejectCodes.GetValueOrDefault(r.Code, r.Code))).ToList();
 

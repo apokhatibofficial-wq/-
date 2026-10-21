@@ -1,0 +1,30 @@
+<Window x:Class="MedLink.Windows.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
+        Title="{Binding S.WinTitle}" Width="1280" Height="800" MinWidth="980" MinHeight="620"
+        WindowStyle="None" ResizeMode="CanResize" Background="{StaticResource Surface}" WindowStartupLocation="CenterScreen"
+        FontFamily="{StaticResource Sans}" UseLayoutRounding="True" TextOptions.TextFormattingMode="Display">
+  <WindowChrome.WindowChrome>
+    <WindowChrome CaptionHeight="36" ResizeBorderThickness="6" GlassFrameThickness="0" CornerRadius="0" UseAeroCaptionButtons="False" />
+  </WindowChrome.WindowChrome>
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="36" />
+      <RowDefinition Height="*" />
+    </Grid.RowDefinitions>
+    <!-- Title bar (SCREENS.md §3): 36px, #f3f4f8, icon 18px, title, min / max / close. Laid out left to right as in the prototype. -->
+    <Border Background="{StaticResource TitleBar}" BorderBrush="{StaticResource TheadBorder}" BorderThickness="0,0,0,1" FlowDirection="LeftToRight">
+      <DockPanel LastChildFill="True">
+        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+          <Button Style="{StaticResource Caption}" Content="&#xE921;" Click="Minimize" AutomationProperties.Name="Minimize" />
+          <Button Style="{StaticResource Caption}" x:Name="MaxButton" Content="&#xE922;" Click="Maximize" AutomationProperties.Name="Maximize" />
+          <Button Style="{StaticResource CaptionClose}" Content="&#xE8BB;" Click="CloseWindow" AutomationProperties.Name="Close" />
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Margin="12,0,0,0" VerticalAlignment="Center">
+          <svgc:SvgViewbox Source="pack://application:,,,/Assets/medlink-icon.svg" Width="18" Height="18" Margin="0,0,10,0" />
+          <TextBlock Text="{Binding S.WinTitle}" FontSize="12" Foreground="{StaticResource Muted}" VerticalAlignment="Center" />
+        </StackPanel>
+      </DockPanel>
+    </Border>
+    <ContentControl x:Name="Host" x:FieldModifier="internal" Grid.Row="1" Focusable="False" />
+  </Grid>
+</Window>

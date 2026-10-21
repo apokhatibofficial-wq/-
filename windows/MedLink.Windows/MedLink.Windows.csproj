@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The WPF window of the MEDLINK Windows app. It only draws MedLink.App.Core, which holds the logic and is tested
+       against the real API. Builds on Linux too (EnableWindowsTargeting) but runs only on Windows; CI runs it there. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <RootNamespace>MedLink.Windows</RootNamespace>
+    <AssemblyName>MEDLINK</AssemblyName>
+    <Version>0.8.0</Version>
+    <Product>MEDLINK</Product>
+    <Company>KHATIB TECHNICAL SOLUTIONS</Company>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>false</SelfContained>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MedLink.App.Core\MedLink.App.Core.csproj" />
+    <!-- Renders the original SVG logos unchanged (BSD-3-Clause). -->
+    <PackageReference Include="SharpVectors.Wpf" Version="1.8.6" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\*.svg" />
+    <Resource Include="Fonts\*.ttf" />
+    <None Include="Fonts\OFL.txt" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

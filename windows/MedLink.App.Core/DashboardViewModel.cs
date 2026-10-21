@@ -4,7 +4,7 @@ using MedLink.Sync;
 namespace MedLink.App;
 
 public sealed record BookingRow(string Id, string Ref, string Time, string Patient, string Department, string Status, string StatusLabel,
-    bool Pending, bool CanCheckIn, bool NeedsReview);
+    bool Pending, bool CanCheckIn, bool NeedsReview, string CheckinTime);
 
 public sealed record FilterChip(string Key, string Label, int Count, bool Selected);
 
@@ -97,7 +97,8 @@ public sealed class DashboardViewModel : Observable
         var deps = _m.Store.Departments().ToDictionary(d => d.Id, Name);
         Rows = list.Where(b => Filter == "all" || b.Status == Filter)
             .Select(b => new BookingRow(b.Id, b.Ref, b.LocalTime, b.PatientName ?? "—", deps.GetValueOrDefault(b.DepartmentId, ""),
-                b.Status, S.StatusLabel(b.Status), b.PendingSync, CanCheckInNow(b), b.NeedsReview))
+                b.Status, S.StatusLabel(b.Status), b.PendingSync, CanCheckInNow(b), b.NeedsReview,
+                b.Status == "arrived" && b.ArrivedAt is { } a ? Clock(a) : "—"))
             .ToList();
         RaiseAll();
     }

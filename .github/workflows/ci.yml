@@ -52,6 +52,37 @@ jobs:
       - run: npm test
       - run: npm run build
 
+  windows-app:
+    # The WPF app runs only on Windows. Its logic (MedLink.App.Core) is tested in the api job against the real API;
+    # here the real window runs against a local fake server with fictional data: DPAPI, SQLCipher, sign-in, sync,
+    # offline check-in, and a screenshot of every screen (artifact "windows-screenshots").
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - run: dotnet build windows/MedLink.Windows -c Release
+      - name: Vulnerable packages (including transitive)
+        shell: pwsh
+        run: |
+          dotnet list windows/MedLink.Windows package --vulnerable --include-transitive | Tee-Object -FilePath vuln.txt
+          if (Select-String -Path vuln.txt -Pattern "has the following vulnerable packages") { exit 1 }
+      - name: Run the app (checks + screenshots)
+        shell: pwsh
+        run: |
+          $out = Join-Path $env:RUNNER_TEMP "windows-screenshots"
+          $exe = Get-ChildItem -Recurse -Filter MEDLINK.exe windows/MedLink.Windows/bin/Release | Select-Object -First 1
+          $p = Start-Process -FilePath $exe.FullName -ArgumentList "--smoke", "`"$out`"" -Wait -PassThru
+          Get-Content (Join-Path $out "smoke.txt")
+          exit $p.ExitCode
+        timeout-minutes: 5
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-screenshots
+          path: ${{ runner.temp }}/windows-screenshots
+
   secrets:
     runs-on: ubuntu-24.04
     steps:
