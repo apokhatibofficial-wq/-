@@ -53,6 +53,32 @@ internal static class Smoke
         Check(missing.Count == 0, screen + " shows its labels" + (missing.Count > 0 ? " — missing: " + string.Join(" | ", missing) : ""));
     }
 
+    /// <summary>
+    /// The splash logo is drawn in the middle: the white pixels (excluding the title bar and the progress bar) are centred.
+    /// A layout check is not enough: the KHATIB drawing was once shifted off the top while its box was centred.
+    /// </summary>
+    private static async Task LogoCentred(Window w, string screen)
+    {
+        await w.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+        var content = (FrameworkElement)w.Content;
+        var bmp = new RenderTargetBitmap((int)content.ActualWidth, (int)content.ActualHeight, 96, 96, PixelFormats.Pbgra32);
+        bmp.Render(content);
+        int width = bmp.PixelWidth, height = bmp.PixelHeight, stride = width * 4;
+        var px = new byte[stride * height];
+        bmp.CopyPixels(px, stride, 0);
+        int top = int.MaxValue, bottom = -1;
+        for (var y = 37; y < height - 80; y++)
+            for (var x = 0; x < width; x++)
+            {
+                var i = y * stride + x * 4;
+                if (px[i] > 200 && px[i + 1] > 200 && px[i + 2] > 200) { top = Math.Min(top, y); bottom = Math.Max(bottom, y); break; }
+            }
+        var centre = 36 + (height - 36) / 2.0;
+        var found = bottom >= 0 ? (top + bottom) / 2.0 : double.NaN;
+        Check(bottom >= 0 && top > 40 && Math.Abs(found - centre) < 60,
+            screen + ": logo drawn in the middle (white rows " + (bottom >= 0 ? top + "–" + bottom : "none") + ", window centre " + (int)centre + ")");
+    }
+
     /// <summary>Every visible logo lies fully inside the window (the KHATIB splash logo was once pushed off the top).</summary>
     private static void LogosInside(Window w, string screen)
     {
@@ -63,7 +89,7 @@ internal static class Smoke
             if (d is SharpVectors.Converters.SvgViewbox { IsVisible: true } v && v.ActualWidth > 0)
             {
                 var r = v.TransformToAncestor(content).TransformBounds(new Rect(0, 0, v.ActualWidth, v.ActualHeight));
-                if (r.Top < 36 - 1 || r.Left < -1 || r.Bottom > content.ActualHeight + 1 || r.Right > content.ActualWidth + 1)
+                if (r.Top < -1 || r.Left < -1 || r.Bottom > content.ActualHeight + 1 || r.Right > content.ActualWidth + 1)
                     bad.Add(v.Source?.ToString() + " at " + r.ToString(System.Globalization.CultureInfo.InvariantCulture));
             }
             for (var i = 0; i < VisualTreeHelper.GetChildrenCount(d); i++) Walk(VisualTreeHelper.GetChild(d, i));
@@ -134,8 +160,10 @@ internal static class Smoke
             window.Host.Content = splash;
             splash.ShowFrame(900); await Shot(window, outDir, "01-splash-khatib");
             LogosInside(window, "splash (KHATIB)");
+            await LogoCentred(window, "splash (KHATIB)");
             splash.ShowFrame(2300); await Shot(window, outDir, "02-splash-medlink");
             LogosInside(window, "splash (MEDLINK)");
+            await LogoCentred(window, "splash (MEDLINK)");
             var played = new SplashView(app, animations: true);
             window.Host.Content = played;
             await Until(() => app.Screen == Screen.SignIn, 8);
