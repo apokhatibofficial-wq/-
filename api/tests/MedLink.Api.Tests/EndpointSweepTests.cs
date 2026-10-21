@@ -201,6 +201,32 @@ public sealed class EndpointSweepTests(MedLinkFixture fx) : IDisposable
         Assert.Equal(auditBefore, await AuditCountAsync());
     }
 
+    [Fact(DisplayName = "Bad input: a NUL byte in a query or JSON field is refused with 400, never a server error (found by ZAP)")]
+    public async Task NulBytesAreRefused()
+    {
+        var (owner, _) = await api.CompanyUserAsync(Roles.Owner);
+        var h = await BookingSetup.CreateAsync(api, owner);
+        var anon = api.Anonymous();
+        var slot = await BookingSetup.SlotAsync(anon, h);
+        var calls = new List<(string What, Task<(HttpStatusCode Status, System.Text.Json.JsonElement Body)> Call)>
+        {
+            ("availability query", anon.Get($"/public/hospitals/{h.Slug}/availability?departmentId=%00")),
+            ("booking name", anon.SendWithHeaderAsync(HttpMethod.Post, $"/public/hospitals/{h.Slug}/bookings",
+                new { departmentId = h.DepartmentId, slotStart = slot, patientName = "مريض\u0000تجريبي", phone = "+963944000888" }, "Idempotency-Key", Guid.NewGuid().ToString())),
+            ("sign-in email", anon.Post("/auth/login", new { email = "a\u0000@x.invalid", password = "x" })),
+            ("link token", anon.Post("/auth/link/inspect", new { token = "\u0000" })),
+            ("staff search", h.Admin.Get("/hospital/bookings?ref=ML-%00")),
+            ("department name", h.Admin.Post("/hospital/departments", new { nameAr = "قسم\u0000", nameEn = "Dept", nameTr = "Bolum" })),
+        };
+        foreach (var (what, call) in calls)
+        {
+            var r = await call;
+            Assert.True((int)r.Status is >= 400 and < 500, $"{what}: {(int)r.Status} {Code(r.Body)}");
+        }
+        await using var db = await fx.OwnerAsync();
+        Assert.Equal(0, await Dapper.SqlMapper.ExecuteScalarAsync<int>(db, "SELECT count(*) FROM bookings WHERE hospital_id = @h", new { h = h.HospitalId }));
+    }
+
     private static string? Code(System.Text.Json.JsonElement b) =>
         b.ValueKind == System.Text.Json.JsonValueKind.Object && b.TryGetProperty("error", out var e) ? e.GetString() : null;
 

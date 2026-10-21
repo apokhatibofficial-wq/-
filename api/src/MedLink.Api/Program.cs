@@ -142,8 +142,11 @@ public static class Startup
         app.UseForwardedHeaders();
         app.UseExceptionHandler(e => e.Run(async ctx =>
         {
-            ctx.Response.StatusCode = 500;
-            await ctx.Response.WriteAsJsonAsync(new { error = "INTERNAL", requestId = ctx.TraceIdentifier });
+            // Text PostgreSQL cannot store (a NUL byte, found by the Phase 11 ZAP scan) is the caller's mistake: 400, not 500.
+            var invalidText = ctx.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>()?.Error
+                is Npgsql.PostgresException { SqlState: Npgsql.PostgresErrorCodes.CharacterNotInRepertoire };
+            ctx.Response.StatusCode = invalidText ? 400 : 500;
+            await ctx.Response.WriteAsJsonAsync(new { error = invalidText ? "INVALID_TEXT" : "INTERNAL", requestId = ctx.TraceIdentifier });
         }));
         app.Use(async (ctx, next) =>
         {
