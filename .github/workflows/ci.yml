@@ -83,6 +83,17 @@ jobs:
           name: windows-screenshots
           path: ${{ runner.temp }}/windows-screenshots
 
+  backups:
+    # The real backup scripts on a throw-away Docker stack, with a local S3 mock in place of R2 and an age key pair
+    # made for the run: backup, monthly restore test, restore with the private key, then a full disaster recovery.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update -q && sudo apt-get install -y -q age
+      - run: docker build -q -t medlink-api:local api
+      - run: infra/backup/ci-test.sh
+        timeout-minutes: 15
+
   secrets:
     runs-on: ubuntu-24.04
     steps:

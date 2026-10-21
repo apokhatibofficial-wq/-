@@ -25,7 +25,7 @@ need() { local k; for k in "$@"; do [ -n "${!k:-}" ] || { echo "$k is not set in
 
 # docker compose for this stack. COMPOSE_ARGS adds files, e.g. "-f docker-compose.yml -f docker-compose.dev.yml".
 compose() { (cd "$INFRA_DIR" && docker compose ${COMPOSE_ARGS:-} --env-file "$ENV_FILE" "$@"); }
-psql_owner() { compose exec -T db psql -U "$DB_OWNER_USER" -v ON_ERROR_STOP=1 -At "$@"; }
+psql_owner() { compose exec -T -e PGOPTIONS=--client-min-messages=warning db psql -U "$DB_OWNER_USER" -v ON_ERROR_STOP=1 -At "$@"; }
 
 # The AWS CLI (R2 speaks the S3 API) in a container, so the server needs only Docker. The keys are passed through
 # the environment, never on a command line. $WORK is mounted at /work for uploads and downloads.

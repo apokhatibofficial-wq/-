@@ -14,7 +14,16 @@ WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
 name="medlink-$stamp.dump.age"
 
-compose exec -T db pg_dump -U "$DB_OWNER_USER" -d "$DB_NAME" -Fc | age -r "$BACKUP_AGE_RECIPIENT" -o "$WORK/$name"
+# While the dump streams into age, a copy goes through a pipe (in memory, not to disk) to pg_restore --list, so
+# the backup is refused unless it holds the data of every table (a broken or schema-only dump fails here, since
+# the server cannot decrypt its own backups to check them later).
+mkfifo "$WORK/toc.pipe"
+compose exec -T db pg_restore --list < "$WORK/toc.pipe" > "$WORK/toc" & lister=$!
+compose exec -T db pg_dump -U "$DB_OWNER_USER" -d "$DB_NAME" -Fc | tee "$WORK/toc.pipe" | age -r "$BACKUP_AGE_RECIPIENT" -o "$WORK/$name"
+wait "$lister" || { echo "$stamp FAILED: the dump could not be read back" >&2; exit 1; }
+tables=$(psql_owner -d "$DB_NAME" -c "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'")
+data=$(grep -c ' TABLE DATA public ' "$WORK/toc" || true)
+[ "$data" = "$tables" ] || { echo "$stamp FAILED: the dump has data for $data of $tables tables" >&2; exit 1; }
 size=$(stat -c %s "$WORK/$name")
 [ "$size" -gt 1024 ] || { echo "$stamp FAILED: backup is empty" >&2; exit 1; }
 sha=$(sha256sum "$WORK/$name" | cut -d' ' -f1)
