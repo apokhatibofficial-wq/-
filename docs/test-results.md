@@ -4,6 +4,70 @@ Real runs only. Re-run the commands to reproduce. Newest phase first.
 
 ---
 
+# Phase 9 — phone page and QR scanner (2026-10-21)
+
+## 1. API tests (xUnit + Testcontainers, PostgreSQL 16)
+`cd api && dotnet build -c Release && dotnet test --no-build -c Release`
+
+**Result: 90 passed, 0 failed** (6 min 6 s). That is the 84 earlier tests plus 6 new ones. Build: 0 warnings.
+
+| Test | Result |
+|---|---|
+| `Scan: a valid code checks in at once (source qr); scanning again says already, at the same time, and records nothing new` | ✅ |
+| `Scan: cancelled and other-day bookings show details but are not checked in; another hospital's code shows nothing; bad codes are unknown` (5 malformed or unknown codes; 0 events stored) | ✅ |
+| `Scan: an arrival by QR overrides the automatic no-show; a manual correction is not overridden` | ✅ |
+| `Scan by booking number: found → confirm → checked in; another hospital's number is not found; doctors and anonymous callers are refused` | ✅ |
+| `Scan: QR-scanner sessions end 12 hours after sign-in; reception keeps the 7-day limit` | ✅ |
+| `Scan: lookups are rate limited per IP (429)` | ✅ |
+
+**Mutation check (4 bugs, all caught):** another hospital's code reported as unknown; check-in allowed on another day; a re-scan recorded again; the 12-hour scanner limit removed.
+
+A slip on my side, now fixed: the first mutation script used `git checkout` on a new file that git didn't track yet. It also reverted an uncommitted change in another file. Both files were restored by hand and the tests passed again. The "other day" mutation was then rerun on its own, and it failed as it should.
+
+## 2. Web
+| Check | Result |
+|---|---|
+| `npm audit` (with jsqr 1.4.0) | ✅ 0 vulnerabilities |
+| `tsc` × 4 | ✅ 0 errors |
+| Unit tests | ✅ shared 3/3 · hospital 10/10 (5 new: result cards, details hidden for another hospital or an unknown code, formats) · booking 5/5 |
+| `vite build` | ✅ hospital 307 kB + jsQR 131 kB (separate file, loaded only when the browser has no QR reader) |
+| gitleaks 8.28.0 | ✅ no leaks |
+
+## 3. Browser end-to-end on the real stack (phone size 390×844, Chromium)
+The camera part uses Chromium's fake camera, fed with a video of a **real** booking QR (a fictional patient), so the real path runs: camera → decoder (jsQR, since desktop Chromium has no built-in QR reader) → server → check-in.
+
+**15 of 15 steps passed** (4 setup + 11 scanner).
+```
+PASS owner signs in; creates a hospital; admin activates and signs in
+PASS admin adds two departments with timetables
+PASS test bookings for today (fictional patients): A for manual check-in, B for the camera, C cancelled
+PASS admin invites a QR-scanner account; it activates its link
+PASS sign-in screen; a wrong password gives the generic error
+PASS scanner signs in: hospital name, connection, camera intro
+PASS by booking number: found → identity check → checked in (source reception)
+PASS by booking number: cancelled shows details in red; an unknown number is not found
+PASS camera: the QR on the (fake) camera is read and checked in at once (source qr)
+PASS scan next: the same ticket again says already checked in, and is not recorded twice
+PASS recent list: the last actions with names, numbers and times (memory only)
+PASS offline: the result says the server is needed; the header shows offline
+PASS English, and no horizontal scrolling at 390px
+PASS sign out returns to the sign-in screen; the session is ended on the server
+PASS camera permission denied: message and a link to search by booking number
+```
+- **API container log** (350 lines): 0 matches for patient names, QR codes (`MLK1.`), phone numbers, booking numbers, `#t=` or test emails.
+- **Nothing about patients is kept on the phone:** localStorage and sessionStorage were checked after the scans.
+
+**Found by the browser run (fixed):**
+1. "Scan next" didn't restart the camera: it was started before the viewfinder was back on screen. The user would have had to tap "Turn on camera" again.
+2. The recent list showed the phone's time zone (04:16) while the card showed hospital time (07:16). Both use hospital time now, and the run checks it.
+3. In Arabic, the time and booking number in the result card were aligned to the opposite side from the other values.
+
+**Regression runs after Phase 9:** Phase 4 16/16 · Phase 5 16/16 · System settings 7/7 · Phase 6 10/10 · Phase 7 10/10. The first try of Phases 5 and 6 failed only because I hadn't started the booking site (port 5175). With it running, both passed.
+
+Not tested: a real phone camera (iPhone Safari, Android Chrome), and Android's built-in reader (BarcodeDetector), which Chromium on Linux doesn't have. A short manual check is in the report.
+
+---
+
 # Phase 8 — the Windows app and the splash animation (2026-10-21)
 
 ## 1. API, sync and app-logic tests (xUnit + Testcontainers, PostgreSQL 16)
