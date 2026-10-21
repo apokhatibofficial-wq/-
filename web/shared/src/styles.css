@@ -153,3 +153,9 @@ select.input { padding: 0 8px; }
 .link-box { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; background: var(--soft); border-radius: 10px; padding: 12px 14px; }
 .form-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
 .form-row .input { height: 40px; }
+
+/* Department picker for doctors (users panel) */
+.scope-picker { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.scope-picker legend { padding: 0; margin-bottom: 6px; }
+.scope-picker .chip { display: inline-flex; align-items: center; font-size: 13px; padding: 5px 10px; }
+.scope-picker input { margin: 0; accent-color: var(--brand, #2541d4); }

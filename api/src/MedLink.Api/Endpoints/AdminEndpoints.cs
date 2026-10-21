@@ -32,12 +32,16 @@ public static class AdminEndpoints
         public string Timezone { get; set; } = "";
         public int? BookingWindowDays { get; set; }
         public int? MinNoticeMin { get; set; }
+        public DateTime? LastSyncAt { get; set; }
+        public int Bookings30d { get; set; }
     }
 
     private const string HospitalSelect = """
         SELECT h.id, h.name_ar, h.name_en, h.name_tr, h.status, h.created_at, h.timezone, h.booking_window_days, h.min_notice_min,
                (SELECT slug FROM hospital_slugs s WHERE s.hospital_id = h.id AND s.is_primary) AS slug,
-               (SELECT count(*)::int FROM users u WHERE u.hospital_id = h.id AND u.status <> 'disabled') AS users
+               (SELECT count(*)::int FROM users u WHERE u.hospital_id = h.id AND u.status <> 'disabled') AS users,
+               (SELECT max(d.last_seen_at) FROM devices d WHERE d.hospital_id = h.id) AS last_sync_at,
+               (SELECT count(*)::int FROM bookings b WHERE b.hospital_id = h.id AND b.created_at > now() - interval '30 days') AS bookings30d
         FROM hospitals h
         """;
 
@@ -53,9 +57,9 @@ public static class AdminEndpoints
         // Per-hospital overrides; null = the company-wide value from System settings.
         bookingWindowDays = h.BookingWindowDays,
         minNoticeMin = h.MinNoticeMin,
-        // Sync and booking data arrive in phases 6-7; null means "never connected", not zero activity hidden.
-        lastSyncAt = (DateTime?)null,
-        bookings30d = 0,
+        // Latest pull or push from any Windows device (revoked ones included); null means no PC has ever connected.
+        lastSyncAt = h.LastSyncAt is { } l ? DateTime.SpecifyKind(l, DateTimeKind.Utc) : (DateTime?)null,
+        bookings30d = h.Bookings30d,
     };
 
     private static string? Clean(string? s, int max) =>

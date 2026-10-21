@@ -10,9 +10,9 @@ export type ConsoleText = (typeof T)['en'];
 /** The permission matrix shown on the Roles tab (mirrors api/src/MedLink.Api/Auth/Permissions.cs). */
 export type Mark = 'Y' | 'N' | 'O';
 export const ROLE_LABELS: Record<Lang, [string[], string[]]> = {
-  ar: [['مالك', 'دعم', 'مشاهد'], ['مدير المستشفى', 'استقبال', 'ماسح QR']],
-  en: [['Owner', 'Support', 'Viewer'], ['Hospital admin', 'Reception', 'QR scanner']],
-  tr: [['Sahip', 'Destek', 'İzleyici'], ['Hastane yöneticisi', 'Kayıt birimi', 'QR tarayıcı']],
+  ar: [['مالك', 'دعم', 'مشاهد'], ['مدير المستشفى', 'استقبال', 'ماسح QR', 'طبيب']],
+  en: [['Owner', 'Support', 'Viewer'], ['Hospital admin', 'Reception', 'QR scanner', 'Doctor']],
+  tr: [['Sahip', 'Destek', 'İzleyici'], ['Hastane yöneticisi', 'Kayıt birimi', 'QR tarayıcı', 'Doktor']],
 };
 export const COMPANY_PERMS: Record<Lang, [string, Mark[]][]> = {
   ar: [['إنشاء وتعديل المستشفيات', ['Y', 'N', 'N']], ['إيقاف وإعادة تفعيل', ['Y', 'N', 'N']], ['استعادة وصول المسؤول', ['Y', 'Y', 'N']], ['عرض التقارير', ['Y', 'Y', 'Y']], ['عرض سجل العمليات', ['Y', 'O', 'N']]],
@@ -20,9 +20,9 @@ export const COMPANY_PERMS: Record<Lang, [string, Mark[]][]> = {
   tr: [['Hastane oluştur ve düzenle', ['Y', 'N', 'N']], ['Askıya al ve etkinleştir', ['Y', 'N', 'N']], ['Yönetici erişimini kurtar', ['Y', 'Y', 'N']], ['Raporları gör', ['Y', 'Y', 'Y']], ['Denetim kaydını gör', ['Y', 'O', 'N']]],
 };
 export const HOSPITAL_PERMS: Record<Lang, [string, Mark[]][]> = {
-  ar: [['تعديل نموذج الحجز ونشره', ['Y', 'N', 'N']], ['إعدادات المستشفى ومهلة عدم الحضور', ['Y', 'N', 'N']], ['عرض الحجوزات والبحث', ['Y', 'Y', 'N']], ['تسجيل الحضور', ['Y', 'Y', 'Y']], ['تصحيح حالة الحضور', ['Y', 'Y', 'N']], ['إدارة مستخدمي المستشفى', ['Y', 'N', 'N']]],
-  en: [['Edit & publish booking form', ['Y', 'N', 'N']], ['Hospital settings & no-show grace', ['Y', 'N', 'N']], ['View & search bookings', ['Y', 'Y', 'N']], ['Check in patients', ['Y', 'Y', 'Y']], ['Correct attendance status', ['Y', 'Y', 'N']], ['Manage hospital users', ['Y', 'N', 'N']]],
-  tr: [['Randevu formunu düzenle ve yayınla', ['Y', 'N', 'N']], ['Hastane ayarları ve bekleme süresi', ['Y', 'N', 'N']], ['Randevuları gör ve ara', ['Y', 'Y', 'N']], ['Hasta girişi yap', ['Y', 'Y', 'Y']], ['Giriş durumunu düzelt', ['Y', 'Y', 'N']], ['Hastane kullanıcılarını yönet', ['Y', 'N', 'N']]],
+  ar: [['تعديل نموذج الحجز ونشره', ['Y', 'N', 'N', 'N']], ['إعدادات المستشفى ومهلة عدم الحضور', ['Y', 'N', 'N', 'N']], ['عرض الحجوزات والبحث', ['Y', 'Y', 'N', 'N']], ['تسجيل الحضور', ['Y', 'Y', 'Y', 'N']], ['تصحيح حالة الحضور', ['Y', 'Y', 'N', 'N']], ['إدارة مستخدمي المستشفى', ['Y', 'N', 'N', 'N']], ['عرض مواعيد قسمه فقط (بدون الهواتف)', ['N', 'N', 'N', 'Y']]],
+  en: [['Edit & publish booking form', ['Y', 'N', 'N', 'N']], ['Hospital settings & no-show grace', ['Y', 'N', 'N', 'N']], ['View & search bookings', ['Y', 'Y', 'N', 'N']], ['Check in patients', ['Y', 'Y', 'Y', 'N']], ['Correct attendance status', ['Y', 'Y', 'N', 'N']], ['Manage hospital users', ['Y', 'N', 'N', 'N']], ['View own department’s appointments only (no phones)', ['N', 'N', 'N', 'Y']]],
+  tr: [['Randevu formunu düzenle ve yayınla', ['Y', 'N', 'N', 'N']], ['Hastane ayarları ve bekleme süresi', ['Y', 'N', 'N', 'N']], ['Randevuları gör ve ara', ['Y', 'Y', 'N', 'N']], ['Hasta girişi yap', ['Y', 'Y', 'Y', 'N']], ['Giriş durumunu düzelt', ['Y', 'Y', 'N', 'N']], ['Hastane kullanıcılarını yönet', ['Y', 'N', 'N', 'N']], ['Yalnızca kendi bölümünün randevularını gör (telefonsuz)', ['N', 'N', 'N', 'Y']]],
 };
 
 /** Console strings added after the prototype (Team tab, time zone). */

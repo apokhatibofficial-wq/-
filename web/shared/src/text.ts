@@ -50,7 +50,7 @@ export const A = {
     tooSoon: (d: string) => 'يُسمح بتغيير الرابط مرة كل 30 يومًا. التغيير التالي ممكن بعد ' + d + '.',
     emailTaken: 'هذا البريد مستخدم لحساب آخر.', noAdmin: 'لا يوجد مسؤول نشط لهذا المستشفى.',
     noData: '—', roleNames: { owner: 'مالك', support: 'دعم', viewer: 'مشاهد' } as Record<string, string>,
-    extraTags: { logout: 'خروج', login_locked: 'قفل', link_completed: 'تفعيل حساب', bootstrap_admin: 'إنشاء المالك', user_invite: 'دعوة مستخدم', user_role: 'تغيير دور', user_disable: 'تعطيل مستخدم', user_enable: 'تفعيل مستخدم', user_link: 'إرسال رابط', hospital_settings: 'إعدادات', department_create: 'قسم جديد', department_edit: 'تعديل قسم', schedule_edit: 'جدول مواعيد', closure_add: 'إغلاق', closure_remove: 'إلغاء إغلاق', company_user_reset_cli: 'استعادة من الخادم', platform_settings: 'إعدادات النظام', booking_rules: 'قواعد الحجز' } as Record<string, string>,
+    extraTags: { logout: 'خروج', login_locked: 'قفل', link_completed: 'تفعيل حساب', bootstrap_admin: 'إنشاء المالك', user_invite: 'دعوة مستخدم', user_role: 'تغيير دور', user_disable: 'تعطيل مستخدم', user_enable: 'تفعيل مستخدم', user_link: 'إرسال رابط', hospital_settings: 'إعدادات', department_create: 'قسم جديد', department_edit: 'تعديل قسم', schedule_edit: 'جدول مواعيد', closure_add: 'إغلاق', closure_remove: 'إلغاء إغلاق', company_user_reset_cli: 'استعادة من الخادم', platform_settings: 'إعدادات النظام', booking_rules: 'قواعد الحجز', device_register: 'تسجيل جهاز', device_revoke: 'إلغاء جهاز', doctor_departments: 'أقسام الطبيب', attendance_correct: 'تصحيح حضور' } as Record<string, string>,
     reportsPending: 'تظهر أرقام الحجوزات والحضور بعد تفعيل نظام الحجز (المرحلة 6).',
   },
   en: {
@@ -84,7 +84,7 @@ export const A = {
     tooSoon: (d: string) => 'The link can change once every 30 days. The next change is possible after ' + d + '.',
     emailTaken: 'This email is already used by another account.', noAdmin: 'This hospital has no active admin.',
     noData: '—', roleNames: { owner: 'Owner', support: 'Support', viewer: 'Viewer' } as Record<string, string>,
-    extraTags: { logout: 'Sign-out', login_locked: 'Locked', link_completed: 'Account set up', bootstrap_admin: 'Owner created', user_invite: 'User invited', user_role: 'Role change', user_disable: 'User disabled', user_enable: 'User enabled', user_link: 'Link sent', hospital_settings: 'Settings', department_create: 'New department', department_edit: 'Department edit', schedule_edit: 'Schedule', closure_add: 'Closure', closure_remove: 'Closure removed', company_user_reset_cli: 'Server recovery', platform_settings: 'System settings', booking_rules: 'Booking rules' } as Record<string, string>,
+    extraTags: { logout: 'Sign-out', login_locked: 'Locked', link_completed: 'Account set up', bootstrap_admin: 'Owner created', user_invite: 'User invited', user_role: 'Role change', user_disable: 'User disabled', user_enable: 'User enabled', user_link: 'Link sent', hospital_settings: 'Settings', department_create: 'New department', department_edit: 'Department edit', schedule_edit: 'Schedule', closure_add: 'Closure', closure_remove: 'Closure removed', company_user_reset_cli: 'Server recovery', platform_settings: 'System settings', booking_rules: 'Booking rules', device_register: 'Device registered', device_revoke: 'Device revoked', doctor_departments: 'Doctor departments', attendance_correct: 'Attendance correction' } as Record<string, string>,
     reportsPending: 'Booking and attendance numbers appear once booking is live (phase 6).',
   },
   tr: {
@@ -118,7 +118,7 @@ export const A = {
     tooSoon: (d: string) => 'Bağlantı 30 günde bir değiştirilebilir. Sonraki değişiklik ' + d + ' tarihinden sonra mümkün.',
     emailTaken: 'Bu e-posta başka bir hesapta kullanılıyor.', noAdmin: 'Bu hastanenin aktif yöneticisi yok.',
     noData: '—', roleNames: { owner: 'Sahip', support: 'Destek', viewer: 'İzleyici' } as Record<string, string>,
-    extraTags: { logout: 'Çıkış', login_locked: 'Kilit', link_completed: 'Hesap kuruldu', bootstrap_admin: 'Sahip oluşturuldu', user_invite: 'Kullanıcı daveti', user_role: 'Rol değişikliği', user_disable: 'Kullanıcı kapatıldı', user_enable: 'Kullanıcı açıldı', user_link: 'Bağlantı gönderildi', hospital_settings: 'Ayarlar', department_create: 'Yeni bölüm', department_edit: 'Bölüm düzenleme', schedule_edit: 'Program', closure_add: 'Kapanış', closure_remove: 'Kapanış kaldırıldı', company_user_reset_cli: 'Sunucu kurtarma', platform_settings: 'Sistem ayarları', booking_rules: 'Randevu kuralları' } as Record<string, string>,
+    extraTags: { logout: 'Çıkış', login_locked: 'Kilit', link_completed: 'Hesap kuruldu', bootstrap_admin: 'Sahip oluşturuldu', user_invite: 'Kullanıcı daveti', user_role: 'Rol değişikliği', user_disable: 'Kullanıcı kapatıldı', user_enable: 'Kullanıcı açıldı', user_link: 'Bağlantı gönderildi', hospital_settings: 'Ayarlar', department_create: 'Yeni bölüm', department_edit: 'Bölüm düzenleme', schedule_edit: 'Program', closure_add: 'Kapanış', closure_remove: 'Kapanış kaldırıldı', company_user_reset_cli: 'Sunucu kurtarma', platform_settings: 'Sistem ayarları', booking_rules: 'Randevu kuralları', device_register: 'Cihaz kaydı', device_revoke: 'Cihaz iptali', doctor_departments: 'Doktor bölümleri', attendance_correct: 'Giriş düzeltmesi' } as Record<string, string>,
     reportsPending: 'Randevu ve katılım sayıları randevu sistemi açıldığında görünür (aşama 6).',
   },
 };
@@ -172,6 +172,7 @@ export const UT = {
     emailNotSent: 'تم الحفظ، لكن تعذّر إرسال البريد. أعد المحاولة.',
     emailTaken: 'هذا البريد مستخدم لحساب آخر.', emailInvalid: 'البريد غير صالح.', lastOwner: 'يجب أن يبقى مالك نشط واحد على الأقل.',
     self: 'لا يمكنك تعديل حسابك من هنا.', network: 'تعذّر الاتصال بالخادم.', generic: 'حدث خطأ غير متوقع.', loading: 'جارٍ التحميل…',
+    scopes: 'الأقسام', scopesRequired: 'اختر قسمًا واحدًا على الأقل.', saveScopes: 'حفظ', cancel: 'إلغاء',
   },
   en: {
     emailPh: 'Email', role: 'Role', invite: 'Send invite', sending: 'Sending…',
@@ -182,6 +183,7 @@ export const UT = {
     emailNotSent: 'Saved, but the email couldn’t be sent. Try again.',
     emailTaken: 'This email is already used by another account.', emailInvalid: 'That email isn’t valid.', lastOwner: 'At least one active Owner must remain.',
     self: 'You can’t change your own account here.', network: 'Can’t reach the server.', generic: 'Something went wrong.', loading: 'Loading…',
+    scopes: 'Departments', scopesRequired: 'Choose at least one department.', saveScopes: 'Save', cancel: 'Cancel',
   },
   tr: {
     emailPh: 'E-posta', role: 'Rol', invite: 'Davet gönder', sending: 'Gönderiliyor…',
@@ -192,5 +194,6 @@ export const UT = {
     emailNotSent: 'Kaydedildi, ancak e-posta gönderilemedi. Tekrar deneyin.',
     emailTaken: 'Bu e-posta başka bir hesapta kullanılıyor.', emailInvalid: 'E-posta geçersiz.', lastOwner: 'En az bir aktif Sahip kalmalıdır.',
     self: 'Kendi hesabınızı buradan değiştiremezsiniz.', network: 'Sunucuya ulaşılamıyor.', generic: 'Bir sorun oluştu.', loading: 'Yükleniyor…',
+    scopes: 'Bölümler', scopesRequired: 'En az bir bölüm seçin.', saveScopes: 'Kaydet', cancel: 'Vazgeç',
   },
 };

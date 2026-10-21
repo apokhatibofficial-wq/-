@@ -120,6 +120,8 @@ public sealed class SyncTests(MedLinkFixture fx) : IDisposable
         Assert.Equal(("no_show", false), (c1.Body.GetProperty("status").GetString(), c1.Body.GetProperty("needsReview").GetBoolean()));
         var c2 = await h.Admin.Post($"/hospital/bookings/{bid}/attendance", new { type = "arrived", reason = "عاد ودخل" });
         Assert.Equal(("arrived", true), (c2.Body.GetProperty("status").GetString(), c2.Body.GetProperty("needsReview").GetBoolean()));
+        await using (var db = await fx.OwnerAsync())
+            Assert.Equal(2, await db.ExecuteScalarAsync<int>("SELECT count(*) FROM audit_log WHERE action = 'attendance_correct' AND target = @bid", new { bid }));
         var listed = await reception.Get($"/hospital/bookings/{bid}");
         Assert.True(listed.Body.GetProperty("booking").GetProperty("needsReview").GetBoolean());
 
@@ -218,6 +220,9 @@ public sealed class SyncTests(MedLinkFixture fx) : IDisposable
         Assert.Equal(HttpStatusCode.Created, reg.StatusCode);
         var dev = (await reg.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("deviceId").GetString()!;
         Assert.Equal(HttpStatusCode.OK, (await win.GetAsync($"/sync/pull?deviceId={dev}&since=0")).StatusCode);
+        // The company console shows the hospital's last sync.
+        var hosp = await owner.Get($"/admin/hospitals/{h.HospitalId}");
+        Assert.NotEqual(JsonValueKind.Null, hosp.Body.GetProperty("hospital").GetProperty("lastSyncAt").ValueKind);
 
         // Reception cannot manage devices; the admin revokes it and the device is refused from then on.
         Assert.Equal(HttpStatusCode.OK, (await h.Admin.Post($"/hospital/devices/{dev}/revoke", new { })).Status);
@@ -226,6 +231,8 @@ public sealed class SyncTests(MedLinkFixture fx) : IDisposable
         Assert.Contains("DEVICE_REVOKED", await refused.Content.ReadAsStringAsync());
         var pushRefused = await win.PostAsJsonAsync("/sync/push", new { deviceId = dev, events = Array.Empty<object>() });
         Assert.Equal(HttpStatusCode.Forbidden, pushRefused.StatusCode);
+        // The console still shows when the hospital last synced, even after the device was revoked.
+        Assert.NotEqual(JsonValueKind.Null, (await owner.Get($"/admin/hospitals/{h.HospitalId}")).Body.GetProperty("hospital").GetProperty("lastSyncAt").ValueKind);
 
         // Another hospital's device id is refused too.
         var other = await BookingSetup.CreateAsync(api, owner);

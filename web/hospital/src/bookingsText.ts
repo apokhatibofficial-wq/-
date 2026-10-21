@@ -9,6 +9,10 @@ export const BT = {
     cancelTitle: 'إلغاء الحجز', reasonPh: 'سبب الإلغاء (إلزامي)', confirmCancel: 'تأكيد الإلغاء',
     cancelNote: 'يصبح الموعد متاحًا لحجز جديد. لا يمكن التراجع عن الإلغاء.', cancelled: 'أُلغي الحجز.', cancelReason: 'سبب الإلغاء',
     notCancellable: 'لا يمكن إلغاء هذا الحجز في حالته الحالية.', generic: 'حدث خطأ غير متوقع.',
+    // Verbatim from designs/Windows App.dc.html and QR Scanner.dc.html
+    markArrived: 'تسجيل الحضور يدويًا', correct: 'تصحيح الحالة', corrReasonPh: 'سبب التصحيح (إلزامي)', saveCorr: 'حفظ التصحيح',
+    corrNote: 'يُسجَّل التصحيح مع السبب والوقت والحساب في سجل التدقيق.', checkedIn: 'تم تسجيل الحضور', saved: 'تم حفظ التصحيح.',
+    needsReview: 'تصحيحان متعارضان · يحتاج مراجعة', otherDay: 'يُسجَّل الحضور في يوم الموعد فقط.', arrivedAt: 'وقت الحضور',
   },
   en: {
     today: 'Today', prev: 'Previous day', next: 'Next day', searchRef: 'Booking number', find: 'Find',
@@ -19,6 +23,9 @@ export const BT = {
     cancelTitle: 'Cancel booking', reasonPh: 'Reason for cancelling (required)', confirmCancel: 'Confirm cancel',
     cancelNote: 'The slot becomes free for a new booking. Cancelling can’t be undone.', cancelled: 'Booking cancelled.', cancelReason: 'Cancel reason',
     notCancellable: 'This booking can’t be cancelled in its current state.', generic: 'Something went wrong.',
+    markArrived: 'Check in manually', correct: 'Correct status', corrReasonPh: 'Reason for correction (required)', saveCorr: 'Save correction',
+    corrNote: 'Corrections are logged with reason, time and account in the audit log.', checkedIn: 'Checked in', saved: 'Correction saved.',
+    needsReview: 'Conflicting corrections · needs review', otherDay: 'Check-in is only possible on the appointment day.', arrivedAt: 'Arrived at',
   },
   tr: {
     today: 'Bugün', prev: 'Önceki gün', next: 'Sonraki gün', searchRef: 'Randevu numarası', find: 'Bul',
@@ -29,5 +36,8 @@ export const BT = {
     cancelTitle: 'Randevuyu iptal et', reasonPh: 'İptal nedeni (zorunlu)', confirmCancel: 'İptali onayla',
     cancelNote: 'Saat yeni randevuya açılır. İptal geri alınamaz.', cancelled: 'Randevu iptal edildi.', cancelReason: 'İptal nedeni',
     notCancellable: 'Bu randevu mevcut durumunda iptal edilemez.', generic: 'Bir sorun oluştu.',
+    markArrived: 'Elle giriş yap', correct: 'Durumu düzelt', corrReasonPh: 'Düzeltme nedeni (zorunlu)', saveCorr: 'Düzeltmeyi kaydet',
+    corrNote: 'Düzeltmeler neden, saat ve hesapla denetim kaydına yazılır.', checkedIn: 'Giriş yapıldı', saved: 'Düzeltme kaydedildi.',
+    needsReview: 'Çelişen düzeltmeler · inceleme gerekli', otherDay: 'Giriş yalnızca randevu gününde yapılabilir.', arrivedAt: 'Geliş saati',
   },
 };

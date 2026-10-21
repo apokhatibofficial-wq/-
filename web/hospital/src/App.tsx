@@ -79,7 +79,7 @@ export function App() {
       >
         {SOON.includes(current) && <div className="card empty" style={{ lineHeight: 1.6 }}>{t.soonBody.appointments}</div>}
         {current === 'form' && <FormBuilder lang={lang} slug={hospital?.slug ?? null} flash={setToast} />}
-        {current === 'bookings' && <Bookings lang={lang} canCancel={me.permissions.includes('AttendanceCorrect')} flash={setToast} />}
+        {current === 'bookings' && <Bookings lang={lang} canCancel={me.permissions.includes('AttendanceCorrect')} canCheckIn={me.permissions.includes('CheckIn')} canCorrect={me.permissions.includes('AttendanceCorrect')} timezone={hospital?.timezone ?? 'Asia/Damascus'} flash={setToast} />}
         {current === 'departments' && <Departments lang={lang} canEdit={me.permissions.includes('HospitalSettings')} flash={setToast} />}
         {current === 'settings' && hospital && <Settings lang={lang} me={me} hospital={hospital} reload={loadHospital} flash={setToast} />}
       </Shell>

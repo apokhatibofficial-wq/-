@@ -637,12 +637,12 @@ function RolesTab({ L }: { L: Lang }) {
       {groups.map(g => (
         <div key={g.title} className="card table">
           <div style={{ padding: '14px 16px', fontSize: 15, fontWeight: 600, color: 'var(--ink)', borderBottom: '1px solid var(--thead-border)' }}>{g.title}</div>
-          <div className="trow thead cols-role" style={{ borderBottom: 'none' }}>
+          <div className="trow thead cols-role" style={{ borderBottom: 'none', gridTemplateColumns: `minmax(170px, 2fr) repeat(${g.roles.length}, minmax(80px, 1fr))`, minWidth: 260 + g.roles.length * 90 }}>
             <span>{t.permission}</span>
             {g.roles.map(r => <span key={r} style={{ textAlign: 'center' }}>{r}</span>)}
           </div>
           {g.perms.map(([label, cells]) => (
-            <div key={label} className="trow cols-role" style={{ fontSize: 14, borderTop: '1px solid var(--divider)', borderBottom: 'none', padding: '10px 16px' }}>
+            <div key={label} className="trow cols-role" style={{ gridTemplateColumns: `minmax(170px, 2fr) repeat(${g.roles.length}, minmax(80px, 1fr))`, minWidth: 260 + g.roles.length * 90, fontSize: 14, borderTop: '1px solid var(--divider)', borderBottom: 'none', padding: '10px 16px' }}>
               <span>{label}</span>
               {cells.map((c, i) => <span key={i} style={{ textAlign: 'center', fontWeight: 700, color: MARK[c].color }}>{MARK[c].mark}</span>)}
             </div>

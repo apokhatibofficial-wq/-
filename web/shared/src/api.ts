@@ -89,7 +89,12 @@ export type Closure = { id: string; date: string; departmentId: string | null; r
 export type ManagedUser = {
   id: string; email: string; status: 'pending' | 'active' | 'disabled'; roles: string[]; has2fa: boolean;
   createdAt: string; lastSeenAt: string | null;
+  /** Doctors only: the departments whose appointments they see. */
+  departmentIds?: string[];
 };
+
+/** A registered Windows PC (reception or doctor). */
+export type Device = { id: string; name: string; registeredBy: string; createdAt: string; lastSeenAt: string | null; revoked: boolean };
 
 /** The public booking-site base. Production: https://medlink.website */
 export const BOOK_ORIGIN: string = (import.meta.env.VITE_BOOK_ORIGIN as string | undefined) ?? 'https://medlink.website';

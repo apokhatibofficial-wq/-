@@ -7,16 +7,17 @@ type Names = { ar: string; en: string | null; tr: string | null };
 type Booking = {
   id: string; ref: string; localDate: string; localTime: string; department: Names & { id: string };
   patientName: string | null; phone: string | null; status: 'waiting' | 'arrived' | 'no_show' | 'cancelled'; formVersion: number | null; cancelReason: string | null;
+  arrivedAt: string | null; needsReview: boolean;
 };
 type Question = { id: string; type: string; label: { ar?: string; en?: string; tr?: string }; opts: { id: string; label: { ar?: string; en?: string; tr?: string } }[] | null };
 
 const lbl = (o: { ar?: string | null; en?: string | null; tr?: string | null } | undefined, l: Lang) => (o ? o[l] || o.ar || o.en || o.tr || '' : '');
 const addDays = (d: string, n: number) => { const [y, m, dd] = d.split('-').map(Number); const x = new Date(Date.UTC(y, m - 1, dd + n)); return x.toISOString().slice(0, 10); };
 
-type Props = { lang: Lang; canCancel: boolean; flash: (s: string) => void };
+type Props = { lang: Lang; canCancel: boolean; canCheckIn: boolean; canCorrect: boolean; timezone: string; flash: (s: string) => void };
 
-/** The day's bookings (hospital time zone), lookup by full booking number, and cancellation by reception. */
-export function Bookings({ lang: L, canCancel, flash }: Props) {
+/** The day's bookings (hospital time zone), lookup by full booking number, check-in, correction and cancellation. */
+export function Bookings({ lang: L, canCancel, canCheckIn, canCorrect, timezone, flash }: Props) {
   const t = BT[L];
   const [date, setDate] = useState<string | null>(null);
   const [rows, setRows] = useState<Booking[] | null>(null);
@@ -25,11 +26,15 @@ export function Bookings({ lang: L, canCancel, flash }: Props) {
   const [open, setOpen] = useState<null | { b: Booking; answers: Record<string, unknown>; questions: Question[] }>(null);
   const [reason, setReason] = useState('');
   const [err, setErr] = useState('');
+  const [today, setToday] = useState<string | null>(null);
+  const [corrType, setCorrType] = useState<'arrived' | 'no_show' | 'waiting'>('arrived');
+  const [corrReason, setCorrReason] = useState('');
 
   const load = useCallback(async (d: string | null) => {
     setRows(null); setSearching(false);
     const r = await api<{ date: string; bookings: Booking[] }>('GET', '/hospital/bookings' + (d ? '?date=' + d : ''));
     setDate(r.date); setRows(r.bookings);
+    if (!d) setToday(r.date);
   }, []);
   useEffect(() => { void load(null); }, [load]);
 
@@ -43,15 +48,36 @@ export function Bookings({ lang: L, canCancel, flash }: Props) {
 
   async function openBooking(b: Booking) {
     const r = await api<{ answers: Record<string, unknown>; questions: Question[] }>('GET', '/hospital/bookings/' + encodeURIComponent(b.id));
-    setOpen({ b, answers: r.answers, questions: r.questions }); setReason(''); setErr('');
+    setOpen({ b, answers: r.answers, questions: r.questions }); setReason(''); setErr(''); setCorrReason('');
+    setCorrType(b.status === 'arrived' ? 'no_show' : 'arrived');
   }
+
+  async function refreshList() { if (searching) await search(); else await load(date); }
+
+  /** Check-in (no reason) or correction (with a reason); the server applies the approved conflict policy. */
+  async function attendance(type: 'arrived' | 'no_show' | 'waiting', reasonText?: string) {
+    if (!open) return;
+    setErr('');
+    try {
+      const r = await api<{ status: Booking['status']; arrivedAt: string | null; needsReview: boolean }>('POST',
+        '/hospital/bookings/' + encodeURIComponent(open.b.id) + '/attendance', reasonText === undefined ? { type } : { type, reason: reasonText });
+      setOpen({ ...open, b: { ...open.b, status: r.status, arrivedAt: r.arrivedAt, needsReview: r.needsReview } });
+      setCorrReason('');
+      flash(reasonText === undefined ? t.checkedIn : t.saved);
+      await refreshList();
+    } catch (e) {
+      const c = e instanceof ApiError ? e.code : '';
+      setErr(c === 'OTHER_DAY' ? t.otherDay : c === 'CANCELLED' ? t.notCancellable : t.generic);
+    }
+  }
+  const clock = (iso: string) => new Date(iso).toLocaleTimeString(L === 'ar' ? 'ar-u-nu-latn' : L, { hour: '2-digit', minute: '2-digit', timeZone: timezone });
 
   async function cancel() {
     if (!open) return;
     try {
       await api('POST', '/hospital/bookings/' + encodeURIComponent(open.b.id) + '/cancel', { reason: reason.trim() });
       setOpen(null); flash(t.cancelled);
-      if (searching) await search(); else await load(date);
+      await refreshList();
     } catch (e) { setErr(e instanceof ApiError && e.code === 'NOT_CANCELLABLE' ? t.notCancellable : t.generic); }
   }
 
@@ -97,7 +123,7 @@ export function Bookings({ lang: L, canCancel, flash }: Props) {
             <span dir="ltr" className="mono" style={{ fontSize: 13 }}>{b.ref}</span>
             <span className="ellipsis" style={{ fontWeight: 500 }} dir="auto">{b.patientName ?? '—'}</span>
             <span className="ellipsis">{lbl(b.department, L)}</span>
-            <span>{chip(b.status)}</span>
+            <span style={{ display: 'flex', gap: 4, alignItems: 'center' }}>{chip(b.status)}{b.needsReview && <span title={t.needsReview} aria-label={t.needsReview} style={{ color: '#b54708', fontWeight: 700 }}>!</span>}</span>
           </div>
         ))}
       </div>
@@ -108,12 +134,12 @@ export function Bookings({ lang: L, canCancel, flash }: Props) {
             <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
                 <div dir="ltr" className="mono" style={{ fontSize: 20, fontWeight: 700, color: 'var(--ink)', textAlign: 'start' }}>{open.b.ref}</div>
-                <span>{chip(open.b.status)}</span>
+                <span style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>{chip(open.b.status)}{open.b.needsReview && <span className="chip" style={{ background: '#fff4e5', color: '#7a4300' }}>{t.needsReview}</span>}</span>
               </div>
               <button type="button" className="icon-btn" aria-label={t.close} onClick={() => setOpen(null)}>×</button>
             </div>
             <div className="facts">
-              {[[t.patient, open.b.patientName ?? '—'], [t.phone, open.b.phone ?? '—'], [t.department, lbl(open.b.department, L)], [t.when, open.b.localDate + ' ' + open.b.localTime]].map(([k, v]) => (
+              {[[t.patient, open.b.patientName ?? '—'], [t.phone, open.b.phone ?? '—'], [t.department, lbl(open.b.department, L)], [t.when, open.b.localDate + ' ' + open.b.localTime], ...(open.b.arrivedAt ? [[t.arrivedAt, clock(open.b.arrivedAt)]] : [])].map(([k, v]) => (
                 <div key={k}><span className="note">{k}</span><span style={{ fontSize: 14, fontWeight: 600 }} dir="auto">{v}</span></div>
               ))}
             </div>
@@ -129,11 +155,30 @@ export function Bookings({ lang: L, canCancel, flash }: Props) {
               </div>
             )}
             {open.b.status === 'cancelled' && open.b.cancelReason && <div className="alert alert-danger">{t.cancelReason}: {open.b.cancelReason}</div>}
+            {err && <div role="alert" className="alert alert-danger">{err}</div>}
+            {canCheckIn && open.b.status === 'waiting' && open.b.localDate === today && (
+              <button type="button" className="btn btn-primary" style={{ alignSelf: 'flex-start' }} onClick={() => void attendance('arrived')}>{t.markArrived}</button>
+            )}
+            {canCorrect && open.b.status !== 'cancelled' && (
+              <div style={{ borderTop: '1px solid var(--thead-border)', paddingTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <span style={{ fontSize: 14, fontWeight: 600 }}>{t.correct}</span>
+                <div role="radiogroup" aria-label={t.correct} style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {(['arrived', 'no_show', 'waiting'] as const).map(k => (
+                    <button key={k} type="button" role="radio" aria-checked={corrType === k} className="copy-btn"
+                      style={{ height: 32, ...(corrType === k ? { background: '#eef1fc', borderColor: 'var(--brand)', color: 'var(--brand-deep)' } : {}) }}
+                      onClick={() => setCorrType(k)}>{t.status[k]}</button>
+                  ))}
+                </div>
+                <textarea className="input" rows={2} maxLength={300} placeholder={t.corrReasonPh} aria-label={t.corrReasonPh} value={corrReason} onChange={e => setCorrReason(e.target.value)} />
+                <button type="button" className="btn btn-secondary" style={{ alignSelf: 'flex-start' }} disabled={corrReason.trim().length < 3}
+                  onClick={() => void attendance(corrType, corrReason.trim())}>{t.saveCorr}</button>
+                <span className="note">{t.corrNote}</span>
+              </div>
+            )}
             {canCancel && open.b.status === 'waiting' && (
               <div style={{ borderTop: '1px solid var(--thead-border)', paddingTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <span style={{ fontSize: 14, fontWeight: 600 }}>{t.cancelTitle}</span>
                 <textarea className="input" rows={2} maxLength={300} placeholder={t.reasonPh} aria-label={t.reasonPh} value={reason} onChange={e => setReason(e.target.value)} />
-                {err && <div role="alert" className="alert alert-danger">{err}</div>}
                 <button type="button" className="btn btn-danger" style={{ alignSelf: 'flex-start' }} disabled={reason.trim().length < 3} onClick={() => void cancel()}>{t.confirmCancel}</button>
                 <span className="note">{t.cancelNote}</span>
               </div>

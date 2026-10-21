@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
-import { api, ApiError, BOOK_ORIGIN, type HospitalMe, type ManagedUser, type Me } from '@medlink/shared/api';
+import { api, ApiError, BOOK_ORIGIN, type Department, type Device, type HospitalMe, type ManagedUser, type Me } from '@medlink/shared/api';
 import type { Lang } from '@medlink/shared/text';
 import { tzLabel, tzOptions } from '@medlink/shared/timezones';
 import { UsersPanel } from '@medlink/shared/UsersPanel';
-import { H } from './text';
+import { H, nameIn } from './text';
 
 type Props = { lang: Lang; me: Me; hospital: HospitalMe; reload: () => Promise<void>; flash: (s: string) => void };
 
@@ -23,6 +23,14 @@ export function Settings({ lang, me, hospital, reload, flash }: Props) {
     api<{ users: ManagedUser[] }>('GET', '/hospital/users').then(r => setUsers(r.users)).catch(() => setUsers([]));
   }, []);
   useEffect(loadUsers, [loadUsers]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  useEffect(() => { api<{ departments: Department[] }>('GET', '/hospital/departments').then(r => setDepartments(r.departments)).catch(() => undefined); }, []);
+  const [devices, setDevices] = useState<{ devices: Device[]; maxActive: number } | null>(null);
+  const loadDevices = useCallback(() => {
+    api<{ devices: Device[]; maxActive: number }>('GET', '/hospital/devices').then(setDevices).catch(() => setDevices({ devices: [], maxActive: 25 }));
+  }, []);
+  useEffect(loadDevices, [loadDevices]);
+  const when = (iso: string) => new Date(iso).toLocaleString(lang === 'ar' ? 'ar-u-nu-latn' : lang, { dateStyle: 'medium', timeStyle: 'short', timeZone: hospital.timezone });
 
   const g = Number(grace), r = Number(retention);
   const valid = Number.isInteger(g) && g >= 0 && g <= 240 && Number.isInteger(r) && r >= 1 && r <= 120;
@@ -97,16 +105,38 @@ export function Settings({ lang, me, hospital, reload, flash }: Props) {
       <UsersPanel
         lang={lang}
         users={users}
-        roles={[{ id: 'reception', label: t.roles.reception }, { id: 'scanner', label: t.roles.scanner }]}
+        roles={[{ id: 'reception', label: t.roles.reception }, { id: 'scanner', label: t.roles.scanner }, { id: 'doctor', label: t.roles.doctor }]}
+        scopedRole="doctor"
+        scopes={departments.map(d => ({ id: d.id, label: nameIn(d.name, lang) }))}
+        scopesNote={t.doctorScopes}
         roleNames={t.roles}
         lockedRoles={['hosp_admin']}
         lockedNote={t.usersLocked}
         selfId={me.id}
         flash={flash}
-        onInvite={async (email, role) => { const x = await api<{ emailSent: boolean }>('POST', '/hospital/users', { email, role }); loadUsers(); return x; }}
+        onInvite={async (email, role, departmentIds) => { const x = await api<{ emailSent: boolean }>('POST', '/hospital/users', { email, role, departmentIds }); loadUsers(); return x; }}
         onChange={async (id, change) => { try { await api('PATCH', '/hospital/users/' + encodeURIComponent(id), change); } finally { loadUsers(); } }}
         onSendLink={id => api<{ emailSent: boolean }>('POST', '/hospital/users/' + encodeURIComponent(id) + '/send-link', {})}
       />
+
+      <h2 className="section-title">{t.devices}</h2>
+      <div className="card" style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <p className="note" style={{ margin: 0 }}>{t.devicesNote(devices?.maxActive ?? 25)}</p>
+        {devices === null ? <div className="empty">…</div> : devices.devices.length === 0 ? <div className="empty">{t.noDevices}</div> : devices.devices.map(d => (
+          <div key={d.id} className="user-row">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0, flex: '1 1 220px' }}>
+              <span className="ellipsis" style={{ fontSize: 14, fontWeight: 600 }} dir="auto">{d.name}</span>
+              <span className="note">{t.registeredBy}: <bdi dir="ltr">{d.registeredBy}</bdi></span>
+            </div>
+            <span className="note" style={{ minWidth: 160 }}>{t.lastSync}: {d.lastSeenAt ? when(d.lastSeenAt) : t.never}</span>
+            {d.revoked
+              ? <span className="chip" style={{ background: '#fdecea', color: '#8a1c12' }}>{t.revoked}</span>
+              : <button type="button" className="copy-btn" style={{ height: 32, color: '#b42318' }} onClick={() => {
+                  api('POST', '/hospital/devices/' + encodeURIComponent(d.id) + '/revoke', {}).then(() => { flash(t.deviceRevoked); loadDevices(); }).catch(() => flash(t.generic));
+                }}>{t.revoke}</button>}
+          </div>
+        ))}
+      </div>
     </>
   );
 }

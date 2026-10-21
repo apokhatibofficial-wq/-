@@ -64,6 +64,9 @@ public static class AttendanceService
             await c.ExecuteAsync("ROLLBACK TO SAVEPOINT att", transaction: t);
             return new RecordResult("duplicate", null, await CurrentAsync(c, t, r.BookingId), b.Ref);
         }
+        // Corrections also go to the audit log (who, when, what); the reason itself stays with the event.
+        if (r.Source == "correction")
+            await MedLink.Api.Audit.AuditLog.WriteAsync(c, t, r.ActorId, r.HospitalId, "attendance_correct", r.BookingId, new { type = r.Type });
         var state = await RecomputeAsync(c, t, r.BookingId);
         return new RecordResult("applied", null, state, b.Ref);
     }
