@@ -77,7 +77,7 @@ public static class HttpAuth
 
     /// <summary>Requires a signed-in caller of the permission's scope who holds the permission. Checked on the server for every request.</summary>
     public static TBuilder Require<TBuilder>(this TBuilder b, Permission permission) where TBuilder : IEndpointConventionBuilder =>
-        b.AddEndpointFilter(async (fctx, next) =>
+        b.WithMetadata(new PermissionRequired(permission)).AddEndpointFilter(async (fctx, next) =>
         {
             var p = fctx.HttpContext.GetPrincipal();
             if (p is null) return Results.Json(new { error = "UNAUTHENTICATED" }, statusCode: 401);
@@ -88,7 +88,7 @@ public static class HttpAuth
         });
 
     public static TBuilder RequireSignedIn<TBuilder>(this TBuilder b) where TBuilder : IEndpointConventionBuilder =>
-        b.AddEndpointFilter(async (fctx, next) =>
+        b.WithMetadata(new SignInRequired()).AddEndpointFilter(async (fctx, next) =>
             fctx.HttpContext.GetPrincipal() is null
                 ? Results.Json(new { error = "UNAUTHENTICATED" }, statusCode: 401)
                 : await next(fctx));
@@ -100,3 +100,7 @@ public static class HttpAuth
                 ? await next(fctx)
                 : Results.Json(new { error = "JSON_REQUIRED" }, statusCode: 415));
 }
+
+/// <summary>Endpoint markers, so a test can check that every endpoint declares who may call it.</summary>
+public sealed record PermissionRequired(Permission Permission);
+public sealed record SignInRequired;
