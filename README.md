@@ -119,7 +119,7 @@ All settings are environment variables; see [`.env.example`](.env.example). The 
 8. If the only Owner loses access: `docker compose --env-file ../.env run --rm api reset-company-user --email <address>` prints a 1-hour reset link. Hand it over only after verifying identity.
 
 ### Backups
-`infra/backup/backup.sh` runs `pg_dump`, encrypts it with `age` using a public key, and uploads it to R2. Schedule it every 6 hours with cron, and set an R2 lifecycle rule to keep 35 days. `infra/backup/restore.sh` restores into a new database for the monthly restore test. The age private key stays offline with the owner. These scripts are written but not yet run; that is Phase 11.
+Every 6 hours `infra/backup/backup.sh` dumps the database, encrypts it with `age` (public key only; the private key stays offline with the owner) and uploads it to Cloudflare R2. Every backup is kept for 30 days and the first of each month for 12 months. `restore-test.sh` runs monthly and checks that a fresh dump restores and that the stored backups are recent and intact. `restore.sh` opens a backup with the private key into a new database; `recover.sh` rebuilds a lost server. The whole cycle runs in CI on every push. Setup, cron lines and the disaster procedure: [`docs/backup-restore.md`](docs/backup-restore.md).
 
 ### Free-tier limits (check the current terms when you sign up)
 - Oracle Always Free: Ampere A1 up to 4 OCPU / 24 GB in total; idle instances may be reclaimed.

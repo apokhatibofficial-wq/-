@@ -4,6 +4,85 @@ Real runs only. Re-run the commands to reproduce. Newest phase first.
 
 ---
 
+# Phase 11 — tests, security, backups (2026-10-21)
+
+## 1. API tests (xUnit + Testcontainers, PostgreSQL 16)
+`cd api && dotnet test tests/MedLink.Api.Tests`
+
+**Result: 100 passed, 0 failed** (10 min 23 s). That is the 96 earlier tests plus 4 new ones:
+
+| Test | Result |
+|---|---|
+| `Acceptance 25: every endpoint declares who may call it; only the reviewed public ones are open` (61 endpoints compared with a fixed table; the 9 public ones match the session middleware) | ✅ |
+| `Acceptance 2: without signing in, every non-public endpoint answers 401 and does nothing` (52 endpoints; audit log unchanged) | ✅ |
+| `Acceptance 25: every role is refused (403) on every endpoint whose permission it lacks, company and hospital alike` (7 roles, 267 refusals, each with the code FORBIDDEN; nothing reaches the audit log) | ✅ |
+| `Bad input: a NUL byte in a query or JSON field is refused with 400, never a server error (found by ZAP)` (failed before the fix: 500) | ✅ |
+
+**Mutation check (7 seeded authorisation faults):**
+- Caught: a rule removed from an endpoint; a wrong permission on an endpoint; the role check removed inside `/admin/audit`, `/sync/pull` and the attendance endpoint; an extra public path.
+- At first, the wrong permission and the `/sync/pull` check were missed. The test took its expectation from the endpoint itself, and another 403 (missing device) hid the removed check. Fixed with the fixed table and by requiring the code FORBIDDEN; both are now caught.
+- Not catchable (no behaviour changes): removing the company/hospital scope check, since no role in the matrix holds a permission of the other scope. It stays as a second line of defence.
+
+## 2. Backups (real scripts, Docker stack, S3 mock for R2, age key made for the run)
+On the dev stack with the data of the Phase 10 browser run:
+```
+backup.sh          20261021T142300Z backup uploaded (97308 bytes), also kept as this month's backup
+backup.sh          20261021T142306Z backup uploaded (97308 bytes)
+restore-test.sh    fresh dump restored, 22 tables, 82 rows, counts match
+                   newest backup …142306Z.dump.age is 0h old, 97308 bytes, checksum OK; monthly copy present
+                   RESTORE TEST PASSED
+r2-lifecycle.sh    rules set: postgres/daily/ 30 days, postgres/monthly/ 365 days
+restore.sh latest  22 tables restored into a new database: row counts identical to the live one; 21/21 RLS policies
+```
+**Failure cases (each must fail):**
+
+| Case | Result |
+|---|---|
+| Stale backup (maximum age set to 0 h) | ✅ `RESTORE TEST FAILED: the newest backup is 0 hours old … is the backup cron running?` |
+| Tampered backup in R2 (same size, other bytes, old checksum) | ✅ `RESTORE TEST FAILED: … does not match its recorded checksum` |
+| Restore over the live database | ✅ `refusing to restore over the live database medlink` |
+| Wrong private key | ✅ fails; the new database is removed again (0 left) |
+| Schema-only dump (seeded fault in `backup.sh`) | First run: the monthly test still passed, because it cannot decrypt stored backups; only the CI restore caught it. Then `backup.sh` was made to check the dump's table of contents → ✅ `FAILED: the dump has data for 0 of 22 tables` |
+| `recover.sh` on a database that has tables | ✅ refused |
+
+**Disaster recovery:**
+- Done after a backup: `docker compose down -v` deleted all containers and volumes, then `recover.sh latest <key>` ran.
+- 13 s; row counts identical to before the disaster; API healthy.
+- In the browser, the hospital admin's session from before was still valid, and the bookings page showed the 3 bookings with their statuses: **PASS**.
+
+**CI job `backups`** (`infra/backup/ci-test.sh`, GitHub run 21): backup ×2, monthly test, restore with the key (identical), refusal over live, disaster recovery (identical, healthy): `BACKUP CYCLE PASSED`.
+
+Found along the way:
+- **The Phase 4 scripts could not have run on the server:** they loaded `.env` through bash, and `EMAIL_FROM=MEDLINK <…>` breaks that.
+- **A slip in the first version of `ci-test.sh`:** a check written as `diff … && echo` cannot stop the script. Every check now fails the run explicitly.
+- **In the S3 mock, setting lifecycle rules deletes every object** (R2 applies the age). The rules are set once on the empty bucket.
+
+## 3. Security headers and browser runs against the built sites
+- `npm run build`, then each `dist/` was served with its `_headers` exactly as Cloudflare Pages would. The only changes: no `upgrade-insecure-requests` on http://localhost, and a report address.
+- **All browser runs of phases 4–10: 81 of 81 steps passed with the CSP enforced:** run 16/16, run5 16/16, run6 7/7, run6b 10/10, run7 10/10, run9 4/4, run9b 11/11 (camera and jsQR), run10 7/7.
+- **CSP violation reports: 0.** Check that reporting works: an injected inline script and an iframe were blocked on all three sites and reported (6 reports).
+
+## 4. OWASP ZAP (2.x stable, Docker)
+| Scan | Result |
+|---|---|
+| Baseline + AJAX spider, company console, hospital web, booking site | 0 failures, 58 passed each. Warnings: inline styles in the CSP, no integrity hash on the Google Fonts stylesheet, "modern web app" (information) |
+| Active scan of the booking site (`/al-sham-hospital`) | 0 failures, 111 passed (same 2 warnings) |
+| API scan, 10 public and sign-in endpoints (OpenAPI written for the scan) | **1 real bug:** `availability?departmentId=%00` → 500 |
+| API scan again after the fix | 0 failures, 0 warnings, 113 passed. `%00` in a path → 400 (Kestrel); in a query → 400 `INVALID_TEXT` |
+
+## 5. Other checks
+| Check | Result |
+|---|---|
+| Web: `tsc` × 4, unit tests, build | ✅ 0 errors; 3/3, 10/10, 5/5; built |
+| gitleaks 8.28.0 (history and working tree) | ✅ no leaks |
+| API container log after the ZAP API scan (7 lines; the container was restarted for the fix, so the browser runs' log was not kept) | ✅ 0 patient names, phones, booking numbers, QR codes or test emails. The two NUL requests are still logged as errors (no personal data). |
+
+## Not tested yet
+- The real R2 bucket and its lifecycle rules (at deployment, Phase 12).
+- Real phones (Phase 9 checklist).
+
+---
+
 # Phase 10 — automatic no-show, cleanup, retention, password recovery (2026-10-21)
 
 ## 1. API tests (xUnit + Testcontainers, PostgreSQL 16)
