@@ -142,7 +142,11 @@ jobs:
           if ((Get-AppxPackage KhatibTechnicalSolutions.MEDLINK).Version -ne '0.9.0.0') { throw 'forged update was installed' }
           $r = Check-Update 'http://127.0.0.1:8099/good/' "$t\good.txt"
           if ($r -notmatch '^ready 0\.9\.1 .*packaged=True version=0\.9\.0') { throw "signed feed: $r" }
-          for ($i = 0; $i -lt 60 -and (Get-AppxPackage KhatibTechnicalSolutions.MEDLINK).Version -ne '0.9.1.0'; $i++) { Start-Sleep 2 }
+          # Windows applies the registered update the next time MEDLINK opens (as the banner says): open it again and
+          # the running app must be 0.9.1 (it checks the feed again and finds nothing newer).
+          Start-Sleep 5
+          $r = Check-Update 'http://127.0.0.1:8099/good/' "$t\reopen.txt"
+          if ($r -notmatch '^none 0\.9\.1 .*packaged=True version=0\.9\.1') { throw "after reopening: $r" }
           $v = (Get-AppxPackage KhatibTechnicalSolutions.MEDLINK).Version
           Write-Host "installed version after the update: $v"
           if ($v -ne '0.9.1.0') { throw 'the signed update was not applied' }

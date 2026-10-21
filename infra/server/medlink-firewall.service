@@ -1,0 +1,14 @@
+# Applies firewall-cloudflare.sh after Docker starts (and again whenever Docker restarts).
+[Unit]
+Description=MEDLINK: only Cloudflare may reach ports 80/443
+After=docker.service
+Requires=docker.service
+PartOf=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/medlink/infra/server/firewall-cloudflare.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target docker.service

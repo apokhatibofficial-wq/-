@@ -248,8 +248,8 @@ internal static class Smoke
             var good = await updater.CheckOnceAsync();
             await Until(() => m.UpdateBanner, 5);
             Check(good.Outcome == "ready" && installer.Installed == 1 && m.UpdateBanner, "signed update downloaded, checked and registered (" + good.Outcome + ")");
+            await Shot(window, outDir, "15-update-ready"); // also waits for layout, so the button's text exists
             Shows(window, "update banner", string.Format(Strings.Ar.UpdateReady, "9.9.9"), Strings.Ar.UpdateClose);
-            await Shot(window, outDir, "15-update-ready");
             m.CloseToUpdateCommand!.Execute(null);
             Check(quit, "\"Close to update\" closes the app");
 
