@@ -53,6 +53,25 @@ internal static class Smoke
         Check(missing.Count == 0, screen + " shows its labels" + (missing.Count > 0 ? " — missing: " + string.Join(" | ", missing) : ""));
     }
 
+    /// <summary>Every visible logo lies fully inside the window (the KHATIB splash logo was once pushed off the top).</summary>
+    private static void LogosInside(Window w, string screen)
+    {
+        var content = (FrameworkElement)w.Content;
+        var bad = new List<string>();
+        void Walk(DependencyObject d)
+        {
+            if (d is SharpVectors.Converters.SvgViewbox { IsVisible: true } v && v.ActualWidth > 0)
+            {
+                var r = v.TransformToAncestor(content).TransformBounds(new Rect(0, 0, v.ActualWidth, v.ActualHeight));
+                if (r.Top < 36 - 1 || r.Left < -1 || r.Bottom > content.ActualHeight + 1 || r.Right > content.ActualWidth + 1)
+                    bad.Add(v.Source?.ToString() + " at " + r.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            }
+            for (var i = 0; i < VisualTreeHelper.GetChildrenCount(d); i++) Walk(VisualTreeHelper.GetChild(d, i));
+        }
+        Walk(content);
+        Check(bad.Count == 0, screen + ": logos fully inside the window" + (bad.Count > 0 ? " — " + string.Join(" | ", bad) : ""));
+    }
+
     /// <summary>Primary buttons show white text (an app-wide TextBlock style once turned it dark).</summary>
     private static void PrimaryTextWhite(Window w, string screen)
     {
@@ -114,7 +133,9 @@ internal static class Smoke
             var splash = new SplashView(app, animations: true);
             window.Host.Content = splash;
             splash.ShowFrame(900); await Shot(window, outDir, "01-splash-khatib");
+            LogosInside(window, "splash (KHATIB)");
             splash.ShowFrame(2300); await Shot(window, outDir, "02-splash-medlink");
+            LogosInside(window, "splash (MEDLINK)");
             var played = new SplashView(app, animations: true);
             window.Host.Content = played;
             await Until(() => app.Screen == Screen.SignIn, 8);
@@ -125,6 +146,7 @@ internal static class Smoke
             await Shot(window, outDir, "03-signin");
             Shows(window, "sign-in", Strings.Ar.WinTitle, Strings.Ar.SignIn, Strings.Ar.SignInSub, Strings.Ar.Email, Strings.Ar.Password, Strings.Ar.BrandLine);
             LogosNotMirrored(window, "sign-in");
+            LogosInside(window, "sign-in");
             PrimaryTextWhite(window, "sign-in");
 
             var vm = app.SignIn;
