@@ -1,3 +1,16 @@
+/* Fonts are served from MEDLINK's own sites (owner's decision, Phase 12): no request to Google, so patients' IP
+ * addresses go nowhere else. IBM Plex, SIL Open Font License 1.1 (Fontsource packages). */
+@import '@fontsource/ibm-plex-sans/400.css';
+@import '@fontsource/ibm-plex-sans/500.css';
+@import '@fontsource/ibm-plex-sans/600.css';
+@import '@fontsource/ibm-plex-sans/700.css';
+@import '@fontsource/ibm-plex-sans-arabic/400.css';
+@import '@fontsource/ibm-plex-sans-arabic/500.css';
+@import '@fontsource/ibm-plex-sans-arabic/600.css';
+@import '@fontsource/ibm-plex-sans-arabic/700.css';
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';
+
 /* MEDLINK design tokens (design_handoff_medlink/README.md). */
 :root {
   --ink: #0f1a4a;

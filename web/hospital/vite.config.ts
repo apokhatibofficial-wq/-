@@ -11,5 +11,6 @@ export default defineConfig({
       '/api': { target: process.env.MEDLINK_API_ORIGIN ?? 'http://localhost:8080', changeOrigin: true, rewrite: p => p.replace(/^\/api/, '') },
     },
   },
-  build: { sourcemap: false },
+  // Fonts stay separate files: the CSP allows fonts from the site itself only, not data: URLs.
+  build: { sourcemap: false, assetsInlineLimit: file => (file.endsWith('.woff2') || file.endsWith('.woff') ? false : undefined) },
 });
