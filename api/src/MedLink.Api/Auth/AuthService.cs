@@ -61,6 +61,12 @@ public sealed class AuthService(Db db, PasswordHasher hasher, TotpService totp, 
         roles.Any(r => r is Roles.Reception or Roles.Scanner or Roles.Doctor) && !roles.Any(r => r is Roles.HospAdmin || Roles.Company.Contains(r))
             ? StaffIdle : AdminIdle;
 
+    /// <summary>QR-scanner accounts (shared phones): the session ends 12 hours after sign-in (SCREENS.md §4). Others: 7 days.</summary>
+    public static TimeSpan MaxAgeFor(IReadOnlyCollection<string> roles) =>
+        roles.Count > 0 && roles.All(r => r == Roles.Scanner) ? ScannerMaxAge : MaxSessionAge;
+
+    public static readonly TimeSpan ScannerMaxAge = TimeSpan.FromHours(12);
+
     public Task<LoginResult> LoginAsync(string email, string password, string? totpCode, string client, CancellationToken ct = default) =>
         db.RunAsync(DbScope.System, async (conn, tx) =>
         {
@@ -133,7 +139,7 @@ public sealed class AuthService(Db db, PasswordHasher hasher, TotpService totp, 
         await conn.ExecuteAsync("""
             INSERT INTO sessions (id, user_id, token_hash, client, expires_at, absolute_expires_at)
             VALUES (@id, @userId, @hash, @client, @exp, @abs)
-            """, new { id, userId, hash = Tokens.Hash(token), client, exp = (Now + IdleFor(roles)).UtcDateTime, abs = (Now + MaxSessionAge).UtcDateTime }, tx);
+            """, new { id, userId, hash = Tokens.Hash(token), client, exp = (Now + IdleFor(roles)).UtcDateTime, abs = (Now + MaxAgeFor(roles)).UtcDateTime }, tx);
         return (token, new Principal(id, userId, email, scope, hospitalId, roles, client, client == "web"));
     }
 

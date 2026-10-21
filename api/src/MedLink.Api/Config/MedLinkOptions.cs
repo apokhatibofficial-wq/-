@@ -36,6 +36,7 @@ public sealed class MedLinkOptions
     public int AuthRatePerNet24 { get; init; } = 60;
     public int BookingRatePerIp { get; init; } = 10;
     public int BookingRatePerHospital { get; init; } = 120;
+    public int ScanRatePerIp { get; init; } = 60;
 
     public static MedLinkOptions FromConfiguration(IConfiguration c, bool requireApp = true, bool requireOwner = false)
     {
@@ -99,6 +100,7 @@ public sealed class MedLinkOptions
             AuthRatePerNet24 = int.Parse(Opt("AUTH_RATE_PER_NET24_PER_MIN", "60")),
             BookingRatePerIp = int.Parse(Opt("BOOKING_RATE_PER_IP_PER_MIN", "10")),
             BookingRatePerHospital = int.Parse(Opt("BOOKING_RATE_PER_HOSPITAL_PER_MIN", "120")),
+            ScanRatePerIp = int.Parse(Opt("SCAN_RATE_PER_IP_PER_MIN", "60")),
         };
 
         if (errors.Count > 0)

@@ -51,7 +51,7 @@ public sealed class MedLinkFixture : IAsyncLifetime
 
     public Task DisposeAsync() => _pg.DisposeAsync().AsTask();
 
-    public Dictionary<string, string?> Settings(int authRate = 10_000)
+    public Dictionary<string, string?> Settings(int authRate = 10_000, int scanRate = 10_000)
     {
         var b = new NpgsqlConnectionStringBuilder(OwnerConnectionString);
         var signing = Secret() + Secret();
@@ -74,6 +74,7 @@ public sealed class MedLinkFixture : IAsyncLifetime
             ["AUTH_RATE_PER_NET24_PER_MIN"] = authRate.ToString(),
             ["BOOKING_RATE_PER_IP_PER_MIN"] = authRate.ToString(),
             ["BOOKING_RATE_PER_HOSPITAL_PER_MIN"] = authRate.ToString(),
+            ["SCAN_RATE_PER_IP_PER_MIN"] = scanRate.ToString(),
         };
     }
 
@@ -83,11 +84,11 @@ public sealed class MedLinkFixture : IAsyncLifetime
     /// Program reads configuration from environment variables at startup, so the factory is started
     /// while those variables are set and they are cleared again straight after.
     /// </summary>
-    public WebApplicationFactory<Program> CreateFactory(int authRate = 10_000)
+    public WebApplicationFactory<Program> CreateFactory(int authRate = 10_000, int scanRate = 10_000)
     {
         lock (EnvLock)
         {
-            var settings = Settings(authRate);
+            var settings = Settings(authRate, scanRate);
             foreach (var (k, v) in settings) Environment.SetEnvironmentVariable(k, v);
             try
             {

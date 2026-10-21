@@ -86,7 +86,8 @@ public static class Startup
                 PartitionedRateLimiter.Create<HttpContext, string>(ctx => AuthPartition(ctx, options.AuthRatePerNet24, net24: true)),
                 // Booking creation: per client IP and per hospital (BACKEND-SPEC §3).
                 PartitionedRateLimiter.Create<HttpContext, string>(ctx => BookingPartition(ctx, options.BookingRatePerIp, perHospital: false)),
-                PartitionedRateLimiter.Create<HttpContext, string>(ctx => BookingPartition(ctx, options.BookingRatePerHospital, perHospital: true)));
+                PartitionedRateLimiter.Create<HttpContext, string>(ctx => BookingPartition(ctx, options.BookingRatePerHospital, perHospital: true)),
+                PartitionedRateLimiter.Create<HttpContext, string>(ctx => ScanPartition(ctx, options.ScanRatePerIp)));
         });
         return services;
     }
@@ -120,6 +121,16 @@ public static class Startup
             return RateLimitPartition.GetNoLimiter("none");
         var key = perHospital ? "h:" + path.Split('/')[3] : "b:" + (ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown");
         return RateLimitPartition.GetSlidingWindowLimiter(key, _ => new SlidingWindowRateLimiterOptions
+        {
+            PermitLimit = perMinute, Window = TimeSpan.FromMinutes(1), SegmentsPerWindow = 6, QueueLimit = 0,
+        });
+    }
+
+    /// <summary>The scanner endpoints, per IP: a fast scanner does a few per minute; this stops guessing booking numbers.</summary>
+    private static RateLimitPartition<string> ScanPartition(HttpContext ctx, int perMinute)
+    {
+        if (!ctx.Request.Path.StartsWithSegments("/scan")) return RateLimitPartition.GetNoLimiter("none");
+        return RateLimitPartition.GetSlidingWindowLimiter("s:" + (ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown"), _ => new SlidingWindowRateLimiterOptions
         {
             PermitLimit = perMinute, Window = TimeSpan.FromMinutes(1), SegmentsPerWindow = 6, QueueLimit = 0,
         });
@@ -161,6 +172,7 @@ public static class Startup
         app.MapHospital();
         app.MapPublic();
         app.MapSync();
+        app.MapScan();
         return app;
     }
 }
