@@ -33,6 +33,16 @@ dotnet run --project windows/MedLink.Windows -- --server https://api.medlink.web
 - **Fonts:** IBM Plex Sans Arabic (Latin included) and IBM Plex Mono, SIL Open Font License (`MedLink.Windows/Fonts/OFL.txt`).
 - **Reduced motion:** follows Windows *Settings › Accessibility › Animation effects*.
 
-## Not yet (later phases)
-- **Phase 12:** the installer (MSIX), the `.exe` icon and the Ed25519-verified updates.
-- **Phase 9:** the QR scanner on the phone. Its check-ins already show up live here.
+## Installer and updates (Phase 12)
+- `installer/` — MSIX packaging for hospital PCs (Windows 10 2004+ / 11, x64; .NET included):
+  - `new-signing-cert.ps1`: the owner's self-signed signing certificate, made once and kept offline;
+  - `build-msix.ps1`: self-contained publish, `makeappx`, `signtool`;
+  - `install-medlink.ps1`: for hospital IT, trusts the certificate and installs MEDLINK for all users;
+  - `AppxManifest.xml`;
+  - `make-icons.mjs`: renders the tile images and `MEDLINK.exe`'s icon from the original logo, which is left unchanged.
+- `MedLink.UpdateTool` (`medlink-update keygen | publish | verify`) — signs each release's `update.json` with the owner's offline Ed25519 key.
+- **The app (`MedLink.App.Core/Updates.cs`):**
+  - checks the feed a minute after start and every 6 hours;
+  - takes only a newer version whose `update.json` verifies with the built-in public key;
+  - then checks the MSIX's size and SHA-256 before Windows' PackageManager registers it. Windows applies it when MEDLINK next opens; a banner says so.
+- **CI (`windows-installer` job):** installs 0.9.0, refuses a feed signed with another key, updates to 0.9.1, then runs the installed app's window check.

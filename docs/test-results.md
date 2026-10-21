@@ -4,6 +4,75 @@ Real runs only. Re-run the commands to reproduce. Newest phase first.
 
 ---
 
+# Phase 12 — installer, documentation, deployment (2026-10-21)
+
+## 1. API and app-logic tests (xUnit + Testcontainers, PostgreSQL 16)
+**Result: 107 passed, 0 failed** (10 min 30 s). That is the 100 earlier tests plus 7 new ones.
+
+| Test | Result |
+|---|---|
+| `Alerts: a failed or missing backup emails the owner once per failure, and once a day while backups are missing` (also: the restore test; a mail-server failure is retried; no `ALERT_EMAIL` → logged, not repeated) | ✅ |
+| `Alerts: the application role can read the backup results and mark an alert, but not change a result` | ✅ |
+| `Updates: a newer version signed with the owner's key is downloaded, checked and handed to Windows` | ✅ |
+| `Updates: the same or an older version is never installed (no downgrade)` | ✅ |
+| `Updates: a manifest signed with another key, edited after signing, or naming another path is rejected` | ✅ |
+| `Updates: an MSIX that does not match the signed size and SHA-256 is deleted, not installed` | ✅ |
+| `Updates: off for development builds, without a public key, or with a plain-HTTP feed; no feed or no network changes nothing` | ✅ |
+
+The log test was adjusted: alert emails carry no link, so it only looks for links in link emails.
+
+## 2. Windows on GitHub Actions (`windows-latest`, run 27)
+**`windows-app` (the window, 34 checks, all PASS).** New checks:
+- an update signed with another key is refused;
+- a signed update is registered;
+- the banner shows its text and button;
+- "Close to update" closes the app.
+
+**`windows-installer`:**
+```
+Built MEDLINK-0.9.0.msix / MEDLINK-0.9.1.msix (78.6 MB each, signed with a throw-away certificate, same subject)
+medlink-update verify good feed    → OK: MEDLINK 0.9.1, signature and checksum valid
+medlink-update verify forged feed  → signature does NOT match this public key
+install-medlink.ps1                → Installed MEDLINK 0.9.0.0 for this PC.
+update check (forged feed)         → rejected  signature packaged=True version=0.9.0
+update check (signed feed)         → ready 0.9.1  packaged=True version=0.9.0
+app reopened                       → none 0.9.1  packaged=True version=0.9.1
+installed version after the update: 0.9.1.0
+installed, updated app --smoke     → 34 PASS, 0 FAIL
+```
+The first run (26) failed twice, and both failures were in the tests:
+- **the button text was checked before layout** (the screenshot showed it correctly);
+- **the version was checked before reopening:** Windows applies a registered update when the app next opens.
+
+## 3. Backups and alerts (`infra/backup/ci-test.sh`, locally and in CI)
+`BACKUP CYCLE PASSED`. New:
+- the results are recorded (`backup=true restore_test=true`);
+- a backup to a missing bucket is recorded as `the upload to R2 failed (bucket no-such-bucket)`;
+- after a restart, the alert email `MEDLINK: The backup failed.` arrives in Mailpit.
+
+## 4. Server scripts
+| Check | Result |
+|---|---|
+| `firewall-cloudflare.sh`, with a real forwarded connection (a test network standing in for the internet; Docker without its local proxy, as internet traffic is handled) | ✅ reachable → **blocked** → allowed with the client's range → **blocked** again; the rule stays single after 3 runs. A first attempt through Docker's local proxy proved nothing (that path skips the chain) and was redone |
+| `setup-ubuntu.sh` in a clean Ubuntu 24.04 container (Docker and systemd steps skipped) | ✅ exit 0, twice. Results: age installed; cron lines; automatic updates + reboot at 01:30 UTC; logrotate valid. The first run found a bug (stopped when run without sudo), now fixed. With an SSH key present: password login and root login turned off |
+| Production compose rehearsal (`infra/docker-compose.yml`, Caddy with a local certificate for `localhost`) | ✅ `/health` over HTTPS with HSTS, nosniff, DENY and no-referrer; HTTP → 308 to HTTPS; API port 8080 and PostgreSQL not reachable from the host; 2 MB body → 413; API container read-only, all capabilities dropped, no-new-privileges, user `app`; backend network internal |
+| Client IP behind Cloudflare | ✅ 20 failed sign-ins from `CF-Connecting-IP: 203.0.113.7` → then 429; another IP is unaffected (so the firewall must allow Cloudflare only) |
+| `bootstrap-admin` on the production stack | ✅ prints the one-time link; a second run → `A company user already exists` (exit 1) |
+
+## 5. Web
+| Check | Result |
+|---|---|
+| Fonts (built sites with their `_headers`, Chromium) | ✅ IBM Plex Sans and Sans Arabic load on all three sites and /scan; **0 requests outside the site**. First run: 4 CSP reports (small fonts inlined as `data:`) → fixed → 0 |
+| `tsc`, unit tests, build, `npm audit` | ✅ 0 errors; 3/3, 10/10, 5/5; 0 vulnerabilities |
+| **All browser runs of phases 4–10 against the built sites, CSP enforced** | ✅ **81/81**: run 16/16, run5 16/16, run6 7/7, run6b 10/10, run7 10/10, run9 4/4, run9b 11/11 (camera + jsQR), run10 7/7; CSP reports 0 |
+| API log of that run | ✅ 0 patient names, phones, booking numbers, QR codes, links or test emails |
+
+## Not tested yet
+- Real Oracle, Cloudflare (DNS, Pages, R2, bucket lock) and Resend accounts: first deployment, with the owner.
+- A real hospital PC and real phones (manual checklists in the Phase 8 and 9 reports).
+
+---
+
 # Phase 11 — tests, security, backups (2026-10-21)
 
 ## 1. API tests (xUnit + Testcontainers, PostgreSQL 16)

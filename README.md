@@ -7,9 +7,10 @@
 ## نظرة عامة
 MEDLINK نظام مواعيد للمستشفيات يتكوّن من: لوحة تحكم الشركة، وتطبيق Windows للمستشفى، وموقع حجز للمرضى برابط خاص لكل مستشفى، وصفحة جوال لمسح QR، وخادم مركزي.
 
-**الحالة:** اكتملت المرحلة 6 (الحجز الإلكتروني ومنشئ النموذج وإصداراته)، وهي بانتظار مراجعة المالك.
-- التقارير: [`docs/phase-6-report.md`](docs/phase-6-report.md) و[`docs/phase-5-report.md`](docs/phase-5-report.md) و[`docs/phase-4-report.md`](docs/phase-4-report.md)
-- نتائج الاختبارات الفعلية: [`docs/test-results.md`](docs/test-results.md)
+**الحالة:** اكتملت المراحل 4 إلى 12. التطبيق جاهز للنشر الأول، بانتظار مراجعة المالك.
+- دليل النشر: [`docs/deployment.md`](docs/deployment.md) · دليل تثبيت Windows لقسم تقنية المعلومات: [`docs/windows-install.md`](docs/windows-install.md)
+- النسخ الاحتياطي والاستعادة: [`docs/backup-restore.md`](docs/backup-restore.md) · قائمة فحص الأمان: [`docs/security-checklist.md`](docs/security-checklist.md)
+- تقارير المراحل: `docs/phase-4-report.md` … [`docs/phase-12-report.md`](docs/phase-12-report.md) · نتائج الاختبارات الفعلية: [`docs/test-results.md`](docs/test-results.md)
 
 | المجلد | المحتوى |
 |---|---|
@@ -18,8 +19,8 @@ MEDLINK نظام مواعيد للمستشفيات يتكوّن من: لوحة �
 | `web/hospital/` | ويب المستشفى: منشئ النموذج، والحجوزات، والأقسام والجداول، والإعدادات والمستخدمون |
 | `web/booking/` | موقع الحجز للمرضى `/book/{slug}` |
 | `web/shared/` | المكوّنات المشتركة بين المواقع الثلاثة |
-| `windows/` | تطبيق Windows بـ WPF (المرحلة 8) |
-| `infra/` | Docker Compose، وCaddy، وسكربتات النسخ الاحتياطي |
+| `windows/` | تطبيق Windows بـ WPF، ومثبّت MSIX، وأداة توقيع التحديثات |
+| `infra/` | Docker Compose، وCaddy، والنسخ الاحتياطي، وسكربتات الخادم |
 | `docs/` | حزمة التصميم، والتقارير، ولقطات الشاشة |
 
 ### قواعد ثابتة
@@ -57,9 +58,10 @@ cd web && npm test && npm run typecheck
 
 MEDLINK is a hospital appointment system with five parts: a company console, a hospital Windows app, a patient booking site (one link per hospital), a phone QR check-in page, and a central API.
 
-**Status:** Phase 6 (online booking, form builder and versions) is complete and waiting for the owner's review.
-- Reports: [`docs/phase-6-report.md`](docs/phase-6-report.md), [`docs/phase-5-report.md`](docs/phase-5-report.md), [`docs/phase-4-report.md`](docs/phase-4-report.md)
-- Real test results: [`docs/test-results.md`](docs/test-results.md)
+**Status:** phases 4–12 are complete; ready for the first deployment, waiting for the owner's review.
+- Deployment: [`docs/deployment.md`](docs/deployment.md) · Windows installation for hospital IT: [`docs/windows-install.md`](docs/windows-install.md)
+- Backup and restore: [`docs/backup-restore.md`](docs/backup-restore.md) · Security checklist: [`docs/security-checklist.md`](docs/security-checklist.md) · Acceptance tests: [`docs/acceptance-tests.md`](docs/acceptance-tests.md)
+- Phase reports `docs/phase-4-report.md` … [`docs/phase-12-report.md`](docs/phase-12-report.md) · Real test results: [`docs/test-results.md`](docs/test-results.md)
 - Design handoff: [`docs/design/`](docs/design/)
 
 ### Stack (approved, free tier)
@@ -108,22 +110,32 @@ All settings are environment variables; see [`.env.example`](.env.example). The 
 | `TOTP_ENC_KEY` | encrypts 2FA secrets at rest |
 | `EMAIL_API_KEY` | SMTP password of the email provider |
 
-### Deployment (outline; full guide in Phase 12)
-1. Create the Oracle ARM VM and install Docker. Allow 80/443 **only from Cloudflare's IP ranges**, and SSH only from your own IP.
-2. In Cloudflare, point `api.medlink.website` at the VM (proxied, SSL mode "Full (strict)").
-3. Copy the repo, create `.env` (`chmod 600`), then run `cd infra && docker compose --env-file ../.env up -d --build`.
-4. Run `docker compose --env-file ../.env run --rm api bootstrap-admin --email <owner email>` once.
-5. Build each site with `VITE_API_URL=https://api.medlink.website` and publish its `dist/` to Cloudflare Pages: `web/admin` → `admin.medlink.website`, `web/hospital` → `app.medlink.website`, `web/booking` → `medlink.website` (also deploy `web/booking/functions/` and set `API_ORIGIN=https://api.medlink.website`, so renamed links get a real 301).
-6. Set `HOSPITAL_WEB_URL=https://app.medlink.website` and list all three origins in `CORS_ORIGINS`.
-7. Company-wide values (default time zone, booking window, minimum notice, patient cancellation, per-phone limit) are set in the console under **System settings**, not in `.env`.
-8. If the only Owner loses access: `docker compose --env-file ../.env run --rm api reset-company-user --email <address>` prints a 1-hour reset link. Hand it over only after verifying identity.
+### Deployment
+The full procedure is in [`docs/deployment.md`](docs/deployment.md):
+- keys made offline;
+- the Oracle VM (`infra/server/setup-ubuntu.sh`: Docker, automatic security updates, SSH keys only, a Cloudflare-only firewall);
+- `.env`, DNS and HTTPS;
+- Cloudflare Pages for the three sites;
+- backups;
+- the Windows release and its signed update feed.
+
+Other notes:
+- Company-wide values (default time zone, booking window, minimum notice, patient cancellation, per-phone limit) are set in the console under **System settings**, not in `.env`.
+- If the only Owner loses access, `docker compose --env-file ../.env run --rm api reset-company-user --email <address>` prints a 1-hour reset link. Hand it over only after verifying identity.
+
+### Windows app
+- **Build and sign:** `windows/installer/build-msix.ps1` builds a self-contained MSIX, signed with KHATIB's own certificate (`new-signing-cert.ps1`, made once and kept offline).
+- **Install:** hospital IT installs it with `install-medlink.ps1` ([`docs/windows-install.md`](docs/windows-install.md)).
+- **Updates:**
+  - published with `medlink-update publish` (`windows/MedLink.UpdateTool`) and signed with an offline Ed25519 key;
+  - the app installs only a newer version whose signature and checksum verify.
 
 ### Backups
 Every 6 hours `infra/backup/backup.sh` dumps the database, encrypts it with `age` (public key only; the private key stays offline with the owner) and uploads it to Cloudflare R2. Every backup is kept for 30 days and the first of each month for 12 months. `restore-test.sh` runs monthly and checks that a fresh dump restores and that the stored backups are recent and intact. `restore.sh` opens a backup with the private key into a new database; `recover.sh` rebuilds a lost server. The whole cycle runs in CI on every push. Setup, cron lines and the disaster procedure: [`docs/backup-restore.md`](docs/backup-restore.md).
 
 ### Free-tier limits (check the current terms when you sign up)
 - Oracle Always Free: Ampere A1 up to 4 OCPU / 24 GB in total; idle instances may be reclaimed.
-- Cloudflare R2: 10 GB storage free.
+- Cloudflare R2: 10 GB storage free per account (backups in one account, Windows updates of about 80 MB each in the other).
 - Cloudflare Pages: 500 builds/month.
 - Resend free tier: about 100 emails/day.
 
