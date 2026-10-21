@@ -47,7 +47,7 @@ public sealed class JobsTests(MedLinkFixture fx) : IDisposable
         var arrived = await BookingAtAsync(h, 50);
         var corrected = await BookingAtAsync(h, 55);
         var cancelled = await BookingAtAsync(h, 60);
-        var old = await BookingAtAsync(h, 60 * 24 * 8);  // 8 days ago: not touched any more
+        var old = await BookingAtAsync(h, 60 * 24 * 6.5); // 6.5 days ago: past the look-back, not touched any more
         await using (var db = await fx.OwnerAsync())
             await db.ExecuteAsync("UPDATE bookings SET status = 'cancelled', cancelled_at = now(), cancel_reason = 'اختبار' WHERE id = @id", new { id = cancelled.Id });
         Assert.Equal(HttpStatusCode.OK, (await reception.Post($"/hospital/bookings/{arrived.Id}/attendance", new { type = "arrived" })).Status);
