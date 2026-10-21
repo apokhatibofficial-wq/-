@@ -4,6 +4,88 @@ Real runs only. Re-run the commands to reproduce. Newest phase first.
 
 ---
 
+# Phase 8 — the Windows app and the splash animation (2026-10-21)
+
+## 1. API, sync and app-logic tests (xUnit + Testcontainers, PostgreSQL 16)
+`cd api && dotnet build -c Release && dotnet test --no-build -c Release`
+
+**Result: 84 passed, 0 failed** (4 min 51 s). That is the 76 earlier tests plus 8 new ones that drive the Windows app's logic (`MedLink.App.Core`) against the real API. Build: 0 warnings.
+
+| Area | Test | Result |
+|---|---|---|
+| Splash | timings follow SCREENS.md (80/1250/1650/2700/3150 ms, bar 28/62/100 %), plus the reduced-motion variant | ✅ |
+| Strings | every string in AR/EN/TR, as bindable properties (no public fields) | ✅ |
+| Sign-in | the same generic error for an unknown email and a wrong password; the 6-digit code step; a QR-scanner account refused and its Windows session ended; sign-in disabled offline; lockout after 5 wrong passwords | ✅ |
+| Saved session | DPAPI-protected file (no token or email in clear); reopens without a password; offline start opens the local copy with the banner; revoked session → sign-in with a notice | ✅ |
+| Dashboard | chips and counts; search by name or number in the day's list; check-in from the table; offline check-in pending, then "1 update synced"; correction (reason < 5 refused); history (booked, reception, correction); live QR check-in notice; language switch (the filter keeps its items) | ✅ |
+| Doctor / shared PC | own department only, no phone, read-only; reception's local copy deleted at sign-out; the same device reused | ✅ |
+| Sign-out / revoke | unsent check-in → warning, copy kept, sent at the next sign-in; device revoked → signed out with a notice, device forgotten | ✅ |
+| Forgot password | WhatsApp link to 4368181700732 with username and hospital only, never the password | ✅ |
+
+Also changed and covered: the pull includes each booking's history; a correction reason needs at least 5 characters (API, web, app).
+
+## 2. The real app on Windows (CI job `windows-app`, windows-latest)
+`MEDLINK.exe --smoke <dir>` runs the WPF window against a local fake server with fictional data. **Final run: 30 of 30 checks passed.** Screenshots: [`screenshots/phase-8/`](screenshots/phase-8/) (`smoke.txt` is the run's own report).
+```
+PASS DPAPI protects and restores the local key
+PASS splash (KHATIB): logos fully inside the window
+PASS splash (KHATIB): logo drawn in the middle (white rows 346–478, window centre 412)
+PASS splash (MEDLINK): logos fully inside the window
+PASS splash (MEDLINK): logo drawn in the middle (white rows 296–527, window centre 412)
+PASS splash plays (3.15 s) and opens sign-in
+PASS sign-in shows 'connected to server'
+PASS sign-in shows its labels
+PASS sign-in: logos not mirrored
+PASS sign-in: logos fully inside the window
+PASS sign-in: primary buttons have white text
+PASS wrong password shows the generic error
+PASS 2FA account asks for the 6-digit code
+PASS offline: pill amber, sign-in disabled
+PASS reception signs in
+PASS today's bookings pulled (6)
+PASS this PC registered once as a device
+PASS local database file is encrypted (SQLCipher)
+PASS saved session is protected (no token or email in clear)
+PASS dashboard shows its labels
+PASS dashboard: logos not mirrored
+PASS dashboard: primary buttons have white text
+PASS offline check-in kept locally as pending
+PASS pending check-in sent when the connection returned
+PASS find by full booking number opens it
+PASS dashboard (English) shows its labels
+PASS sign-out deletes this user's local copy (nothing pending)
+PASS doctor: read-only, no phone
+PASS second user reuses the PC's device
+PASS no WPF binding errors (0)
+```
+
+**How it got there.** The first Windows run passed its 17 checks, but its screenshots showed real bugs. Each was fixed and now has a check:
+
+| Bug (seen in a screenshot) | Fix | Check added |
+|---|---|---|
+| MEDLINK and KHATIB logos mirrored in Arabic | logos always laid out left to right | logos not mirrored |
+| Most labels empty (WPF binds to properties; the strings were fields) | strings are properties | no binding errors; screens show their labels; a unit test forbids fields |
+| Title-bar buttons shown as boxes (icon font missing) | drawn as shapes | (screenshot) |
+| Dark text on primary buttons | button text isolated from the app-wide text style | primary-button text is white |
+| Phone and date reversed in Arabic; history time wrapped | left-to-right values, wider column | (screenshot) |
+| Department filter blank after a language change | items kept and renamed in place | unit test |
+| KHATIB logo shifted off the top of the splash (and ~110 px high on sign-in) | logos drawn as WPF drawings from the original files (the viewer control mishandled the file's negative viewBox origin) | logo drawn in the middle (pixel check); logos inside the window |
+
+Two attempts at the KHATIB fix (an explicit size, then height-only) were proved insufficient by the pixel check before the third one passed.
+
+## 3. Other checks
+| Check | Result |
+|---|---|
+| `dotnet list package --vulnerable` (API, tests, MedLink.Sync, MedLink.App.Core, MedLink.Windows incl. SharpVectors 1.8.6) | ✅ none |
+| Web: `npm audit`, `tsc` × 4, unit tests 13/13 | ✅ |
+| gitleaks 8.28.0 (local and in CI) | ✅ no leaks |
+| CI on GitHub (api, web, windows-app, secrets) | ✅ green on the final commit |
+| Logo files copied into the app | ✅ byte-identical to `docs/design/designs/assets` (SHA-256 compared) |
+
+Not run in this phase: the Phase 4–7 browser runs (the web changed only in the minimum correction-reason length, 3 → 5, and the Phase 7 run's reasons are longer than 5). The app has not run on a real hospital PC yet (see the manual checklist in the report).
+
+---
+
 # Phase 7 — sync and the local database for the Windows app (2026-10-21)
 
 ## 1. API and sync-library tests (xUnit + Testcontainers, PostgreSQL 16)

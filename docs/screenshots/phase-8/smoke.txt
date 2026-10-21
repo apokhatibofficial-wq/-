@@ -1,0 +1,30 @@
+PASS DPAPI protects and restores the local key
+PASS splash (KHATIB): logos fully inside the window
+PASS splash (KHATIB): logo drawn in the middle (white rows 346–478, window centre 412)
+PASS splash (MEDLINK): logos fully inside the window
+PASS splash (MEDLINK): logo drawn in the middle (white rows 296–527, window centre 412)
+PASS splash plays (3.15 s) and opens sign-in
+PASS sign-in shows 'connected to server'
+PASS sign-in shows its labels
+PASS sign-in: logos not mirrored
+PASS sign-in: logos fully inside the window
+PASS sign-in: primary buttons have white text
+PASS wrong password shows the generic error
+PASS 2FA account asks for the 6-digit code
+PASS offline: pill amber, sign-in disabled
+PASS reception signs in
+PASS today's bookings pulled (6)
+PASS this PC registered once as a device
+PASS local database file is encrypted (SQLCipher)
+PASS saved session is protected (no token or email in clear)
+PASS dashboard shows its labels
+PASS dashboard: logos not mirrored
+PASS dashboard: primary buttons have white text
+PASS offline check-in kept locally as pending
+PASS pending check-in sent when the connection returned
+PASS find by full booking number opens it
+PASS dashboard (English) shows its labels
+PASS sign-out deletes this user's local copy (nothing pending)
+PASS doctor: read-only, no phone
+PASS second user reuses the PC's device
+PASS no WPF binding errors (0)

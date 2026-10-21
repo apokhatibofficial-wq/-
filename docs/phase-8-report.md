@@ -41,7 +41,7 @@ Real test results: [`test-results.md`](test-results.md) (Phase 8 section). Scree
   - table columns as specified;
   - detail panel 340 px (290 px when narrow).
 - Arabic is right-to-left and English/Turkish left-to-right.
-- **Logos:** the original SVG files are drawn unchanged and never mirrored.
+- **Logos:** the original SVG files are drawn unchanged, never mirrored, as WPF drawings (read with SharpVectors, BSD-3-Clause).
 - **Fonts:** IBM Plex Sans Arabic and IBM Plex Mono, SIL Open Font License.
 
 **Server:**
@@ -56,7 +56,9 @@ The first Windows run passed all of its automatic checks, but the screenshots sh
 4. **Primary-button text was dark on blue** (an app-wide text style overrode the button's colour). Fixed and checked.
 5. **The phone number and date were reversed in Arabic**, and the history time wrapped onto two lines.
 6. **The department filter went blank after a language change.** Fixed, with a test.
-7. **The KHATIB logo on the splash was pushed off the top** (its SVG has a negative viewBox origin). It now gets an explicit size, and a check makes sure every logo stays inside the window.
+7. **The KHATIB logo on the splash was pushed off the top**, and on sign-in it sat about 110 px too high. The SVG viewer control mishandled that file's negative viewBox origin. Logos are now read from the original files into WPF drawings, so the origin no longer matters. A pixel check confirms that each splash logo is drawn in the middle; it took three attempts, and the check caught the two that didn't work.
+
+**Final Windows run: 30 of 30 checks passed** (see test-results).
 
 ## Decisions I made (please confirm or correct)
 1. **Sign-in uses the email address** (the design says "username"). Accounts are email-based everywhere else.
