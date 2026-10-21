@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MedLink.Api.Tests", "tests\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MedLink.Sync", "..\windows\MedLink.Sync\MedLink.Sync.csproj", "{C7F39764-531A-413B-BBD5-CB1501D21B2A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MedLink.App.Core", "..\windows\MedLink.App.Core\MedLink.App.Core.csproj", "{4D72E37D-A717-494E-98BB-70672382549E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -34,6 +36,10 @@ Global
 		{C7F39764-531A-413B-BBD5-CB1501D21B2A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C7F39764-531A-413B-BBD5-CB1501D21B2A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C7F39764-531A-413B-BBD5-CB1501D21B2A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4D72E37D-A717-494E-98BB-70672382549E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4D72E37D-A717-494E-98BB-70672382549E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4D72E37D-A717-494E-98BB-70672382549E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4D72E37D-A717-494E-98BB-70672382549E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{61182CB4-0638-4D89-AD3B-BB60BAFADA69} = {51BB24BD-04A9-4EEA-AA4F-743DFA20FED7}

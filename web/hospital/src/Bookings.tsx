@@ -170,7 +170,7 @@ export function Bookings({ lang: L, canCancel, canCheckIn, canCorrect, timezone,
                   ))}
                 </div>
                 <textarea className="input" rows={2} maxLength={300} placeholder={t.corrReasonPh} aria-label={t.corrReasonPh} value={corrReason} onChange={e => setCorrReason(e.target.value)} />
-                <button type="button" className="btn btn-secondary" style={{ alignSelf: 'flex-start' }} disabled={corrReason.trim().length < 3}
+                <button type="button" className="btn btn-secondary" style={{ alignSelf: 'flex-start' }} disabled={corrReason.trim().length < 5}
                   onClick={() => void attendance(corrType, corrReason.trim())}>{t.saveCorr}</button>
                 <span className="note">{t.corrNote}</span>
               </div>

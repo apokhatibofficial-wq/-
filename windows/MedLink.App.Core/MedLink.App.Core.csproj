@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The Windows app's logic: view models, sign-in, session, background sync. No WPF here, so it is tested on Linux
+       against the real API; MedLink.Windows (WPF) only draws it. -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <RootNamespace>MedLink.App</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MedLink.Sync\MedLink.Sync.csproj" />
+  </ItemGroup>
+
+</Project>

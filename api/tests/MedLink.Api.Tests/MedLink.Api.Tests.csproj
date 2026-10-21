@@ -30,6 +30,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\MedLink.Api\MedLink.Api.csproj" />
     <ProjectReference Include="..\..\..\windows\MedLink.Sync\MedLink.Sync.csproj" />
+    <ProjectReference Include="..\..\..\windows\MedLink.App.Core\MedLink.App.Core.csproj" />
   </ItemGroup>
 
 </Project>

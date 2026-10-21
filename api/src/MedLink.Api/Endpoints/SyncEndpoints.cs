@@ -16,6 +16,8 @@ namespace MedLink.Api.Endpoints;
 public static class SyncEndpoints
 {
     public const int MaxActiveDevices = 25, PullPageSize = 500, MaxPushEvents = 200;
+    /// <summary>Corrections need a reason of at least 5 characters (SCREENS.md, Windows detail panel).</summary>
+    public const int MinReason = 5;
 
     public sealed record RegisterRequest(string? Name);
     public sealed record PushEvent(Guid? ClientEventId, string? BookingId, string? Ref, string? Type, string? Source, DateTimeOffset? At, string? Reason);
@@ -36,6 +38,7 @@ public static class SyncEndpoints
         public DateTime? ArrivedAt { get; set; }
         public bool NeedsReview { get; set; }
         public long SyncSeq { get; set; }
+        public DateTime CreatedAt { get; set; }
     }
 
     private static DateTime Utc(DateTime d) => DateTime.SpecifyKind(d, DateTimeKind.Utc);
@@ -118,7 +121,7 @@ public static class SyncEndpoints
                     var from = TimeZoneInfo.ConvertTimeToUtc(today.AddDays(-1).ToDateTime(TimeOnly.MinValue), tz);
                     var to = TimeZoneInfo.ConvertTimeToUtc(today.AddDays(31).ToDateTime(TimeOnly.MinValue), tz);
                     var rows = (await c.QueryAsync<SyncBooking>($"""
-                        SELECT b.id, b.ref, b.department_id, b.slot_start, b.patient_name, b.phone, b.status, b.arrived_at, b.needs_review, b.sync_seq
+                        SELECT b.id, b.ref, b.department_id, b.slot_start, b.patient_name, b.phone, b.status, b.arrived_at, b.needs_review, b.sync_seq, b.created_at
                         FROM bookings b
                         WHERE b.hospital_id = @h AND b.sync_seq > @after AND b.slot_start >= @from AND b.slot_start < @to
                         {(canSeeAll ? "" : "AND b.department_id IN (SELECT department_id FROM doctor_departments WHERE user_id = @user)")}
@@ -130,6 +133,11 @@ public static class SyncEndpoints
                     var cursor = rows.Count > 0 ? rows[^1].SyncSeq : after;
                     await c.ExecuteAsync("UPDATE devices SET last_seen_at = now(), last_seq = greatest(last_seq, @cursor) WHERE id = @deviceId",
                         new { deviceId, cursor }, t);
+                    // The attendance history of each booking, for the detail panel (also offline). Doctors get no reasons.
+                    var ids = rows.Select(r => r.Id).ToArray();
+                    var history = (await c.QueryAsync<(string BookingId, string Type, string Source, DateTime At, string? Reason)>(
+                        "SELECT booking_id, type, source, at, reason FROM attendance_events WHERE booking_id = ANY(@ids) ORDER BY received_at",
+                        new { ids }, t)).ToLookup(e => e.BookingId);
                     var deps = await c.QueryAsync<(string Id, string NameAr, string? NameEn, string? NameTr, bool Active)>(
                         "SELECT id, name_ar, name_en, name_tr, active FROM departments WHERE hospital_id = @h ORDER BY sort", new { h = p.HospitalId }, t);
                     return (Done: true, Body: Results.Json(new
@@ -149,7 +157,8 @@ public static class SyncEndpoints
                                 // Doctors' PCs never receive phone numbers (owner's decision: least personal data).
                                 phone = canSeeAll ? b.Phone : null,
                                 status = b.Status, arrivedAt = b.ArrivedAt is { } a ? Utc(a) : (DateTime?)null,
-                                needsReview = b.NeedsReview, seq = b.SyncSeq,
+                                needsReview = b.NeedsReview, seq = b.SyncSeq, bookedAt = Utc(b.CreatedAt),
+                                events = history[b.Id].Select(e => new { type = e.Type, source = e.Source, at = Utc(e.At), reason = canSeeAll ? e.Reason : null }),
                             };
                         }),
                     }));
@@ -190,7 +199,7 @@ public static class SyncEndpoints
             var correction = req.Reason is not null;
             if (correction ? !p.Has(Permission.AttendanceCorrect) : !p.Has(Permission.CheckIn)) return Error("FORBIDDEN", 403);
             if (req.Type is not ("arrived" or "no_show" or "waiting") || (!correction && req.Type != "arrived")) return Error("TYPE_INVALID", 422);
-            if (correction && req.Reason!.Trim().Length is < 3 or > 300) return Error("REASON_REQUIRED", 422);
+            if (correction && req.Reason!.Trim().Length is < MinReason or > 300) return Error("REASON_REQUIRED", 422);
             var r = await db.RunAsync(p.DbScope, (c, t) => AttendanceService.RecordAsync(c, t, new RecordRequest(
                 p.HospitalId!, id, req.Type!, correction ? "correction" : "reception", clock.GetUtcNow(), p.UserId, null, null, req.Reason?.Trim()), clock.GetUtcNow()));
             return r.Outcome == "rejected"
@@ -210,7 +219,7 @@ public static class SyncEndpoints
         {
             if (!p.Has(Permission.AttendanceCorrect)) return new RecordResult("rejected", "FORBIDDEN", null);
             if (e.Type is not ("arrived" or "no_show" or "waiting")) return new RecordResult("rejected", "TYPE_INVALID", null);
-            if (string.IsNullOrWhiteSpace(e.Reason) || e.Reason.Trim().Length > 300) return new RecordResult("rejected", "REASON_REQUIRED", null);
+            if (e.Reason is null || e.Reason.Trim().Length is < MinReason or > 300) return new RecordResult("rejected", "REASON_REQUIRED", null);
         }
         // Offline check-in is by booking number only (owner's decision); the device may send the id when it has it.
         var bookingId = e.BookingId ?? (e.Ref is null ? null : await c.ExecuteScalarAsync<string?>(

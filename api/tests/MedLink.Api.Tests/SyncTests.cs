@@ -72,7 +72,12 @@ public sealed class SyncTests(MedLinkFixture fx) : IDisposable
 
         // The change is pulled after the old cursor; the device's last-seen is recorded.
         var after = await reception.Get($"/sync/pull?deviceId={dev}&since={cursor}");
-        Assert.Equal("arrived", Assert.Single(Bookings(after.Body)).GetProperty("status").GetString());
+        var changed = Assert.Single(Bookings(after.Body));
+        Assert.Equal("arrived", changed.GetProperty("status").GetString());
+        // The history travels with the booking, so the Windows detail panel works offline.
+        var ev = Assert.Single(changed.GetProperty("events").EnumerateArray());
+        Assert.Equal(("arrived", "reception"), (ev.GetProperty("type").GetString(), ev.GetProperty("source").GetString()));
+        Assert.NotEqual(JsonValueKind.Null, changed.GetProperty("bookedAt").ValueKind);
         var devices = await h.Admin.Get("/hospital/devices");
         var d = Assert.Single(devices.Body.GetProperty("devices").EnumerateArray());
         Assert.NotEqual(JsonValueKind.Null, d.GetProperty("lastSeenAt").ValueKind);
@@ -116,6 +121,7 @@ public sealed class SyncTests(MedLinkFixture fx) : IDisposable
         Assert.Equal(HttpStatusCode.OK, (await reception.Post($"/hospital/bookings/{bid}/attendance", new { type = "arrived" })).Status);
         var noReason = await reception.Post($"/hospital/bookings/{bid}/attendance", new { type = "no_show", reason = "" });
         Assert.Equal(HttpStatusCode.UnprocessableEntity, noReason.Status);
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, (await reception.Post($"/hospital/bookings/{bid}/attendance", new { type = "no_show", reason = "قصير" })).Status);
         var c1 = await reception.Post($"/hospital/bookings/{bid}/attendance", new { type = "no_show", reason = "غادر قبل الدخول" });
         Assert.Equal(("no_show", false), (c1.Body.GetProperty("status").GetString(), c1.Body.GetProperty("needsReview").GetBoolean()));
         var c2 = await h.Admin.Post($"/hospital/bookings/{bid}/attendance", new { type = "arrived", reason = "عاد ودخل" });
