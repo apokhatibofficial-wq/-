@@ -52,6 +52,66 @@ public sealed class EndpointSweepTests(MedLinkFixture fx) : IDisposable
 
     private static string Key(Ep e) => e.Method + " " + e.Pattern;
 
+    /// <summary>
+    /// The approved access rule of every non-public endpoint (permission, or "signin" where the endpoint checks the
+    /// role itself). Changing an endpoint's rule fails this test until the table is updated on purpose.
+    /// </summary>
+    private static readonly Dictionary<string, string> Expected = new()
+    {
+        ["GET /admin/audit"] = "signin",
+        ["GET /admin/hospitals"] = "ViewReports",
+        ["POST /admin/hospitals"] = "HospitalsCreateEdit",
+        ["GET /admin/hospitals/{id}"] = "ViewReports",
+        ["PATCH /admin/hospitals/{id}"] = "HospitalsCreateEdit",
+        ["PUT /admin/hospitals/{id}/booking-rules"] = "HospitalsCreateEdit",
+        ["POST /admin/hospitals/{id}/reactivate"] = "HospitalsSuspend",
+        ["POST /admin/hospitals/{id}/recover-admin"] = "RecoverAdminAccess",
+        ["POST /admin/hospitals/{id}/suspend"] = "HospitalsSuspend",
+        ["GET /admin/reports"] = "ViewReports",
+        ["GET /admin/settings"] = "ViewReports",
+        ["PATCH /admin/settings"] = "PlatformSettings",
+        ["GET /admin/slugs/check"] = "HospitalsCreateEdit",
+        ["GET /admin/team"] = "ManageTeam",
+        ["POST /admin/team"] = "ManageTeam",
+        ["PATCH /admin/team/{id}"] = "ManageTeam",
+        ["POST /admin/team/{id}/send-link"] = "ManageTeam",
+        ["POST /auth/logout"] = "signin",
+        ["GET /auth/me"] = "signin",
+        ["GET /hospital/bookings"] = "BookingsView",
+        ["GET /hospital/bookings/{id}"] = "BookingsView",
+        ["POST /hospital/bookings/{id}/attendance"] = "signin",
+        ["POST /hospital/bookings/{id}/cancel"] = "AttendanceCorrect",
+        ["GET /hospital/closures"] = "HospitalRead",
+        ["POST /hospital/closures"] = "HospitalSettings",
+        ["DELETE /hospital/closures/{id}"] = "HospitalSettings",
+        ["GET /hospital/departments"] = "HospitalRead",
+        ["POST /hospital/departments"] = "HospitalSettings",
+        ["PATCH /hospital/departments/{id}"] = "HospitalSettings",
+        ["PUT /hospital/departments/{id}/schedules"] = "HospitalSettings",
+        ["GET /hospital/devices"] = "HospitalSettings",
+        ["POST /hospital/devices/{id}/revoke"] = "HospitalSettings",
+        ["GET /hospital/form"] = "FormEditPublish",
+        ["PUT /hospital/form/draft"] = "FormEditPublish",
+        ["DELETE /hospital/form/draft"] = "FormEditPublish",
+        ["POST /hospital/form/publish"] = "FormEditPublish",
+        ["GET /hospital/form/versions"] = "FormEditPublish",
+        ["GET /hospital/form/versions/{version}"] = "FormEditPublish",
+        ["POST /hospital/form/versions/{version}/restore"] = "FormEditPublish",
+        ["GET /hospital/me"] = "HospitalRead",
+        ["PATCH /hospital/settings"] = "HospitalSettings",
+        ["GET /hospital/users"] = "HospitalUsersManage",
+        ["POST /hospital/users"] = "HospitalUsersManage",
+        ["GET /hospital/users/{id}"] = "HospitalUsersManage",
+        ["PATCH /hospital/users/{id}"] = "HospitalUsersManage",
+        ["POST /hospital/users/{id}/send-link"] = "HospitalUsersManage",
+        ["POST /scan/checkin"] = "CheckIn",
+        ["GET /scan/lookup"] = "CheckIn",
+        ["POST /scan/qr"] = "CheckIn",
+        ["POST /sync/devices"] = "HospitalRead",
+        ["GET /sync/pull"] = "signin",
+        ["POST /sync/push"] = "HospitalRead"
+    };
+
     private static Task<(HttpStatusCode Status, System.Text.Json.JsonElement Body)> Call(ApiClient c, Ep e, object? body = null) =>
         c.SendAsync(new HttpMethod(e.Method), e.Path, e.Method is "POST" or "PUT" or "PATCH" ? body ?? new { } : null);
 
@@ -68,6 +128,8 @@ public sealed class EndpointSweepTests(MedLinkFixture fx) : IDisposable
             Assert.True(isPublic == MedLink.Api.Auth.HttpAuth.IsAnonymousPath(e.Path), $"{Key(e)}: public list and middleware disagree");
         }
         Assert.Equal(Public.Order(), eps.Where(e => Public.Contains(Key(e))).Select(Key).Order());
+        var actual = eps.Where(e => !Public.Contains(Key(e))).ToDictionary(Key, e => e.Permission?.ToString() ?? "signin");
+        Assert.Equal(Expected.OrderBy(x => x.Key), actual.OrderBy(x => x.Key));
     }
 
     [Fact(DisplayName = "Acceptance 2: without signing in, every non-public endpoint answers 401 and does nothing")]
@@ -99,6 +161,7 @@ public sealed class EndpointSweepTests(MedLinkFixture fx) : IDisposable
         var inv = await h.Admin.Post("/hospital/users", new { email = docEmail, role = Roles.Doctor, departmentIds = new[] { h.DepartmentId } });
         var (pw, secret) = await api.CompleteLinkAsync(CapturingEmailSender.TokenFrom(fx.Email.LastTo(docEmail)));
         clients[Roles.Doctor] = await api.SignInAsync(new TestUser(inv.Body.GetProperty("id").GetString()!, docEmail, pw, secret));
+        var scannerDevice = (await clients[Roles.Scanner].Post("/sync/devices", new { name = "هاتف الماسح" })).Body.GetProperty("deviceId").GetString();
         var auditBefore = await AuditCountAsync();
 
         var refused = 0;
@@ -106,7 +169,7 @@ public sealed class EndpointSweepTests(MedLinkFixture fx) : IDisposable
             foreach (var (role, client) in clients.Where(c => !PermissionMatrix.Has([c.Key], e.Permission!.Value)))
             {
                 var r = await Call(client, e);
-                Assert.True(r.Status == HttpStatusCode.Forbidden, $"{role} on {Key(e)} (needs {e.Permission}) answered {(int)r.Status}");
+                Assert.True(r.Status == HttpStatusCode.Forbidden && Code(r.Body) == "FORBIDDEN", $"{role} on {Key(e)} (needs {e.Permission}) answered {(int)r.Status} {Code(r.Body)}");
                 refused++;
             }
 
@@ -118,17 +181,18 @@ public sealed class EndpointSweepTests(MedLinkFixture fx) : IDisposable
             ("POST /hospital/bookings/{id}/attendance", new { type = "arrived" }, [.. company, Roles.Doctor]),
             ("POST /hospital/bookings/{id}/attendance", new { type = "arrived", reason = "تصحيح للاختبار" }, [.. company, Roles.Scanner, Roles.Doctor]),
             ("GET /sync/pull", null, [.. company, Roles.Scanner]),
-            ("POST /sync/push", new { deviceId = "1", events = Array.Empty<object>() }, company),
         };
         var all = Endpoints();
         foreach (var (key, body, roles) in inside)
         {
             var e = Assert.Single(all, x => Key(x) == key);
+            // The scanner's own registered device, so only the role check can refuse the pull.
+            if (key == "GET /sync/pull") e = e with { Path = "/sync/pull?deviceId=" + scannerDevice };
             Assert.True(e.SignIn);
             foreach (var role in roles)
             {
                 var r = await Call(clients[role], e, body);
-                Assert.True(r.Status == HttpStatusCode.Forbidden, $"{role} on {key} answered {(int)r.Status}");
+                Assert.True(r.Status == HttpStatusCode.Forbidden && Code(r.Body) == "FORBIDDEN", $"{role} on {key} answered {(int)r.Status} {Code(r.Body)}");
                 refused++;
             }
         }
@@ -136,6 +200,9 @@ public sealed class EndpointSweepTests(MedLinkFixture fx) : IDisposable
         Assert.True(refused > 200, $"only {refused} refusals checked");
         Assert.Equal(auditBefore, await AuditCountAsync());
     }
+
+    private static string? Code(System.Text.Json.JsonElement b) =>
+        b.ValueKind == System.Text.Json.JsonValueKind.Object && b.TryGetProperty("error", out var e) ? e.GetString() : null;
 
     private async Task<long> AuditCountAsync()
     {

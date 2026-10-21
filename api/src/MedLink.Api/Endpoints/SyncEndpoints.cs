@@ -190,7 +190,7 @@ public static class SyncEndpoints
                 await c.ExecuteAsync("UPDATE devices SET last_seen_at = now() WHERE id = @d", new { d = req.DeviceId }, t);
                 return Results.Json(new { results });
             });
-        }).RequireSignedIn().RequireJson();
+        }).Require(Permission.HospitalRead).RequireJson(); // hospital accounts only; each event is then checked against the caller's permissions
 
         // ---------------------------------------------------------------- web: check in / correct
         app.MapPost("/hospital/bookings/{id}/attendance", async (string id, AttendanceRequest req, HttpContext ctx, Db db, TimeProvider clock) =>
