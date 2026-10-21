@@ -4,6 +4,64 @@ Real runs only. Re-run the commands to reproduce. Newest phase first.
 
 ---
 
+# Phase 7 — sync and the local database for the Windows app (2026-10-21)
+
+## 1. API and sync-library tests (xUnit + Testcontainers, PostgreSQL 16)
+`cd api && dotnet build -c Release && dotnet test --no-build -c Release`
+
+**Result: 76 passed, 0 failed** (4 min 18 s). That is 59 earlier tests plus 17 new ones. Build: 0 warnings (warnings are errors).
+
+| Area | Test | Result |
+|---|---|---|
+| Conflict policy (unit, 6) | no events = waiting; earliest arrival wins; offline arrival beats auto no-show; correction beats everything; conflicting corrections → latest received + needs review; agreeing corrections are no conflict | ✅ |
+| Pull/push | `Sync: pull after a cursor, push check-in by booking number; a retried push is applied once` | ✅ |
+| Offline | `Sync: an offline check-in received after the automatic no-show wins; the earliest arrival time is kept` | ✅ |
+| Corrections | `Sync: corrections win; conflicting corrections flag the booking for review; reasons are required` (also: 2 `attendance_correct` audit rows) | ✅ |
+| Rejections | `Sync: cancelled bookings, other-day check-ins and implausible times are rejected` (CANCELLED, OTHER_DAY, NOT_FOUND, BAD_TIME ×2, FORBIDDEN, SOURCE_INVALID; 0 events stored) | ✅ |
+| Doctor | `Sync: a doctor pulls only their own department's bookings, without phone numbers, and cannot check in` (also: department change takes effect on the next pull) | ✅ |
+| Devices | `Sync: Windows bearer token; revoked devices are refused; 25 active devices per hospital; scanner cannot pull` (also: another hospital's device is refused; console last sync) | ✅ |
+| RLS | `Sync: RLS keeps devices and attendance events inside their hospital` (and DELETE on events is refused: 42501) | ✅ |
+| Local DB encryption | `Windows sync: the local database is encrypted; the wrong key cannot open it; no plaintext in the file` | ✅ |
+| Offline client | `Windows sync: offline check-in is kept as pending, backs off, then syncs once the network returns` | ✅ |
+| Lost response / rejection | `Windows sync: a lost response is retried and applied once; a check-in the server rejects is reported, not kept` | ✅ |
+| Cache window | `Windows sync: the local copy keeps only yesterday to +30 days` | ✅ |
+
+**Mutation check (9 bugs introduced on purpose, all caught, all code restored):** doctor department filter removed; doctors receive phones; revoked-device check removed; latest arrival instead of earliest; no review flag; other-day check-in allowed; push permission not checked; SQLCipher key removed (plaintext found in the file); outbox backoff removed.
+
+Not tested here: DPAPI itself (Windows only; a stand-in protector is used in tests), and the library on a real Windows PC.
+
+## 2. Web (npm workspace)
+| Check | Result |
+|---|---|
+| `npm audit` | ✅ 0 vulnerabilities |
+| `tsc` × 4 | ✅ 0 errors |
+| Unit tests | ✅ shared 3/3 · hospital 5/5 · booking 5/5 |
+| `vite build` × 3 | ✅ admin 255 kB · hospital 282 kB · booking 207 kB |
+| `dotnet list package --vulnerable` (API, tests, MedLink.Sync) | ✅ none |
+| gitleaks 8.28.0 | ✅ no leaks |
+
+## 3. Browser end-to-end on the real stack (Docker: PostgreSQL, API image, Mailpit; Vite web apps)
+**10 of 10 steps passed** (run twice on a fresh database; the second run was after a container restart).
+```
+PASS owner signs in; creates a hospital; admin activates and signs in
+PASS admin adds two departments with timetables
+PASS two test bookings for today, one per department (test data only)
+PASS admin invites a doctor limited to one department, and a receptionist
+PASS doctor signs in: no bookings page, and the server refuses the bookings list
+PASS reception checks a patient in from the Bookings page
+PASS a correction needs a reason; reception corrects to no-show, admin corrects back: flagged for review
+PASS Windows client (bearer): registers a device, pulls today, pushes an offline check-in by booking number
+PASS admin sees the device with its last sync, then revokes it; the device is refused
+PASS company console: last sync shown, doctor column in the roles matrix, new audit labels
+```
+- **API container log** (540 lines): 0 matches for the test patient names, the phone number, `MLK1.`, `#t=`, test emails, `Bearer` or the correction reasons.
+
+**Regression runs after Phase 7:** Phase 4 16/16 · Phase 5 16/16 · System settings 7/7 · Phase 6 10/10. The Phase 6 run first failed 9/10: the booking drawer now has two text boxes (correction and cancel reason), so its selector was changed to the cancel box's label. Not a product bug.
+
+Found by the browser run (fixed): the console's "last sync" counted only active devices, so revoking the only PC made the hospital show "never connected". It now uses every device, and a test checks it.
+
+---
+
 # Phase 6 — online booking, form builder and versions (2026-10-20)
 
 ## 1. API tests (xUnit + Testcontainers, PostgreSQL 16)
