@@ -99,7 +99,7 @@ public static class BookingEndpoints
         FROM bookings b JOIN departments d ON d.id = b.department_id LEFT JOIN form_versions v ON v.id = b.form_version_id
         """;
 
-    private static object Dto(BookingRow b, TimeZoneInfo tz)
+    private static object Dto(BookingRow b, TimeZoneInfo tz, bool full = true)
     {
         var local = TimeZoneInfo.ConvertTime(new DateTimeOffset(DateTime.SpecifyKind(b.SlotStart, DateTimeKind.Utc)), tz);
         return new
@@ -107,13 +107,23 @@ public static class BookingEndpoints
             id = b.Id, @ref = b.Ref, slotStart = DateTime.SpecifyKind(b.SlotStart, DateTimeKind.Utc),
             localDate = local.ToString("yyyy-MM-dd"), localTime = local.ToString("HH:mm"),
             department = new { id = b.DepartmentId, ar = b.DepNameAr, en = b.DepNameEn, tr = b.DepNameTr },
-            patientName = b.PatientName, phone = b.Phone, status = b.Status, formVersion = b.FormVersion,
+            // Doctors (own departments, read-only) get no phone numbers or staff-written reasons (owner's decision, Phase 8).
+            patientName = b.PatientName, phone = full ? b.Phone : null, status = b.Status, formVersion = b.FormVersion,
             arrivedAt = b.ArrivedAt is { } a ? DateTime.SpecifyKind(a, DateTimeKind.Utc) : (DateTime?)null, needsReview = b.NeedsReview,
-            createdAt = DateTime.SpecifyKind(b.CreatedAt, DateTimeKind.Utc), cancelReason = b.CancelReason,
+            createdAt = DateTime.SpecifyKind(b.CreatedAt, DateTimeKind.Utc), cancelReason = full ? b.CancelReason : null,
         };
     }
 
-    /// <summary>Hospital staff: the day's bookings, lookup by full booking number, and cancellation by reception.</summary>
+    /// <summary>Who may read bookings: all of them (BookingsView), or a doctor's own departments only; null = refused.</summary>
+    private static string? ReadFilter(Principal p) =>
+        p.Has(Permission.BookingsView) ? ""
+        : p.Has(Permission.BookingsViewOwnDepartment) ? " AND b.department_id IN (SELECT department_id FROM doctor_departments WHERE user_id = @user)"
+        : null;
+
+    /// <summary>
+    /// Hospital staff: the day's bookings, lookup by full booking number, and cancellation by reception. Doctors read
+    /// their own departments only, without phone numbers or reasons, and without the form answers.
+    /// </summary>
     public static void MapHospitalBookings(this WebApplication app)
     {
         var g = app.MapGroup("/hospital/bookings");
@@ -121,6 +131,8 @@ public static class BookingEndpoints
         g.MapGet("", async (string? date, string? @ref, HttpContext ctx, Db db, TimeProvider clock) =>
         {
             var p = ctx.RequirePrincipal();
+            if (ReadFilter(p) is not { } only) return Error("FORBIDDEN", 403);
+            var full = only.Length == 0;
             return await db.RunAsync(p.DbScope, async (c, t) =>
             {
                 var tzId = await c.ExecuteScalarAsync<string>("SELECT timezone FROM hospitals WHERE id = @h", new { h = p.HospitalId }, t);
@@ -128,38 +140,57 @@ public static class BookingEndpoints
                 if (!string.IsNullOrWhiteSpace(@ref))
                 {
                     // Full booking number only: no name search (SCREENS.md §4).
-                    var one = await c.QueryAsync<BookingRow>(BookingSelect + " WHERE b.hospital_id = @h AND b.ref = @r", new { h = p.HospitalId, r = @ref.Trim().ToUpperInvariant() }, t);
-                    return Results.Json(new { bookings = one.Select(b => Dto(b, tz)) });
+                    var one = await c.QueryAsync<BookingRow>(BookingSelect + " WHERE b.hospital_id = @h AND b.ref = @r" + only,
+                        new { h = p.HospitalId, r = @ref.Trim().ToUpperInvariant(), user = p.UserId }, t);
+                    return Results.Json(new { bookings = one.Select(b => Dto(b, tz, full)) });
                 }
                 DateOnly day;
                 if (date is null) day = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(clock.GetUtcNow(), tz).DateTime);
                 else if (!DateOnly.TryParseExact(date, "yyyy-MM-dd", out day)) return Error("DATE_INVALID", 422);
                 var from = TimeZoneInfo.ConvertTimeToUtc(day.ToDateTime(TimeOnly.MinValue), tz);
                 var to = TimeZoneInfo.ConvertTimeToUtc(day.AddDays(1).ToDateTime(TimeOnly.MinValue), tz);
-                var rows = await c.QueryAsync<BookingRow>(BookingSelect + " WHERE b.hospital_id = @h AND b.slot_start >= @from AND b.slot_start < @to ORDER BY b.slot_start, b.seat_no",
-                    new { h = p.HospitalId, from, to }, t);
-                return Results.Json(new { date = day.ToString("yyyy-MM-dd"), bookings = rows.Select(b => Dto(b, tz)) });
+                var rows = await c.QueryAsync<BookingRow>(BookingSelect + " WHERE b.hospital_id = @h AND b.slot_start >= @from AND b.slot_start < @to" + only
+                    + " ORDER BY b.slot_start, b.seat_no", new { h = p.HospitalId, from, to, user = p.UserId }, t);
+                return Results.Json(new { date = day.ToString("yyyy-MM-dd"), bookings = rows.Select(b => Dto(b, tz, full)) });
             });
-        }).Require(Permission.BookingsView);
+        }).RequireSignedIn();
 
         g.MapGet("/{id}", async (string id, HttpContext ctx, Db db) =>
         {
             var p = ctx.RequirePrincipal();
+            if (ReadFilter(p) is not { } only) return Error("FORBIDDEN", 403);
+            var full = only.Length == 0;
             return await db.RunAsync(p.DbScope, async (c, t) =>
             {
-                var b = await c.QuerySingleOrDefaultAsync<BookingRow>(BookingSelect + " WHERE b.id = @id AND b.hospital_id = @h", new { id, h = p.HospitalId }, t);
+                var b = await c.QuerySingleOrDefaultAsync<BookingRow>(BookingSelect + " WHERE b.id = @id AND b.hospital_id = @h" + only,
+                    new { id, h = p.HospitalId, user = p.UserId }, t);
                 if (b is null) return Error("NOT_FOUND", 404);
                 var tz = BookingService.Zone((await c.ExecuteScalarAsync<string>("SELECT timezone FROM hospitals WHERE id = @h", new { h = p.HospitalId }, t))!);
-                var answers = await c.QueryAsync<(string QuestionId, string Value)>("SELECT question_id, value_json::text FROM booking_answers WHERE booking_id = @id", new { id }, t);
-                var schema = await c.ExecuteScalarAsync<string?>("SELECT v.schema_json::text FROM bookings b JOIN form_versions v ON v.id = b.form_version_id WHERE b.id = @id", new { id }, t);
+                var answers = full
+                    ? await c.QueryAsync<(string QuestionId, string Value)>("SELECT question_id, value_json::text FROM booking_answers WHERE booking_id = @id", new { id }, t)
+                    : [];
+                var schema = full
+                    ? await c.ExecuteScalarAsync<string?>("SELECT v.schema_json::text FROM bookings b JOIN form_versions v ON v.id = b.form_version_id WHERE b.id = @id", new { id }, t)
+                    : null;
+                // The status history, as in the Windows detail panel (who and where; reasons for full readers only).
+                var events = await c.QueryAsync<(string Type, string Source, DateTime At, string? Reason, string? Actor)>("""
+                    SELECT e.type, e.source, e.at, e.reason, u.email::text AS actor
+                    FROM attendance_events e LEFT JOIN users u ON u.id = e.actor_id
+                    WHERE e.booking_id = @id ORDER BY e.at, e.received_at
+                    """, new { id }, t);
                 return Results.Json(new
                 {
-                    booking = Dto(b, tz),
+                    booking = Dto(b, tz, full),
                     answers = answers.ToDictionary(a => a.QuestionId, a => JsonDocument.Parse(a.Value).RootElement),
                     questions = schema is null ? [] : FormEndpoints.Parse(schema).Questions,
+                    events = events.Select(e => new
+                    {
+                        type = e.Type, source = e.Source, at = DateTime.SpecifyKind(e.At, DateTimeKind.Utc),
+                        reason = full ? e.Reason : null, actor = full ? e.Actor : null,
+                    }),
                 });
             });
-        }).Require(Permission.BookingsView);
+        }).RequireSignedIn();
 
         // Patients cannot cancel online (owner's decision); reception and the hospital admin can, with a reason.
         g.MapPost("/{id}/cancel", async (string id, CancelRequest req, HttpContext ctx, Db db) =>

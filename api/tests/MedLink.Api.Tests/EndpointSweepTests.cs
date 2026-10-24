@@ -77,8 +77,8 @@ public sealed class EndpointSweepTests(MedLinkFixture fx) : IDisposable
         ["POST /admin/team/{id}/send-link"] = "ManageTeam",
         ["POST /auth/logout"] = "signin",
         ["GET /auth/me"] = "signin",
-        ["GET /hospital/bookings"] = "BookingsView",
-        ["GET /hospital/bookings/{id}"] = "BookingsView",
+        ["GET /hospital/bookings"] = "signin",
+        ["GET /hospital/bookings/{id}"] = "signin",
         ["POST /hospital/bookings/{id}/attendance"] = "signin",
         ["POST /hospital/bookings/{id}/cancel"] = "AttendanceCorrect",
         ["GET /hospital/closures"] = "HospitalRead",
@@ -181,6 +181,8 @@ public sealed class EndpointSweepTests(MedLinkFixture fx) : IDisposable
             ("POST /hospital/bookings/{id}/attendance", new { type = "arrived" }, [.. company, Roles.Doctor]),
             ("POST /hospital/bookings/{id}/attendance", new { type = "arrived", reason = "تصحيح للاختبار" }, [.. company, Roles.Scanner, Roles.Doctor]),
             ("GET /sync/pull", null, [.. company, Roles.Scanner]),
+            ("GET /hospital/bookings", null, [.. company, Roles.Scanner]),
+            ("GET /hospital/bookings/{id}", null, [.. company, Roles.Scanner]),
         };
         var all = Endpoints();
         foreach (var (key, body, roles) in inside)

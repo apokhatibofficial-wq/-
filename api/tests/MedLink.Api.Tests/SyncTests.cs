@@ -197,7 +197,10 @@ public sealed class SyncTests(MedLinkFixture fx) : IDisposable
         Assert.DoesNotContain("+963944000111", pull.Body.GetRawText());
         Assert.DoesNotContain(other, pull.Body.GetRawText());
 
-        Assert.Equal(HttpStatusCode.Forbidden, (await doctor.Get("/hospital/bookings")).Status);
+        // The hospital web shows the doctor the same: their own department only (Phase 12, web board).
+        var web = await doctor.Get("/hospital/bookings");
+        Assert.Equal(HttpStatusCode.OK, web.Status);
+        Assert.Equal(mine, Assert.Single(web.Body.GetProperty("bookings").EnumerateArray()).GetProperty("id").GetString());
         var push = await doctor.Post("/sync/push", new { deviceId = dev, events = new[] { Ev("arrived", @ref: myRef) } });
         Assert.Equal("FORBIDDEN", push.Body.GetProperty("results")[0].GetProperty("code").GetString());
 
@@ -206,6 +209,62 @@ public sealed class SyncTests(MedLinkFixture fx) : IDisposable
         Assert.Equal(HttpStatusCode.OK, (await h.Admin.Patch($"/hospital/users/{docId}", new { departmentIds = new[] { dep2 } })).Status);
         var pull2 = await doctor.Get($"/sync/pull?deviceId={dev}&since=0");
         Assert.Equal(other, Assert.Single(Bookings(pull2.Body)).GetProperty("id").GetString());
+    }
+
+    [Fact(DisplayName = "Hospital web: a doctor reads only their departments, without phones, reasons or form answers; others see the status history")]
+    public async Task WebDoctorView()
+    {
+        var (owner, _) = await api.CompanyUserAsync(Roles.Owner);
+        var h = await BookingSetup.CreateAsync(api, owner);
+        var dep2 = (await h.Admin.Post("/hospital/departments", new { nameAr = "العظمية" })).Body.GetProperty("id").GetString()!;
+        var blocks = Enumerable.Range(0, 7).Select(w => new { weekday = w, start = "00:00", end = "24:00", slotMinutes = 30, capacity = 1 }).ToArray();
+        await h.Admin.Put($"/hospital/departments/{dep2}/schedules", new { blocks });
+        var email = TestApi.NewEmail("doctor");
+        var inv = await h.Admin.Post("/hospital/users", new { email, role = Roles.Doctor, departmentIds = new[] { h.DepartmentId } });
+        var (password, secret) = await api.CompleteLinkAsync(CapturingEmailSender.TokenFrom(fx.Email.LastTo(email)));
+        var doctor = await api.SignInAsync(new TestUser(inv.Body.GetProperty("id").GetString()!, email, password, secret));
+        var (reception, _) = await api.StaffAsync(h.Admin, Roles.Reception);
+
+        var (mine, myRef) = await TodayBookingAsync(h, 120);
+        var (other, otherRef) = await TodayBookingAsync(h, 150, dep2);
+        await using (var db = await fx.OwnerAsync())
+            await db.ExecuteAsync("INSERT INTO booking_answers (booking_id, hospital_id, question_id, value_json) VALUES (@id, @h, 'q1', '\"جواب سري\"')", new { id = mine, h = h.HospitalId });
+        Assert.Equal(HttpStatusCode.OK, (await reception.Post($"/hospital/bookings/{mine}/attendance", new { type = "arrived" })).Status);
+        Assert.Equal(HttpStatusCode.OK, (await reception.Post($"/hospital/bookings/{mine}/attendance", new { type = "no_show", reason = "خطأ في التسجيل" })).Status);
+
+        // Reception: both departments, phones, answers, and the history with reasons and accounts.
+        var all = await reception.Get("/hospital/bookings");
+        Assert.Equal(2, all.Body.GetProperty("bookings").GetArrayLength());
+        var full = await reception.Get($"/hospital/bookings/{mine}");
+        Assert.Equal("+963944000111", full.Body.GetProperty("booking").GetProperty("phone").GetString());
+        Assert.True(full.Body.GetProperty("answers").TryGetProperty("q1", out _));
+        var ev = full.Body.GetProperty("events").EnumerateArray().ToList();
+        Assert.Equal(["arrived/reception", "no_show/correction"], ev.Select(e => e.GetProperty("type").GetString() + "/" + e.GetProperty("source").GetString()));
+        Assert.Equal("خطأ في التسجيل", ev[1].GetProperty("reason").GetString());
+
+        // Doctor: own department only, no phone, no answers, no reasons or accounts in the history.
+        var list = await doctor.Get("/hospital/bookings");
+        var only = Assert.Single(list.Body.GetProperty("bookings").EnumerateArray());
+        Assert.Equal(mine, only.GetProperty("id").GetString());
+        Assert.Equal(JsonValueKind.Null, only.GetProperty("phone").ValueKind);
+        var detail = await doctor.Get($"/hospital/bookings/{mine}");
+        Assert.Equal(HttpStatusCode.OK, detail.Status);
+        Assert.Empty(detail.Body.GetProperty("answers").EnumerateObject());
+        Assert.All(detail.Body.GetProperty("events").EnumerateArray(), e =>
+        {
+            Assert.Equal(JsonValueKind.Null, e.GetProperty("reason").ValueKind);
+            Assert.Equal(JsonValueKind.Null, e.GetProperty("actor").ValueKind);
+        });
+        Assert.DoesNotContain("+963944000111", detail.Body.GetRawText());
+        Assert.DoesNotContain("جواب سري", detail.Body.GetRawText());
+        Assert.DoesNotContain("خطأ في التسجيل", detail.Body.GetRawText());
+        // The other department does not exist for the doctor, by id or by booking number.
+        Assert.Equal(HttpStatusCode.NotFound, (await doctor.Get($"/hospital/bookings/{other}")).Status);
+        Assert.Equal(0, (await doctor.Get("/hospital/bookings?ref=" + otherRef)).Body.GetProperty("bookings").GetArrayLength());
+        Assert.Equal(1, (await doctor.Get("/hospital/bookings?ref=" + myRef)).Body.GetProperty("bookings").GetArrayLength());
+        // And still read-only.
+        Assert.Equal(HttpStatusCode.Forbidden, (await doctor.Post($"/hospital/bookings/{mine}/attendance", new { type = "arrived" })).Status);
+        Assert.Equal(HttpStatusCode.Forbidden, (await doctor.Post($"/hospital/bookings/{mine}/cancel", new { reason = "اختبار" })).Status);
     }
 
     [Fact(DisplayName = "Sync: Windows bearer token; revoked devices are refused; 25 active devices per hospital; scanner cannot pull")]
