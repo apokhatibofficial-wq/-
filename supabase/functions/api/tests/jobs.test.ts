@@ -5,13 +5,15 @@ import { cleanup, noShow, opsAlert, retention, retentionDue } from "../src/jobs.
 import { appSql, book, type BookingHospital, bookingHospital, ownerSql, secrets, slot, staff, test, TestApi } from "./harness.ts";
 
 const db = () => new Db(appSql);
+/** One fixed minute for the whole file: two bookings computed from now() on either side of a minute boundary could land on the same slot. */
+const BASE = Math.floor(Date.now() / 60000) * 60000;
 
 /** A booking whose slot started `minutesAgo` minutes ago (negative = in the future). */
 async function bookingAt(api: TestApi, h: BookingHospital, minutesAgo: number, name = "مريض تجريبي للمهام") {
   const r = await book(api, h, await slot(api, h), { name, phone: "+963944000555" });
   assertEquals(r.status, 201, JSON.stringify(r.body));
   secrets.push(r.body.qr);
-  await ownerSql`UPDATE bookings SET slot_start = date_trunc('minute', now()) - make_interval(secs => ${minutesAgo * 60}::float8) WHERE ref = ${r.body.ref}`;
+  await ownerSql`UPDATE bookings SET slot_start = ${new Date(BASE - minutesAgo * 60000)} WHERE ref = ${r.body.ref}`;
   const [{ id }] = await ownerSql<{ id: string }[]>`SELECT id FROM bookings WHERE ref = ${r.body.ref}`;
   return { id, ref: r.body.ref as string, qr: r.body.qr as string };
 }
