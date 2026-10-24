@@ -1,0 +1,8 @@
+# Cloudflare Pages settings of the patient booking site (deployed by .github/workflows/deploy-web.yml).
+# API_ORIGIN lets functions/book/[slug].js turn renamed booking links into real 301 redirects. Not a secret.
+name = "medlink-booking"
+pages_build_output_dir = "dist"
+compatibility_date = "2026-09-01"
+
+[vars]
+API_ORIGIN = "https://api.medlink.website"

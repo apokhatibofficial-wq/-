@@ -1,0 +1,63 @@
+name: Deploy web
+
+# Publishes the three sites to Cloudflare Pages on every push to the default branch (or by hand: Actions › Deploy web
+# › Run workflow). Until the owner adds the repository secrets CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID
+# (docs/deployment.md, step 5), it builds and tests only, and says so. The token needs only "Cloudflare Pages: Edit".
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-web
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.ref_name == github.event.repository.default_branch
+    runs-on: ubuntu-24.04
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      # Optional repository variables (Settings › Variables) to change the addresses; the defaults are the approved ones.
+      API_URL: ${{ vars.MEDLINK_API_URL || 'https://api.medlink.website' }}
+      DOMAIN: ${{ vars.MEDLINK_DOMAIN || 'medlink.website' }}
+      WRANGLER: npx --yes wrangler@4.146.0
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - name: Build (API at ${{ env.API_URL }})
+        run: VITE_API_URL="$API_URL" npm run build
+      - name: Cloudflare not set up yet
+        if: env.CLOUDFLARE_API_TOKEN == '' || env.CLOUDFLARE_ACCOUNT_ID == ''
+        run: echo "::notice::Built and tested only. Add CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID as repository secrets to publish (docs/deployment.md, step 5)."
+      - name: Publish to Cloudflare Pages
+        if: env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != ''
+        run: |
+          set -euo pipefail
+          # project | site folder | custom domain
+          for site in "medlink-admin admin admin.$DOMAIN" "medlink-hospital hospital app.$DOMAIN" "medlink-booking booking $DOMAIN"; do
+            set -- $site
+            # Created once (an existing project is fine); "production" is the production branch name.
+            $WRANGLER pages project create "$1" --production-branch production >/dev/null 2>&1 || true
+            # Run from the site folder, so the booking site's functions/ and wrangler.toml are included.
+            (cd "$2" && $WRANGLER pages deploy dist --project-name "$1" --branch production --commit-hash "$GITHUB_SHA" --commit-dirty=true)
+            # Attach the custom domain (once; "already exists" is fine). The DNS record is added by Cloudflare.
+            code=$(curl -s -o /tmp/domain.json -w '%{http_code}' -X POST \
+              "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$1/domains" \
+              -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" -H 'Content-Type: application/json' --data "{\"name\":\"$3\"}")
+            if [ "$code" = 200 ]; then echo "$1: domain $3 attached"
+            elif grep -q 'already' /tmp/domain.json; then echo "$1: domain $3 already attached"
+            else echo "::warning::$1: could not attach $3 (HTTP $code); add it under Pages › $1 › Custom domains"; fi
+          done
