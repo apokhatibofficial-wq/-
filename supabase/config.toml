@@ -1,0 +1,6 @@
+# Supabase project settings used by `supabase functions deploy` (see docs/deployment-supabase.md).
+project_id = "medlink"
+
+[functions.api]
+# MEDLINK checks its own sessions (cookie or bearer token); Supabase's JWT check would reject them.
+verify_jwt = false

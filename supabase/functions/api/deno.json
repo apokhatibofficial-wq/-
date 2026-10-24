@@ -1,0 +1,15 @@
+{
+  "imports": {
+    "hono": "npm:hono@4.13.13",
+    "hono/cookie": "npm:hono@4.13.13/cookie",
+    "hono/cors": "npm:hono@4.13.13/cors",
+    "postgres": "npm:postgres@3.4.9",
+    "hash-wasm": "npm:hash-wasm@4.12.0"
+  },
+  "compilerOptions": {
+    "strict": true
+  },
+  "lint": {
+    "rules": { "exclude": ["no-explicit-any"] }
+  }
+}
