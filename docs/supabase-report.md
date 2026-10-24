@@ -74,10 +74,13 @@ Deployment guide: [`deployment-supabase.md`](deployment-supabase.md).
 1. **JSON was stored double-encoded** (as a JSON string inside jsonb): the form versions, the drafts and the audit log. It is now written as real JSON, and a test checks it.
 2. **A restore failed on "schema public already exists"** (a Supabase-style dump of one schema). The restore now skips that one statement.
 
-## Decisions I made (please confirm or correct)
-1. **The scheduler runs every minute**, as before. That is about 43,000 of the 500,000 free calls a month. Every 5 minutes would use 8,600, but a no-show would be marked up to 5 minutes later.
-2. **Backups cover MEDLINK's own schema only.** Supabase's internal schemas are not ours to restore.
-3. **The board still refreshes every 15 seconds.** You have not answered the 30-second question yet. It is a one-line change.
+## Owner's decisions (2026-10-24, after the report)
+1. **The scheduler runs every minute**, as before (about 43,000 of the 500,000 free calls a month).
+2. **The hospital board refreshes every 30 seconds** (was 15), to halve its use of the free calls.
+3. **Doctors do not see the booking form answers** (as built).
+
+## Decision I made (please confirm or correct)
+- **Backups cover MEDLINK's own schema only.** Supabase's internal schemas are not ours to restore.
 
 ## Not done, and why
 - **Not yet run on real Supabase, Cloudflare Workers or Resend.** I cannot reach your accounts. Three things can only be confirmed on the first real deployment:

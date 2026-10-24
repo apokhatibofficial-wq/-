@@ -13,7 +13,7 @@ type Event = { type: 'arrived' | 'no_show' | 'waiting'; source: string; at: stri
 type Status = Booking['status'];
 const STATUSES: Status[] = ['waiting', 'arrived', 'no_show', 'cancelled'];
 /** The day board refreshes itself (a phone scan or the Windows app shows up here without reloading). */
-export const LIVE_MS = 15_000;
+export const LIVE_MS = 30_000;
 type Question = { id: string; type: string; label: { ar?: string; en?: string; tr?: string }; opts: { id: string; label: { ar?: string; en?: string; tr?: string } }[] | null };
 
 const lbl = (o: { ar?: string | null; en?: string | null; tr?: string | null } | undefined, l: Lang) => (o ? o[l] || o.ar || o.en || o.tr || '' : '');

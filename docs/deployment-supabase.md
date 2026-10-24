@@ -10,7 +10,7 @@
 
 | Limit | Meaning for MEDLINK |
 |---|---|
-| Supabase: 500,000 function calls a month | The scheduler uses about 43,000. Each open hospital board uses about 2,400 a day (one call every 15 seconds for 10 hours). |
+| Supabase: 500,000 function calls a month | The scheduler uses about 43,000. Each open hospital board uses about 1,200 a day (one call every 30 seconds for 10 hours; owner's decision). |
 | Supabase: 500 MB database | Hundreds of thousands of bookings. |
 | Supabase: a project with **no activity for 7 days is paused** | The scheduler calls the API every minute. Unpause it from the dashboard if it ever happens. |
 | Cloudflare Workers: 100,000 requests a day | Far above the use above. |

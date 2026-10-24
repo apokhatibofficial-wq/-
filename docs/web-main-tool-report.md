@@ -7,7 +7,7 @@ Real results: [`test-results.md`](test-results.md) (section "Web as the main too
 ## What changed
 **The "Bookings" page of `app.medlink.website` is now the live day board, and the first page staff see:**
 - **Live:**
-  - today's list refreshes itself every 15 seconds while the page is open;
+  - today's list refreshes itself every 30 seconds while the page is open (15 at first; 30 by the owner's decision on 2026-10-24, to stay within Supabase's free calls);
   - a check-in from the phone scanner, the Windows app or another member of staff appears without reloading, with a notice: "سُجّل حضور: <name>";
   - an open booking's details follow too.
 - **Status chips with counts** (All / Waiting / Arrived / No-show / Cancelled) that filter the list, plus a **department filter**.
@@ -32,9 +32,9 @@ Real results: [`test-results.md`](test-results.md) (section "Web as the main too
 - `web/hospital/src/Bookings.tsx`, `bookingsText.ts`, `App.tsx`, `text.ts`.
 - `docs/deployment.md`, `README.md`.
 
-## Decision I made (please confirm or correct)
-- **Doctors do not see the booking form answers,** as in the Windows app. If the form asks something the doctor needs to see before the visit, tell me and I will show them the answers too.
+## Owner's decision
+- **Doctors do not see the booking form answers,** as in the Windows app (confirmed on 2026-10-24).
 
 ## Known limits
 - **The web needs the internet.** During an outage, reception cannot check patients in from the web (the Windows app can).
-- **"Live" means up to 15 seconds.** That is enough for a reception desk, and it keeps the load on the free server low.
+- **"Live" means up to 30 seconds.** That is enough for a reception desk, and it keeps within the free plan.
