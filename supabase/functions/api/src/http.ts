@@ -41,6 +41,11 @@ export async function body(c: Ctx): Promise<Record<string, unknown>> {
 
 export class JsonRequired extends Error {}
 
+/** For JSON-only endpoints that read no body: only the content type is checked. */
+export function requireJsonType(c: Ctx) {
+  if (!isJson(c)) throw new JsonRequired();
+}
+
 /** Field readers: missing or null → null; the wrong type → 400. Property names are matched case-insensitively. */
 function field(b: Record<string, unknown>, name: string): unknown {
   if (name in b) return b[name];

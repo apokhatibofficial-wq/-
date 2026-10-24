@@ -91,7 +91,7 @@ export async function testConfig(o: ApiOptions = {}): Promise<Config> {
   };
 }
 
-const appSql = connect(urls.appUrl, 4);
+export const appSql = connect(urls.appUrl, 4);
 
 export interface Res {
   status: number;
@@ -221,6 +221,33 @@ export class TestApi {
     const user = { id, email, password, totpSecret };
     return { client: await this.signIn(user), user };
   }
+}
+
+export interface HospitalSetup {
+  hospitalId: string;
+  slug: string;
+  admin: TestUser;
+  adminClient: Client;
+}
+
+export async function hospital(api: TestApi, owner: Client, slug?: string): Promise<HospitalSetup> {
+  slug ??= "h-" + crypto.randomUUID().replaceAll("-", "").slice(0, 12);
+  const adminEmail = newEmail("hadmin");
+  const create = await owner.post("/admin/hospitals", { nameAr: "مستشفى الاختبار", nameEn: "Test Hospital", nameTr: "Test Hastanesi", adminEmail, slug });
+  assertEquals(create.status, 201, JSON.stringify(create.body));
+  const { password, totpSecret } = await api.completeLink(CapturingEmail.tokenFrom(api.email.lastTo(adminEmail)));
+  const [{ id }] = await ownerSql<{ id: string }[]>`SELECT id FROM users WHERE email = ${adminEmail}`;
+  const admin = { id, email: adminEmail, password, totpSecret };
+  return { hospitalId: create.body.id, slug, admin, adminClient: await api.signIn(admin) };
+}
+
+export async function staff(api: TestApi, hospitalAdmin: Client, role: string, extra: Record<string, unknown> = {}): Promise<{ client: Client; user: TestUser }> {
+  const email = newEmail(role);
+  const r = await hospitalAdmin.post("/hospital/users", { email, role, ...extra });
+  assertEquals(r.status, 201, JSON.stringify(r.body));
+  const { password, totpSecret } = await api.completeLink(CapturingEmail.tokenFrom(api.email.lastTo(email)));
+  const user = { id: r.body.id, email, password, totpSecret };
+  return { client: await api.signIn(user), user };
 }
 
 /** Deno.test without the resource checks (the database pool stays open between tests). */
