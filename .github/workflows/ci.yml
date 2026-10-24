@@ -179,6 +179,42 @@ jobs:
       - run: infra/backup/ci-test.sh
         timeout-minutes: 15
 
+  supabase-api:
+    # The API as it runs on Supabase (Deno), tested on a real PostgreSQL 16 with every migration.
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: ci-only-throwaway
+        ports: ["5432:5432"]
+        options: --health-cmd pg_isready --health-interval 2s --health-retries 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.5.6
+      - name: Type check
+        working-directory: supabase/functions/api
+        run: deno check index.ts tests/*.ts
+      - name: Tests
+        working-directory: supabase/functions/api
+        env:
+          TEST_PG_URL: postgres://postgres:ci-only-throwaway@127.0.0.1:5432/postgres
+        run: deno test -A tests/
+
+  supabase-backups:
+    # The Supabase backup scripts end to end: a local PostgreSQL in place of Supabase, an S3 mock in place of R2.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.5.6
+      - run: sudo apt-get update -q && sudo apt-get install -y -q age
+      - run: supabase/backup/ci-test.sh
+        timeout-minutes: 15
+
   secrets:
     runs-on: ubuntu-24.04
     steps:

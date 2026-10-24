@@ -1,0 +1,59 @@
+# MEDLINK database backups on Supabase (supabase/backup, docs/backup-restore.md):
+# every 6 hours an encrypted backup to Cloudflare R2, and on the 1st of each month the automatic restore test.
+# Results go into the database (ops_checks), so the API emails the owner when a backup fails or stops running.
+# The log shows file names and sizes only. Without the secrets below, the run only says what is missing.
+name: Backups
+
+on:
+  schedule:
+    - cron: "23 */6 * * *"   # backup
+    - cron: "41 1 1 * *"     # monthly restore test (after the 00:23 backup)
+  workflow_dispatch:
+    inputs:
+      job:
+        description: "backup or restore-test"
+        default: backup
+        type: choice
+        options: [backup, restore-test]
+
+concurrency:
+  group: backups
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      BACKUP_AGE_RECIPIENT: ${{ secrets.BACKUP_AGE_RECIPIENT }}
+      R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+      R2_BUCKET: ${{ secrets.R2_BUCKET }}
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Settings present?
+        id: ready
+        run: |
+          missing=""
+          for k in DB_URL BACKUP_AGE_RECIPIENT R2_ACCOUNT_ID R2_BUCKET R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY; do
+            [ -n "${!k}" ] || missing="$missing $k"
+          done
+          if [ -n "$missing" ]; then
+            echo "::notice::Backups are not set up yet (missing:$missing). See docs/backup-restore.md. Until then MEDLINK emails the owner every day that no backup has run."
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.ready.outputs.ok == 'true'
+        run: sudo apt-get update -q && sudo apt-get install -y -q age
+      - name: Backup
+        if: steps.ready.outputs.ok == 'true' && (github.event.schedule == '23 */6 * * *' || inputs.job == 'backup')
+        run: supabase/backup/backup.sh
+      - name: Monthly restore test
+        if: steps.ready.outputs.ok == 'true' && (github.event.schedule == '41 1 1 * *' || inputs.job == 'restore-test')
+        run: supabase/backup/restore-test.sh

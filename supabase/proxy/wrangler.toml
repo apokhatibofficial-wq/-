@@ -1,0 +1,6 @@
+# The Cloudflare proxy in front of the MEDLINK function (deployed by .github/workflows/deploy-api.yml).
+# SUPABASE_FUNCTION_URL is passed at deploy time; PROXY_SECRET is a Worker secret, set once by the workflow.
+name = "medlink-api-proxy"
+main = "worker.js"
+compatibility_date = "2026-09-01"
+workers_dev = false
