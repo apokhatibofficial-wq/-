@@ -40,7 +40,7 @@ export async function publish(tx: Tx, hospitalId: string, questions: FormQuestio
   const summary = diff(questions, current ? questionsFromStored(current.schema_json) : null);
   await tx`
     INSERT INTO form_versions (id, hospital_id, version, schema_json, published_by, restored_from_version, change_summary_json)
-    VALUES (${id}, ${hospitalId}, ${next}, ${JSON.stringify(toStored(questions))}::jsonb, ${actorId}, ${restoredFrom}, ${JSON.stringify(summary)}::jsonb)`;
+    VALUES (${id}, ${hospitalId}, ${next}, ${tx.json(toStored(questions) as any)}, ${actorId}, ${restoredFrom}, ${tx.json(summary as any)})`;
   await tx`
     INSERT INTO hospital_active_form (hospital_id, form_version_id) VALUES (${hospitalId}, ${id})
     ON CONFLICT (hospital_id) DO UPDATE SET form_version_id = excluded.form_version_id`;
@@ -79,7 +79,7 @@ export function formRoutes(app: Hono<Env>) {
     if (e !== null) return err(c, e, 422);
     await deps(c).db.run(Scopes.hospital(p.hospitalId), (tx) => tx`
       INSERT INTO form_drafts (hospital_id, schema_json, base_version, updated_by, updated_at)
-      VALUES (${p.hospitalId}, ${JSON.stringify(toStored(questions as FormQuestion[]))}::jsonb, ${baseVersion ?? 0}, ${p.userId}, now())
+      VALUES (${p.hospitalId}, ${tx.json(toStored(questions as FormQuestion[]) as any)}, ${baseVersion ?? 0}, ${p.userId}, now())
       ON CONFLICT (hospital_id) DO UPDATE SET schema_json = excluded.schema_json, base_version = excluded.base_version,
           updated_by = excluded.updated_by, updated_at = now()`);
     return json(c, { status: "ok" });

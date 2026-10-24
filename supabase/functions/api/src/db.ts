@@ -59,5 +59,5 @@ export const isUniqueViolation = (e: unknown) => pgCode(e) === "23505";
 /** Append-only audit trail. Never pass passwords, tokens, links, patient data or emails in meta. */
 export async function audit(tx: Tx, actorId: string | null, hospitalId: string | null, action: string, target: string, meta: unknown = {}) {
   await tx`INSERT INTO audit_log (actor_id, hospital_id, action, target, meta_json)
-           VALUES (${actorId}, ${hospitalId}, ${action}, ${target}, ${JSON.stringify(meta ?? {})}::jsonb)`;
+           VALUES (${actorId}, ${hospitalId}, ${action}, ${target}, ${tx.json(meta ?? {} as any)})`;
 }

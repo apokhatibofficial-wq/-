@@ -1,19 +1,6 @@
 import { assertEquals } from "jsr:@std/assert@1.0.14";
-import { appSql, type Client, hospital, ownerSql, staff, test, TestApi } from "./harness.ts";
-
-export const visit = (ar = "نوع الزيارة") => ({
-  id: "visit", type: "single", req: true, label: { ar, en: "Visit type", tr: "Ziyaret türü" },
-  opts: [{ id: "new", label: { ar: "استشارة جديدة", en: "New", tr: "Yeni" } }, { id: "fu", label: { ar: "متابعة", en: "Follow-up", tr: "Kontrol" } }],
-});
-export const note = () => ({ id: "note", type: "short", req: false, label: { ar: "ملاحظة لموظف الاستقبال", en: "Note", tr: "Not" }, opts: [] });
-export const first = () => ({ id: "first", type: "yesno", req: true, label: { ar: "هل هذه زيارتك الأولى؟", en: "First visit?", tr: "İlk ziyaret?" }, opts: [] });
-
-export async function publish(admin: Client, ...questions: unknown[]): Promise<number> {
-  assertEquals((await admin.put("/hospital/form/draft", { questions })).status, 200);
-  const r = await admin.post("/hospital/form/publish", {});
-  assertEquals(r.status, 200, JSON.stringify(r.body));
-  return r.body.version;
-}
+import { appSql, hospital, ownerSql, staff, test, TestApi } from "./harness.ts";
+import { first, note, publish, visit } from "./form_fixtures.ts";
 
 test("Acceptance 12/14: a published question appears on the booking link; a saved draft does not", async () => {
   const api = await TestApi.create();
@@ -138,4 +125,18 @@ test("Only the hospital admin edits the form; published versions cannot be modif
     code = (e as { code: string }).code;
   }
   assertEquals(code, "42501");
+});
+
+test("JSON is stored as JSON objects and arrays, never as encoded strings", async () => {
+  const api = await TestApi.create();
+  const { client: owner } = await api.companyUser("owner");
+  const { hospitalId, adminClient: admin } = await hospital(api, owner);
+  await publish(admin, visit());
+  await admin.put("/hospital/form/draft", { questions: [visit(), note()] });
+  const [r] = await ownerSql<{ s: string; c: string; d: string; bad: number }[]>`
+    SELECT (SELECT jsonb_typeof(schema_json) FROM form_versions WHERE hospital_id = ${hospitalId}) AS s,
+           (SELECT jsonb_typeof(change_summary_json) FROM form_versions WHERE hospital_id = ${hospitalId}) AS c,
+           (SELECT jsonb_typeof(schema_json) FROM form_drafts WHERE hospital_id = ${hospitalId}) AS d,
+           (SELECT count(*)::int FROM audit_log WHERE jsonb_typeof(meta_json) <> 'object') AS bad`;
+  assertEquals({ ...r }, { s: "object", c: "array", d: "object", bad: 0 });
 });

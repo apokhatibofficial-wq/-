@@ -254,3 +254,40 @@ export async function staff(api: TestApi, hospitalAdmin: Client, role: string, e
 export function test(name: string, fn: () => Promise<void>) {
   Deno.test({ name, fn, sanitizeOps: false, sanitizeResources: false });
 }
+
+// ---------------------------------------------------------------- bookings
+/** A hospital with one department open every day 00:00–24:00 in 30-minute slots. */
+export interface BookingHospital extends HospitalSetup {
+  departmentId: string;
+}
+
+export async function bookingHospital(api: TestApi, owner: Client, capacity = 1, slotMinutes = 30): Promise<BookingHospital> {
+  const h = await hospital(api, owner);
+  const dep = await h.adminClient.post("/hospital/departments", { nameAr: "الباطنية", nameEn: "Internal medicine" });
+  assertEquals(dep.status, 201);
+  const blocks = [0, 1, 2, 3, 4, 5, 6].map((w) => ({ weekday: w, start: "00:00", end: "24:00", slotMinutes, capacity }));
+  assertEquals((await h.adminClient.put(`/hospital/departments/${dep.body.id}/schedules`, { blocks })).status, 200);
+  return { ...h, departmentId: dep.body.id };
+}
+
+export async function availability(api: TestApi, h: BookingHospital): Promise<any> {
+  const r = await api.anonymous().get(`/public/hospitals/${h.slug}/availability?departmentId=${h.departmentId}`);
+  assertEquals(r.status, 200, JSON.stringify(r.body));
+  return r.body;
+}
+
+/** The n-th bookable slot start (ISO) from the public availability. */
+export async function slot(api: TestApi, h: BookingHospital, dayIndex = 1, slotIndex = 0): Promise<string> {
+  return (await availability(api, h)).days[dayIndex].slots[slotIndex].start;
+}
+
+export function book(api: TestApi, h: BookingHospital, slotStart: string, o: { key?: string; answers?: unknown; formVersionId?: string; name?: string; phone?: string | null } = {}): Promise<Res> {
+  return api.anonymous().send("POST", `/public/hospitals/${h.slug}/bookings`, {
+    departmentId: h.departmentId,
+    slotStart,
+    patientName: o.name ?? "مريض اختبار",
+    phone: o.phone ?? null,
+    formVersionId: o.formVersionId ?? null,
+    answers: o.answers ?? null,
+  }, { headers: { "Idempotency-Key": o.key ?? crypto.randomUUID().replaceAll("-", "") } });
+}

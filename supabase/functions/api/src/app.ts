@@ -85,6 +85,7 @@ export function createApp(d: AppDeps, modules: RouteModule[]): Hono<Env> {
     if (pgCode(e) === "22021" || pgCode(e) === "22P05") return error(c as Ctx, "INVALID_TEXT", 400);
     const requestId = crypto.randomUUID();
     console.error(JSON.stringify({ level: "error", msg: "unhandled", requestId, error: (e as Error)?.name, code: pgCode(e) }));
+    if (Deno.env.get("MEDLINK_DEBUG")) console.error(e);
     return json(c as Ctx, { error: "INTERNAL", requestId }, 500);
   });
 
