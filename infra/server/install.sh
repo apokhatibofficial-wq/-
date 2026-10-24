@@ -68,7 +68,9 @@ fi
 
 step "4/6 build and start MEDLINK"
 cd infra
-docker compose --env-file ../.env up -d --build --quiet-pull 2>&1 | grep -vE '^ *(#|=>)' | tail -n 5
+# NO_BUILD=1 uses an API image built beforehand (medlink-api:local) instead of building it here.
+build=--build; [ "${NO_BUILD:-}" = 1 ] && build=
+docker compose --env-file ../.env up -d $build --quiet-pull 2>&1 | grep -vE '^ *(#|=>)' | tail -n 5
 for i in $(seq 90); do
   if docker compose --env-file ../.env exec -T caddy wget -qO- http://api:8080/health 2>/dev/null | grep -q '"ok"'; then ok=1; break; fi
   sleep 2

@@ -2,6 +2,30 @@
 
 The full procedure for the first production deployment and for later updates. The scripts it uses were tested in Phase 12 (see [`test-results.md`](test-results.md)). The cloud accounts themselves (Oracle, Cloudflare, Resend) could not be used from the development environment, so **the first deployment should be done together, step by step.**
 
+## The short way (about 1 hour)
+1. **Accounts:** open the accounts in the table below (they must be in your name). Move the domain's DNS to Cloudflare.
+2. **Server:**
+   - Create the Oracle VM (step 2, items 1–2, below).
+   - Connect with SSH and paste one command:
+     ```bash
+     sudo bash -c "$(curl -fsSL https://raw.githubusercontent.com/<owner>/<repo>/<branch>/infra/server/install.sh)"
+     ```
+   - If the repository is private, `curl` cannot fetch the script. Instead:
+     - `git clone` the repository to `/opt/medlink`, with a **read-only** access token, typed when git asks;
+     - then run `sudo /opt/medlink/infra/server/install.sh`.
+   - It asks for three things: your email, the domain, and the Resend key (hidden while you type). It then:
+     - generates the server secrets on the server itself (they are never shown);
+     - starts MEDLINK;
+     - prints the one-time link for your owner account, and what is left.
+3. **DNS:** in Cloudflare, add the `api` A record and the SSL settings the script prints (step 4 below).
+4. **Sites:**
+   - In Cloudflare, create an API token with the permission **"Cloudflare Pages: Edit"**.
+   - In GitHub, under Settings › Secrets and variables › Actions, add the repository secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`.
+   - The workflow **Deploy web** then publishes the three sites and attaches `admin.`, `app.` and the main domain on every push. Actions › Deploy web › Run workflow runs it at once.
+5. **Backups:** follow [`backup-restore.md`](backup-restore.md). Until they are set up, you get an alert email every 6 hours.
+
+The sections below are the same procedure in full detail.
+
 ## 0. What you need
 | Account / item | Used for | Cost |
 |---|---|---|
