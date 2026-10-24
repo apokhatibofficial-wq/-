@@ -11,15 +11,14 @@ import { FormBuilder } from './FormBuilder';
 import { Bookings } from './Bookings';
 import { FT } from './formText';
 
-type Page = 'appointments' | 'bookings' | 'form' | 'departments' | 'settings';
-// Appointments (today's check-in board) arrives with the Windows app and the QR scanner.
-const SOON: Page[] = ['appointments'];
+type Page = 'bookings' | 'form' | 'departments' | 'settings';
+// The web is the main tool (owner's decision, after Phase 12); "Bookings" is the live day board.
 
 export function App() {
   const [lang, setLang] = useState<Lang>(loadLang);
   const [me, setMe] = useState<Me | null | undefined>(undefined);
   const [hospital, setHospital] = useState<HospitalMe | null>(null);
-  const [page, setPage] = useState<Page>('departments');
+  const [page, setPage] = useState<Page>('bookings');
   const [toast, setToast] = useToast();
   const isLink = window.location.pathname.replace(/\/+$/, '') === '/link';
 
@@ -54,10 +53,10 @@ export function App() {
 
   const t = H[lang];
   const isAdmin = me.roles.includes('hosp_admin');
-  const pages: Page[] = isAdmin ? ['appointments', 'bookings', 'form', 'departments', 'settings']
-    : me.roles.includes('reception') ? ['appointments', 'bookings', 'departments'] : ['appointments', 'departments'];
-  const nav: NavItem[] = pages.map(k => ({ key: k, label: t.nav[k], soon: SOON.includes(k) }));
-  const current = pages.includes(page) ? page : 'departments';
+  const canRead = me.permissions.includes('BookingsView') || me.permissions.includes('BookingsViewOwnDepartment');
+  const pages: Page[] = isAdmin ? ['bookings', 'form', 'departments', 'settings'] : canRead ? ['bookings', 'departments'] : ['departments'];
+  const nav: NavItem[] = pages.map(k => ({ key: k, label: t.nav[k] }));
+  const current = pages.includes(page) ? page : pages[0];
 
   async function signOut() {
     await api('POST', '/auth/logout', {}).catch(() => undefined);
@@ -75,11 +74,11 @@ export function App() {
         email={me.email} roleLabel={me.roles.map(r => t.roles[r] ?? r).join(' · ') + (isAdmin ? ' · 2FA' : '')}
         onSignOut={signOut}
         title={t.nav[current]}
-        subtitle={SOON.includes(current) ? t.subs.soon : current === 'departments' ? t.subs.departments : current === 'form' ? FT[lang].titleSub : current === 'bookings' ? t.subs.bookings : t.subs.settings}
+        subtitle={current === 'departments' ? t.subs.departments : current === 'form' ? FT[lang].titleSub : current === 'bookings' ? t.subs.bookings : t.subs.settings}
       >
-        {SOON.includes(current) && <div className="card empty" style={{ lineHeight: 1.6 }}>{t.soonBody.appointments}</div>}
         {current === 'form' && <FormBuilder lang={lang} slug={hospital?.slug ?? null} flash={setToast} />}
-        {current === 'bookings' && <Bookings lang={lang} canCancel={me.permissions.includes('AttendanceCorrect')} canCheckIn={me.permissions.includes('CheckIn')} canCorrect={me.permissions.includes('AttendanceCorrect')} timezone={hospital?.timezone ?? 'Asia/Damascus'} flash={setToast} />}
+        {current === 'bookings' && <Bookings lang={lang} canCancel={me.permissions.includes('AttendanceCorrect')} canCheckIn={me.permissions.includes('CheckIn')} canCorrect={me.permissions.includes('AttendanceCorrect')}
+          readOnly={!me.permissions.includes('BookingsView')} grace={hospital?.noShowGraceMin ?? null} timezone={hospital?.timezone ?? 'Asia/Damascus'} flash={setToast} />}
         {current === 'departments' && <Departments lang={lang} canEdit={me.permissions.includes('HospitalSettings')} flash={setToast} />}
         {current === 'settings' && hospital && <Settings lang={lang} me={me} hospital={hospital} reload={loadHospital} flash={setToast} />}
       </Shell>

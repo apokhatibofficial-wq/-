@@ -1,6 +1,10 @@
 /** Bookings page copy (the design has no mock-up for it; tone follows the Windows dashboard). */
 export const BT = {
   ar: {
+    all: 'الكل', allDepts: 'كل الأقسام', history: 'السجل', readOnly: 'عرض فقط: مواعيد أقسامك، بدون أرقام الهواتف.',
+    live: (n: string) => 'سُجّل حضور: ' + n, grace: (m: number) => 'يُسجَّل «لم يحضر» تلقائيًا من الخادم بعد ' + m + ' دقيقة',
+    src: { qr: 'عبر ماسح QR', reception: 'يدويًا من الاستقبال', auto: 'تلقائيًا من الخادم', correction: 'بتصحيح يدوي' } as Record<string, string>,
+    booked: 'تم الحجز عبر الرابط', liveNote: 'تتحدّث القائمة تلقائيًا كل 15 ثانية.',
     today: 'اليوم', prev: 'اليوم السابق', next: 'اليوم التالي', searchRef: 'رقم الحجز', find: 'بحث',
     searchNote: 'البحث برقم الحجز الكامل فقط، ولا يُسمح بالبحث بالاسم.', refFormat: 'أدخل رقم الحجز كاملًا، مثل ML-7K3Q9P.',
     time: 'الوقت', ref: 'رقم الحجز', patient: 'المريض', department: 'القسم', statusLabel: 'الحالة', phone: 'الهاتف', when: 'الموعد',
@@ -15,6 +19,10 @@ export const BT = {
     needsReview: 'تصحيحان متعارضان · يحتاج مراجعة', otherDay: 'يُسجَّل الحضور في يوم الموعد فقط.', arrivedAt: 'وقت الحضور',
   },
   en: {
+    all: 'All', allDepts: 'All departments', history: 'History', readOnly: 'View only: your departments’ appointments, without phone numbers.',
+    live: (n: string) => 'Checked in: ' + n, grace: (m: number) => 'Server marks no-show automatically after ' + m + ' min',
+    src: { qr: 'via QR scanner', reception: 'manually at reception', auto: 'automatically by server', correction: 'by manual correction' } as Record<string, string>,
+    booked: 'Booked via link', liveNote: 'The list updates by itself every 15 seconds.',
     today: 'Today', prev: 'Previous day', next: 'Next day', searchRef: 'Booking number', find: 'Find',
     searchNote: 'Search by the full booking number only; name search is not allowed.', refFormat: 'Enter the full booking number, e.g. ML-7K3Q9P.',
     time: 'Time', ref: 'Booking no.', patient: 'Patient', department: 'Department', statusLabel: 'Status', phone: 'Phone', when: 'Appointment',
@@ -28,6 +36,10 @@ export const BT = {
     needsReview: 'Conflicting corrections · needs review', otherDay: 'Check-in is only possible on the appointment day.', arrivedAt: 'Arrived at',
   },
   tr: {
+    all: 'Tümü', allDepts: 'Tüm bölümler', history: 'Geçmiş', readOnly: 'Yalnızca görüntüleme: bölümlerinizin randevuları, telefon numaraları olmadan.',
+    live: (n: string) => 'Giriş kaydedildi: ' + n, grace: (m: number) => 'Sunucu ' + m + ' dk sonra otomatik "gelmedi" işaretler',
+    src: { qr: 'QR tarayıcı ile', reception: 'kayıt biriminde elle', auto: 'sunucu tarafından otomatik', correction: 'elle düzeltme ile' } as Record<string, string>,
+    booked: 'Bağlantı ile randevu alındı', liveNote: 'Liste her 15 saniyede kendiliğinden güncellenir.',
     today: 'Bugün', prev: 'Önceki gün', next: 'Sonraki gün', searchRef: 'Randevu numarası', find: 'Bul',
     searchNote: 'Yalnızca tam randevu numarasıyla arama yapılır; isimle arama yapılamaz.', refFormat: 'Tam randevu numarasını girin, örn. ML-7K3Q9P.',
     time: 'Saat', ref: 'Randevu no.', patient: 'Hasta', department: 'Bölüm', statusLabel: 'Durum', phone: 'Telefon', when: 'Randevu',

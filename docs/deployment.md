@@ -10,15 +10,15 @@ The full procedure for the first production deployment and for later updates. Th
 | Cloudflare account **B** (separate login) | R2 bucket `medlink-backups` | free (10 GB) |
 | Oracle Cloud | one Always Free Ampere A1 VM | free |
 | Resend (or a similar provider) | activation and reset emails, server alerts | free tier |
-| A Windows PC of yours | creating the keys and building the installer | — |
+| A Windows PC of yours (only if the Windows app is used) | creating the signing keys and building the installer | — |
 
 ## 1. Keys, made on your own PC (never on the server, never in chat or WhatsApp)
 | Key | How | Where it goes |
 |---|---|---|
 | Server secrets (`DB_PASSWORD`, `DB_APP_PASSWORD`, `SESSION_SIGNING_KEY`, `TOTP_ENC_KEY`) | `openssl rand -base64 48`, once each | `.env` on the server |
 | Backup key pair | `age-keygen -o medlink-backup-key.txt` | public line → `.env` `BACKUP_AGE_RECIPIENT`; the file stays **offline** |
-| Update signing key | `dotnet run --project windows/MedLink.UpdateTool -- keygen medlink-update.key` | the printed `UPDATE_SIGNING_PUBLIC_KEY` goes into every installer build; the key file stays **offline** |
-| Package-signing certificate | `windows/installer/new-signing-cert.ps1 -OutDir <folder>` | `.pfx` stays **offline**; `.cer` goes to hospital IT |
+| Update signing key (Windows app only) | `dotnet run --project windows/MedLink.UpdateTool -- keygen medlink-update.key` | the printed `UPDATE_SIGNING_PUBLIC_KEY` goes into every installer build; the key file stays **offline** |
+| Package-signing certificate (Windows app only) | `windows/installer/new-signing-cert.ps1 -OutDir <folder>` | `.pfx` stays **offline**; `.cer` goes to hospital IT |
 
 Keep the offline files on two USB sticks in two places, with a copy of `.env`. **If they are lost:**
 - **backup key:** old backups can no longer be read;
@@ -96,7 +96,9 @@ Follow [`backup-restore.md`](backup-restore.md):
 
 The cron lines are already installed by `setup-ubuntu.sh`.
 
-## 7. Windows app: first release
+## 7. Windows app (optional, deferred: owner's decision)
+The hospital web (`app.medlink.website`) is the main tool for staff: the live day board, check-in, corrections, cancellations, and doctors' read-only view. The Windows app is kept for hospitals that need to keep working **during internet outages**. Do this step only when a hospital asks for it.
+
 1. On your Windows PC (with the .NET 8 SDK and the Windows SDK), build and sign:
    ```powershell
    windows\installer\build-msix.ps1 -Version 1.0.0 -Pfx <...>\medlink-signing.pfx -UpdatePublicKey <UPDATE_SIGNING_PUBLIC_KEY> -OutDir <release folder>

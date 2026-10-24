@@ -7,7 +7,7 @@
 ## نظرة عامة
 MEDLINK نظام مواعيد للمستشفيات يتكوّن من: لوحة تحكم الشركة، وتطبيق Windows للمستشفى، وموقع حجز للمرضى برابط خاص لكل مستشفى، وصفحة جوال لمسح QR، وخادم مركزي.
 
-**الحالة:** اكتملت المراحل 4 إلى 12. التطبيق جاهز للنشر الأول، بانتظار مراجعة المالك.
+**الحالة:** اكتملت المراحل 4 إلى 12. التطبيق جاهز للنشر الأول، بانتظار مراجعة المالك. **ويب المستشفى هو الأداة الأساسية للموظفين** (لوحة اليوم الحية، وتسجيل الحضور، والتصحيح، وعرض الطبيب)، وتطبيق Windows اختياري للمستشفيات التي تحتاج العمل دون إنترنت.
 - دليل النشر: [`docs/deployment.md`](docs/deployment.md) · دليل تثبيت Windows لقسم تقنية المعلومات: [`docs/windows-install.md`](docs/windows-install.md)
 - النسخ الاحتياطي والاستعادة: [`docs/backup-restore.md`](docs/backup-restore.md) · قائمة فحص الأمان: [`docs/security-checklist.md`](docs/security-checklist.md)
 - تقارير المراحل: `docs/phase-4-report.md` … [`docs/phase-12-report.md`](docs/phase-12-report.md) · نتائج الاختبارات الفعلية: [`docs/test-results.md`](docs/test-results.md)
@@ -58,7 +58,7 @@ cd web && npm test && npm run typecheck
 
 MEDLINK is a hospital appointment system with five parts: a company console, a hospital Windows app, a patient booking site (one link per hospital), a phone QR check-in page, and a central API.
 
-**Status:** phases 4–12 are complete; ready for the first deployment, waiting for the owner's review.
+**Status:** phases 4–12 are complete; ready for the first deployment, waiting for the owner's review. **The hospital web is the staff's main tool** (live day board, check-in, corrections, doctors' read-only view); the Windows app is optional, for hospitals that must keep working during internet outages.
 - Deployment: [`docs/deployment.md`](docs/deployment.md) · Windows installation for hospital IT: [`docs/windows-install.md`](docs/windows-install.md)
 - Backup and restore: [`docs/backup-restore.md`](docs/backup-restore.md) · Security checklist: [`docs/security-checklist.md`](docs/security-checklist.md) · Acceptance tests: [`docs/acceptance-tests.md`](docs/acceptance-tests.md)
 - Phase reports `docs/phase-4-report.md` … [`docs/phase-12-report.md`](docs/phase-12-report.md) · Real test results: [`docs/test-results.md`](docs/test-results.md)
