@@ -1,0 +1,202 @@
+# Deploys the MEDLINK API to Supabase (owner's decision, 2026-10-24) on every push to the default branch, or by hand
+# (Actions › Deploy API › Run workflow). Until the owner adds the secrets below (docs/deployment-supabase.md), it only
+# says what is missing.
+#   SUPABASE_ACCESS_TOKEN  personal access token (Supabase › Account › Access tokens)
+#   SUPABASE_PROJECT_REF   the project's reference (Project settings › General)
+#   SUPABASE_DB_URL        the "Session pooler" connection string, with the database password in it
+#   EMAIL_API_KEY          Resend API key (optional at first: sign-in links are then not emailed)
+#   CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID  (already there for the sites; the token also needs
+#                          "Workers Scripts: Edit" and "Workers Routes: Edit" for api.<domain>)
+# The server-side secrets (session and TOTP keys, the API's database password, the proxy and scheduler secrets) are
+# generated here on the first deployment, straight into Supabase and Cloudflare, and never printed. If backups are set
+# up, an encrypted copy (readable only with the owner's offline key) goes to R2 for disaster recovery.
+name: Deploy API
+
+on:
+  push:
+    paths:
+      - "supabase/**"
+      - "api/src/MedLink.Api/Data/Migrations/**"
+      - ".github/workflows/deploy-api.yml"
+  workflow_dispatch:
+    inputs:
+      rotate_internal:
+        description: "Make new proxy, scheduler and database secrets (sessions and 2FA are not affected)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-api
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.ref_name == github.event.repository.default_branch
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+      DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      EMAIL_API_KEY: ${{ secrets.EMAIL_API_KEY }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      BACKUP_AGE_RECIPIENT: ${{ secrets.BACKUP_AGE_RECIPIENT }}
+      R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+      R2_BUCKET: ${{ secrets.R2_BUCKET }}
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      DOMAIN: ${{ vars.MEDLINK_DOMAIN || 'medlink.website' }}
+      ALERT_EMAIL: ${{ vars.MEDLINK_ALERT_EMAIL }}
+      SUPABASE: npx --yes supabase@2.119.0
+      WRANGLER: npx --yes wrangler@4.146.0
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Settings present?
+        id: ready
+        run: |
+          missing=""
+          for k in SUPABASE_ACCESS_TOKEN REF DB_URL; do [ -n "${!k}" ] || missing="$missing $k"; done
+          if [ -n "$missing" ]; then
+            echo "::notice::The API is not deployed yet (missing:$missing). See docs/deployment-supabase.md."
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: denoland/setup-deno@v2
+        if: steps.ready.outputs.ok == 'true'
+        with:
+          deno-version: v2.5.6
+
+      - name: Tests (the same suite as CI, on a throw-away PostgreSQL)
+        if: steps.ready.outputs.ok == 'true'
+        working-directory: supabase/functions/api
+        run: |
+          docker run -d --name pg -p 127.0.0.1:55432:5432 -e POSTGRES_PASSWORD=deploy-test-only postgres:16-alpine >/dev/null
+          for _ in $(seq 60); do docker exec pg pg_isready -q && break; sleep 1; done
+          deno check index.ts
+          TEST_PG_URL=postgres://postgres:deploy-test-only@127.0.0.1:55432/postgres deno test -A tests/
+
+      - name: First deployment, or new internal secrets?
+        if: steps.ready.outputs.ok == 'true'
+        id: first
+        run: |
+          if $SUPABASE secrets list --project-ref "$REF" | grep -q SESSION_SIGNING_KEY; then first=false; else first=true; fi
+          rotate=${{ inputs.rotate_internal == true }}
+          echo "first=$first" >> "$GITHUB_OUTPUT"
+          [ "$first" = true ] || [ "$rotate" = true ] && echo "internal=true" >> "$GITHUB_OUTPUT" || echo "internal=false" >> "$GITHUB_OUTPUT"
+          echo "first deployment: $first; new internal secrets: $rotate"
+
+      - name: Generate secrets (never printed)
+        if: steps.ready.outputs.ok == 'true'
+        run: |
+          set -euo pipefail
+          umask 077
+          f=$RUNNER_TEMP/secrets.env
+          : > "$f"
+          gen() { local v; v=$(openssl rand -base64 48 | tr -d '\n'); echo "::add-mask::$v"; printf '%s=%s\n' "$1" "$v" >> "$f"; }
+          if [ "${{ steps.first.outputs.first }}" = true ]; then gen SESSION_SIGNING_KEY; gen TOTP_ENC_KEY; fi
+          if [ "${{ steps.first.outputs.internal }}" = true ]; then
+            app=$(openssl rand -hex 32); echo "::add-mask::$app"; printf 'DB_APP_PASSWORD=%s\n' "$app" >> "$f"
+            # The API connects as medlink_app through the pooler in transaction mode (port 6543).
+            python3 - "$DB_URL" "$app" >> "$f" <<'PY'
+          import sys, urllib.parse as u
+          url = u.urlsplit(sys.argv[1]); user = url.username or ""
+          tenant = user.split(".", 1)[1] if "." in user else ""
+          app_user = "medlink_app" + ("." + tenant if tenant else "")
+          host = url.hostname + ":" + ("6543" if "pooler.supabase.com" in url.hostname else str(url.port or 5432))
+          print("DB_APP_URL=" + u.urlunsplit((url.scheme, app_user + ":" + sys.argv[2] + "@" + host, url.path, "sslmode=require", "")))
+          PY
+            gen JOBS_SECRET; gen PROXY_SECRET
+          fi
+
+      - name: Database migrations
+        if: steps.ready.outputs.ok == 'true'
+        run: |
+          set -euo pipefail
+          app=$(grep -E '^DB_APP_PASSWORD=' "$RUNNER_TEMP/secrets.env" | cut -d= -f2- || true)
+          DB_OWNER_URL=$DB_URL DB_APP_PASSWORD=$app deno run -A supabase/scripts/migrate.ts
+
+      - name: Function settings and deployment
+        if: steps.ready.outputs.ok == 'true'
+        working-directory: supabase
+        run: |
+          set -euo pipefail
+          f=$RUNNER_TEMP/secrets.env
+          {
+            grep -vE '^DB_APP_PASSWORD=' "$f" || true
+            echo "EMAIL_FROM=MEDLINK <no-reply@$DOMAIN>"
+            echo "ADMIN_WEB_URL=https://admin.$DOMAIN"
+            echo "HOSPITAL_WEB_URL=https://app.$DOMAIN"
+            echo "CORS_ORIGINS=https://admin.$DOMAIN,https://app.$DOMAIN,https://$DOMAIN"
+            echo "COOKIE_SECURE=true"
+            [ -z "$EMAIL_API_KEY" ] || echo "EMAIL_API_KEY=$EMAIL_API_KEY"
+            [ -z "$ALERT_EMAIL" ] || echo "ALERT_EMAIL=$ALERT_EMAIL"
+          } > "$RUNNER_TEMP/function.env"
+          $SUPABASE secrets set --project-ref "$REF" --env-file "$RUNNER_TEMP/function.env" >/dev/null
+          rm -f "$RUNNER_TEMP/function.env"
+          $SUPABASE functions deploy api --project-ref "$REF" --no-verify-jwt --use-api
+
+      - name: Scheduler (pg_cron calls the jobs endpoint every minute)
+        if: steps.ready.outputs.ok == 'true' && steps.first.outputs.internal == 'true'
+        run: |
+          set -euo pipefail
+          secret=$(grep -E '^JOBS_SECRET=' "$RUNNER_TEMP/secrets.env" | cut -d= -f2-)
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -q -v url="https://$REF.supabase.co/functions/v1/api/internal/jobs" -v secret="$secret" <<'SQL'
+          CREATE EXTENSION IF NOT EXISTS pg_cron WITH SCHEMA pg_catalog;
+          CREATE EXTENSION IF NOT EXISTS pg_net WITH SCHEMA extensions;
+          SELECT vault.create_secret(:'url', 'medlink_jobs_url') WHERE NOT EXISTS (SELECT 1 FROM vault.secrets WHERE name = 'medlink_jobs_url');
+          SELECT vault.update_secret(id, :'url') FROM vault.secrets WHERE name = 'medlink_jobs_url';
+          SELECT vault.create_secret(:'secret', 'medlink_jobs_secret') WHERE NOT EXISTS (SELECT 1 FROM vault.secrets WHERE name = 'medlink_jobs_secret');
+          SELECT vault.update_secret(id, :'secret') FROM vault.secrets WHERE name = 'medlink_jobs_secret';
+          SELECT cron.schedule('medlink-jobs', '* * * * *', $job$
+            SELECT net.http_post(
+              url := (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'medlink_jobs_url'),
+              headers := jsonb_build_object('content-type', 'application/json',
+                'x-medlink-jobs', (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'medlink_jobs_secret')),
+              body := '{}'::jsonb, timeout_milliseconds := 55000)
+          $job$);
+          SQL
+          echo "scheduler set: every minute"
+
+      - name: Cloudflare proxy (api.${{ env.DOMAIN }})
+        if: steps.ready.outputs.ok == 'true' && env.CLOUDFLARE_API_TOKEN != ''
+        working-directory: supabase/proxy
+        run: |
+          set -euo pipefail
+          node test.mjs
+          # A Workers custom domain: Cloudflare creates the DNS record for api.<domain> itself.
+          $WRANGLER deploy --var "SUPABASE_FUNCTION_URL:https://$REF.supabase.co/functions/v1/api" --domain "api.$DOMAIN"
+          if [ "${{ steps.first.outputs.internal }}" = true ]; then
+            grep -E '^PROXY_SECRET=' "$RUNNER_TEMP/secrets.env" | cut -d= -f2- | $WRANGLER secret put PROXY_SECRET >/dev/null
+            echo "proxy secret set"
+          fi
+
+      - name: Encrypted copy of the new secrets in R2 (for disaster recovery)
+        if: steps.ready.outputs.ok == 'true' && steps.first.outputs.internal == 'true' && env.BACKUP_AGE_RECIPIENT != '' && env.R2_SECRET_ACCESS_KEY != ''
+        run: |
+          set -euo pipefail
+          sudo apt-get install -y -q age >/dev/null
+          WORK=$RUNNER_TEMP
+          age -r "$BACKUP_AGE_RECIPIENT" -o "$WORK/secrets.env.age" "$WORK/secrets.env"
+          . supabase/backup/lib.sh
+          s3 s3 cp /work/secrets.env.age "s3://$R2_BUCKET/config/function-secrets-$(date -u +%Y%m%dT%H%M%SZ).env.age" --only-show-errors
+          echo "encrypted copy stored under config/"
+
+      - name: Remove the secrets file
+        if: always()
+        run: rm -f "$RUNNER_TEMP/secrets.env"
+
+      - name: Health
+        if: steps.ready.outputs.ok == 'true' && env.CLOUDFLARE_API_TOKEN != ''
+        run: |
+          for _ in $(seq 20); do
+            if curl -sf "https://api.$DOMAIN/health" | grep -q '"ok"'; then echo "https://api.$DOMAIN/health: ok"; exit 0; fi
+            sleep 6
+          done
+          echo "::warning::https://api.$DOMAIN/health does not answer yet (DNS or the proxy may need a few minutes)"

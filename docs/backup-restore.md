@@ -98,3 +98,42 @@ The Windows apps keep their unsent check-ins and send them once the API is back.
 - **Backups older than 30 days are not locked.** Someone who took over the server could delete the older monthly copies (the 30 most recent days are locked).
 - **The private key is the single point of failure for reading backups.** Keep two offline copies.
 - **One region, one provider (Cloudflare R2)** for the backups.
+
+## On Supabase (owner's decision, 2026-10-24)
+With the API on Supabase there is no server. The same protection runs from GitHub Actions instead of cron:
+- **Backups:** every 6 hours, `.github/workflows/backups.yml` runs `supabase/backup/backup.sh`. It dumps MEDLINK's schema (`public`), encrypts the dump with your age public key, uploads it to R2 and checks it. The layout is the same: 30 daily + 12 monthly.
+- **Monthly restore test:** on the 1st of each month, `supabase/backup/restore-test.sh` restores a fresh dump into a throw-away PostgreSQL and compares every table's row count with the live database. It also checks the newest backup in R2.
+- **Results and alerts:** both scripts record their result in `ops_checks`, so the API emails `MEDLINK_ALERT_EMAIL` exactly as described under "Alerts" above.
+- **Proved in CI on every push:** `supabase/backup/ci-test.sh` runs the whole cycle against a local PostgreSQL and an S3 mock: backup twice, restore test, a failed backup recorded, restore with the private key, recovery into an empty database.
+
+### Setup (once)
+1. **Key pair, on your own computer:** `age-keygen -o medlink-backup-key.txt` (age has Windows builds). Keep the file offline, in two places. The `# public key: age1…` line becomes the GitHub secret `BACKUP_AGE_RECIPIENT`.
+2. **R2:**
+   - Create the bucket `medlink-backups` (Cloudflare › R2; enabling R2 asks for a payment card, but the free tier costs nothing).
+   - Add the lifecycle rules (`postgres/daily/` 30 days, `postgres/monthly/` 365 days) and the bucket lock (`postgres/`, 30 days), as in steps 3–4 of "One-time setup".
+   - Create an R2 API token limited to that bucket ("Object Read & Write").
+3. **GitHub secrets:** `R2_ACCOUNT_ID`, `R2_BUCKET`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `BACKUP_AGE_RECIPIENT`. `SUPABASE_DB_URL` is already there from the deployment.
+4. Actions › **Backups** › Run workflow (backup). It must say `backup uploaded`.
+
+Once backups are set up, the first **Deploy API** run that makes server secrets also stores an encrypted copy of them in R2 under `config/`. Only your offline key can read it. It is needed to recover with the same 2FA keys.
+
+### Every 3 months: open a real backup (on your computer, with Docker and age)
+```bash
+R2_ACCOUNT_ID=… R2_BUCKET=medlink-backups R2_ACCESS_KEY_ID=… R2_SECRET_ACCESS_KEY=… \
+  supabase/backup/restore.sh latest /path/to/medlink-backup-key.txt
+```
+It restores into a local, throw-away PostgreSQL and prints the row counts. Supabase is not touched.
+
+### Disaster: the Supabase project is lost
+1. Create a new Supabase project, and put its values in the GitHub secrets (`SUPABASE_PROJECT_REF`, `SUPABASE_DB_URL`).
+2. On your computer:
+   ```bash
+   DB_URL=<new project's session pooler URI> R2_…=… supabase/backup/recover.sh latest /path/to/medlink-backup-key.txt
+   ```
+   It refuses a project that already has MEDLINK tables, and restores in one transaction.
+3. Put back the original session and 2FA keys:
+   - decrypt the newest `config/function-secrets-*.env.age` from R2 with the same key;
+   - set `SESSION_SIGNING_KEY` and `TOTP_ENC_KEY` in the new project (Edge Functions › Secrets).
+4. Run **Deploy API** with "Make new proxy, scheduler and database secrets" ticked.
+
+Without the original `TOTP_ENC_KEY`, everyone must set up 2FA again: you through `medlink_reset_company_user`, then the hospital admins through "Recover admin access".
