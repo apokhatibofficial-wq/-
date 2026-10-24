@@ -83,11 +83,14 @@ Deployment guide: [`deployment-supabase.md`](deployment-supabase.md).
 - **Backups cover MEDLINK's own schema only.** Supabase's internal schemas are not ours to restore.
 
 ## Not done, and why
-- **Not yet run on real Supabase, Cloudflare Workers or Resend.** I cannot reach your accounts. Three things can only be confirmed on the first real deployment:
-  - the API connecting through Supabase's pooler as its own database role (`medlink_app`);
-  - creating `pg_cron` and `pg_net` from the workflow;
-  - the Workers custom domain.
+- **First real deployment: done on 2026-10-24** (Deploy API run #5, every step green). Checked from outside:
+  - `https://api.medlink.website/health` answers `{"status":"ok"}`. The function reaches the database through Supabase's pooler as its own role, `medlink_app`.
+  - A wrong sign-in answers 401 `INVALID_CREDENTIALS` with the CORS header for the admin site.
+  - Calling the function directly at `*.supabase.co` is refused (403): only the proxy gets in.
+  - The scheduler (pg_cron + pg_net) and the Workers custom domain were set up by the workflow.
 
-  If one of them fails, the workflow says where. I will fix it with you.
+  On the way, two problems in the deployment were found and fixed:
+  - a database address containing `[` or `]` broke the workflow's parsing;
+  - a test failed on a minute boundary.
 - **The three sites and the Windows app have not been re-run end to end against the new API in a browser.** The earlier browser scripts were in this environment's temporary folder, which was lost when the session restarted. The API's answers are checked field by field by the tests above. The first real sign-in and booking after deployment is the end-to-end check (checklist in the deployment guide).
 - **The .NET API, the server scripts and their CI jobs are still in the repository,** by your decision. I will remove them after the new API has run in production.
