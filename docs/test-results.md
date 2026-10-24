@@ -4,6 +4,31 @@ Real runs only. Re-run the commands to reproduce. Newest phase first.
 
 ---
 
+# Web as the main tool (2026-10-24, owner's decision a)
+
+## 1. API tests
+**Result: 108 passed, 0 failed** (8 min 58 s). New:
+- `Hospital web: a doctor reads only their departments, without phones, reasons or form answers; others see the status history` ✅. The other department does not exist for the doctor (404 by id, empty by booking number); check-in and cancel → 403.
+- **Endpoint sweep:** the two booking-read endpoints now check the role inside. Company accounts and the scanner get `FORBIDDEN` there ✅.
+- **The sync doctor test:** it used to expect 403 on `/hospital/bookings`; it now expects the doctor's own department only ✅.
+
+## 2. Browser, real stack, built sites with the CSP enforced: **83/83 steps**
+| Run | Result |
+|---|---|
+| run7 (updated for the new behaviour) | **12/12**. New steps: the doctor's board (view-only note, 1 of 2 bookings, no phone, history, no buttons); **live: reception's check-in appeared on the doctor's open page after ~13 s, with the notice "سُجّل حضور: مريض تجريبي أ", without reloading**; chips "الكل 2" and the arrived filter (1 row); the department filter (1 row) |
+| run 16/16 · run5 16/16 · run6 7/7 · run6b 10/10 · run9 4/4 · run9b 11/11 · run10 7/7 | ✅ |
+| CSP violation reports | 0 |
+| API log | 8 lines, 0 personal data |
+
+**The first regression run had 2 failures, both test-side.** run5 and run6b expected "الأقسام" to be the first page after sign-in; it is now "الحجوزات", as decided. The scripts now open "الأقسام" themselves.
+
+## 3. Web checks
+- `tsc` × 4: 0 errors.
+- Unit tests: 3/3, 10/10, 5/5.
+- `npm audit`: 0 vulnerabilities.
+
+---
+
 # Phase 12 — installer, documentation, deployment (2026-10-21)
 
 ## 1. API and app-logic tests (xUnit + Testcontainers, PostgreSQL 16)
