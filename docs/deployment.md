@@ -22,6 +22,10 @@ The full procedure for the first production deployment and for later updates. Th
    - In Cloudflare, create an API token with the permission **"Cloudflare Pages: Edit"**.
    - In GitHub, under Settings › Secrets and variables › Actions, add the repository secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`.
    - The workflow **Deploy web** then publishes the three sites and attaches `admin.`, `app.` and the main domain on every push. Actions › Deploy web › Run workflow runs it at once.
+   - Once, in Cloudflare DNS › Records, add three proxied CNAME records. A domain attached by the workflow does not get its DNS record by itself. The targets are the projects' `*.pages.dev` names, shown under Workers & Pages:
+     - `app` → `medlink-hospital.pages.dev`;
+     - `admin` → `medlink-admin-ept.pages.dev`;
+     - `@` → `medlink-booking.pages.dev`.
 5. **Backups:** follow [`backup-restore.md`](backup-restore.md). Until they are set up, you get an alert email every 6 hours.
 
 The sections below are the same procedure in full detail.
