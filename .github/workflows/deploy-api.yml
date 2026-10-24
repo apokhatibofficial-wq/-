@@ -105,12 +105,18 @@ jobs:
             app=$(openssl rand -hex 32); echo "::add-mask::$app"; printf 'DB_APP_PASSWORD=%s\n' "$app" >> "$f"
             # The API connects as medlink_app through the pooler in transaction mode (port 6543).
             python3 - "$DB_URL" "$app" >> "$f" <<'PY'
-          import sys, urllib.parse as u
-          url = u.urlsplit(sys.argv[1]); user = url.username or ""
+          import sys
+          # Parsed by hand: a password may hold characters (such as [ or ]) that urllib takes for an IPv6 address.
+          scheme, rest = sys.argv[1].split("://", 1)
+          cred, hostpart = rest.rsplit("@", 1)
+          user = cred.split(":", 1)[0]
           tenant = user.split(".", 1)[1] if "." in user else ""
           app_user = "medlink_app" + ("." + tenant if tenant else "")
-          host = url.hostname + ":" + ("6543" if "pooler.supabase.com" in url.hostname else str(url.port or 5432))
-          print("DB_APP_URL=" + u.urlunsplit((url.scheme, app_user + ":" + sys.argv[2] + "@" + host, url.path, "sslmode=require", "")))
+          hostport, _, path = hostpart.partition("/")
+          host = hostport.rsplit(":", 1)[0] if ":" in hostport else hostport
+          port = "6543" if host.endswith("pooler.supabase.com") else (hostport.rsplit(":", 1)[1] if ":" in hostport else "5432")
+          db = path.split("?", 1)[0] or "postgres"
+          print(f"DB_APP_URL={scheme}://{app_user}:{sys.argv[2]}@{host}:{port}/{db}?sslmode=require")
           PY
             gen JOBS_SECRET; gen PROXY_SECRET
           fi
