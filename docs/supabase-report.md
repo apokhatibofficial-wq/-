@@ -92,5 +92,8 @@ Deployment guide: [`deployment-supabase.md`](deployment-supabase.md).
   On the way, two problems in the deployment were found and fixed:
   - a database address containing `[` or `]` broke the workflow's parsing;
   - a test failed on a minute boundary.
+- **Email: working since 2026-10-25.** `medlink.website` is verified in Resend, and an invitation from the admin Team page arrived. On the way:
+  - the first try failed because the `EMAIL_API_KEY` secret reached the deployment empty;
+  - the deployment now warns when it is empty, and a failed send logs the provider's status code and error name (never the recipient or the link).
 - **The three sites and the Windows app have not been re-run end to end against the new API in a browser.** The earlier browser scripts were in this environment's temporary folder, which was lost when the session restarted. The API's answers are checked field by field by the tests above. The first real sign-in and booking after deployment is the end-to-end check (checklist in the deployment guide).
 - **The .NET API, the server scripts and their CI jobs are still in the repository,** by your decision. I will remove them after the new API has run in production.

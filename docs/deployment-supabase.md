@@ -63,7 +63,7 @@ It refuses to run a second time. If you lose your password or phone, run `SELECT
 1. At **resend.com**: sign up, then Domains › Add `medlink.website`.
 2. Add the DNS records it shows in Cloudflare › DNS. They must be **DNS only** (grey cloud).
 3. API Keys › Create (Sending access) › add it as the GitHub secret `EMAIL_API_KEY`.
-4. Run **Deploy API** again.
+4. Run **Deploy API** again. If its "Function settings and deployment" step shows a yellow warning about `EMAIL_API_KEY`, the secret is missing or misnamed (it must be a **Repository secret**, not a Variable).
 
 Until then, invitations and reset links are not emailed. The admin console says "email not sent", and you can send them again later.
 
