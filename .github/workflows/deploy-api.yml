@@ -144,6 +144,7 @@ jobs:
             [ -z "$EMAIL_API_KEY" ] || echo "EMAIL_API_KEY=$EMAIL_API_KEY"
             [ -z "$ALERT_EMAIL" ] || echo "ALERT_EMAIL=$ALERT_EMAIL"
           } > "$RUNNER_TEMP/function.env"
+          [ -n "$EMAIL_API_KEY" ] || echo "::warning::The EMAIL_API_KEY secret is empty or missing: invitations and reset links will not be emailed."
           $SUPABASE secrets set --project-ref "$REF" --env-file "$RUNNER_TEMP/function.env" >/dev/null
           rm -f "$RUNNER_TEMP/function.env"
           $SUPABASE functions deploy api --project-ref "$REF" --no-verify-jwt --use-api

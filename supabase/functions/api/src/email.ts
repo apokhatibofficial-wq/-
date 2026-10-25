@@ -22,8 +22,12 @@ export class ResendEmailSender implements EmailSender {
       headers: { "Authorization": `Bearer ${this.config.emailApiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({ from: this.config.emailFrom, to: [message.to], subject: message.subject, text: message.textBody }),
     });
+    if (!res.ok) {
+      // Resend's error name (e.g. "validation_error") says why; its body never contains the API key.
+      const name = await res.json().then((j) => String(j?.name ?? "").slice(0, 60)).catch(() => "");
+      throw new Error(`email provider answered ${res.status} ${name}`.trim());
+    }
     await res.body?.cancel();
-    if (!res.ok) throw new Error(`email provider answered ${res.status}`);
     // Never log the recipient or body: the body contains a one-time link.
     console.log(JSON.stringify({ level: "info", msg: "email sent", kind: message.kind }));
   }
@@ -35,7 +39,7 @@ export async function trySend(sender: EmailSender, message: EmailMessage): Promi
     await sender.send(message);
     return true;
   } catch (e) {
-    console.error(JSON.stringify({ level: "error", msg: "email delivery failed", kind: message.kind, error: (e as Error)?.name ?? "Error" }));
+    console.error(JSON.stringify({ level: "error", msg: "email delivery failed", kind: message.kind, error: (e as Error)?.message ?? "Error" }));
     return false;
   }
 }
