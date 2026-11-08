@@ -1,7 +1,7 @@
 # Security headers for Cloudflare Pages (copied into dist/ by the build). Checked with a real browser in Phase 11.
-# If the API moves from https://api.medlink.website, change connect-src below.
+# If the API moves from https://api.medlink.website, change connect-src and img-src (doctor photos) below.
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://api.medlink.website; media-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https://api.medlink.website; connect-src 'self' https://api.medlink.website; media-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
   Referrer-Policy: no-referrer

@@ -20,7 +20,10 @@ export function requiresTotp(roles: readonly string[]): boolean {
   return roles.some((r) => CompanyRoles.includes(r) || r === Roles.hospAdmin);
 }
 
-/** In the order of the .NET enum: the first eight are company permissions, the rest hospital permissions. */
+/**
+ * In the order of the .NET enum: the first eight are company permissions, the rest hospital permissions.
+ * DoctorProfilesManage (doctor pages, 2026-11-08) exists only in this API; it is listed last but is a company permission.
+ */
 export const Permissions = [
   "HospitalsCreateEdit",
   "HospitalsSuspend",
@@ -39,12 +42,14 @@ export const Permissions = [
   "HospitalUsersManage",
   /** Doctor: today's list for their own department(s), without phone numbers (owner's decision). */
   "BookingsViewOwnDepartment",
+  /** Doctor profile pages (medlink.website/dr/...): create, edit, publish, delete. Owner only. */
+  "DoctorProfilesManage",
 ] as const;
 
 export type Permission = typeof Permissions[number];
 
 const Map: Record<string, Permission[]> = {
-  owner: ["HospitalsCreateEdit", "HospitalsSuspend", "RecoverAdminAccess", "ViewReports", "ViewAuditFull", "ViewAuditHospitalOnly", "PlatformSettings", "ManageTeam"],
+  owner: ["HospitalsCreateEdit", "HospitalsSuspend", "RecoverAdminAccess", "ViewReports", "ViewAuditFull", "ViewAuditHospitalOnly", "PlatformSettings", "ManageTeam", "DoctorProfilesManage"],
   support: ["RecoverAdminAccess", "ViewReports", "ViewAuditHospitalOnly"],
   viewer: ["ViewReports"],
   hosp_admin: ["HospitalRead", "FormEditPublish", "HospitalSettings", "BookingsView", "CheckIn", "AttendanceCorrect", "HospitalUsersManage"],
@@ -55,7 +60,7 @@ const Map: Record<string, Permission[]> = {
 
 /** Permissions that only company users can hold; all others are hospital permissions. */
 export function isCompanyPermission(p: Permission): boolean {
-  return Permissions.indexOf(p) <= Permissions.indexOf("ManageTeam");
+  return Permissions.indexOf(p) <= Permissions.indexOf("ManageTeam") || p === "DoctorProfilesManage";
 }
 
 export function has(roles: readonly string[], p: Permission): boolean {

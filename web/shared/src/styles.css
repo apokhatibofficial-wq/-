@@ -109,6 +109,7 @@ button:disabled { cursor: not-allowed; }
 .trow { display: grid; gap: 10px; padding: 12px 16px; align-items: center; border-bottom: 1px solid var(--divider); }
 .thead { padding: 10px 16px; font-size: 12px; font-weight: 600; color: var(--muted); background: var(--thead); border-bottom: 1px solid var(--thead-border); }
 .cols-hosp { grid-template-columns: minmax(160px, 1.5fr) minmax(150px, 1.2fr) 96px 120px 76px; min-width: 640px; }
+.cols-doc { grid-template-columns: minmax(200px, 2fr) minmax(170px, 1.4fr) minmax(120px, 1fr); min-width: 520px; }
 .cols-rep { grid-template-columns: minmax(150px, 2fr) 90px minmax(130px, 1.4fr) 80px; min-width: 500px; }
 .cols-role { grid-template-columns: minmax(170px, 2fr) repeat(3, minmax(80px, 1fr)); gap: 8px; min-width: 440px; }
 .clickable { cursor: pointer; background: #fff; border-inline: none; border-top: none; width: 100%; text-align: start; font: inherit; color: inherit; }

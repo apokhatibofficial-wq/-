@@ -28,11 +28,20 @@ const Public = [
   "POST /auth/login", "POST /auth/link/inspect", "POST /auth/link/complete",
   "GET /public/book/{slug}", "GET /public/slugs/{slug}",
   "GET /public/hospitals/{slug}/form", "GET /public/hospitals/{slug}/availability", "POST /public/hospitals/{slug}/bookings",
+  // Doctor pages (2026-11-08): published profiles only.
+  "GET /public/doctors/{slug}", "GET /public/doctors/{slug}/photo",
 ];
 
 /** The approved access rule of every other endpoint: the same table as the .NET API, plus the scheduler's endpoint. */
 const Expected: Record<string, string> = {
   "GET /admin/audit": "signin",
+  "GET /admin/doctors": "ViewReports",
+  "POST /admin/doctors": "DoctorProfilesManage",
+  "PATCH /admin/doctors/{id}": "DoctorProfilesManage",
+  "DELETE /admin/doctors/{id}": "DoctorProfilesManage",
+  "GET /admin/doctors/{id}/photo": "ViewReports",
+  "PUT /admin/doctors/{id}/photo": "DoctorProfilesManage",
+  "DELETE /admin/doctors/{id}/photo": "DoctorProfilesManage",
   "GET /admin/hospitals": "ViewReports",
   "POST /admin/hospitals": "HospitalsCreateEdit",
   "GET /admin/hospitals/{id}": "ViewReports",
@@ -94,7 +103,7 @@ const auditCount = async () => (await ownerSql<{ n: number }[]>`SELECT count(*):
 test("Acceptance 25: every endpoint declares who may call it; only the reviewed public ones are open", async () => {
   await TestApi.create();
   const eps = endpoints();
-  assertEquals(eps.length, 62);
+  assertEquals(eps.length, 71);
   for (const e of eps) {
     const isPublic = Public.includes(key(e));
     assert(isPublic || e.rule !== "anonymous", `${key(e)} has no access rule`);
@@ -116,7 +125,7 @@ test("Acceptance 2: without signing in, every non-public endpoint answers 401 an
     assertEquals(r.status, 401, `${key(e)} answered ${r.status} without a session`);
     n++;
   }
-  assertEquals(n, 52);
+  assertEquals(n, 59);
   // The scheduler's endpoint wants its own secret.
   assertEquals((await call(anon, endpoints().find((e) => e.rule === "jobs")!)).status, 403);
   assertEquals(await auditCount(), before);

@@ -74,7 +74,8 @@ export function createApp(d: AppDeps, modules: RouteModule[]): Hono<Env> {
     const h = c.res.headers;
     h.set("X-Content-Type-Options", "nosniff");
     h.set("Referrer-Policy", "no-referrer");
-    h.set("Cache-Control", "no-store");
+    // Only the public doctor photos set their own (cacheable) value.
+    if (!h.has("Cache-Control")) h.set("Cache-Control", "no-store");
     h.set("X-Frame-Options", "DENY");
   });
 

@@ -76,6 +76,7 @@ export const Ids = {
   booking: () => "bkg_" + ulid(),
   device: () => "dev_" + ulid(),
   attendance: () => "att_" + ulid(),
+  doctor: () => "doc_" + ulid(),
 };
 
 // ---------------------------------------------------------------- passwords

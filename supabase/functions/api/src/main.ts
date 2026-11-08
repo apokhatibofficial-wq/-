@@ -4,13 +4,14 @@ import type { AppDeps } from "./http.ts";
 import { adminRoutes } from "./routes/admin.ts";
 import { authRoutes } from "./routes/auth.ts";
 import { hospitalBookingRoutes, publicBookingRoutes } from "./routes/bookings.ts";
+import { doctorRoutes } from "./routes/doctors.ts";
 import { formRoutes } from "./routes/forms.ts";
 import { hospitalRoutes, publicSlugRoutes } from "./routes/hospital.ts";
 import { internalRoutes } from "./routes/internal.ts";
 import { scanRoutes } from "./routes/scan.ts";
 import { syncRoutes } from "./routes/sync.ts";
 
-export const modules = [authRoutes, adminRoutes, formRoutes, hospitalRoutes, publicSlugRoutes, publicBookingRoutes, hospitalBookingRoutes, scanRoutes, syncRoutes, internalRoutes];
+export const modules = [authRoutes, adminRoutes, formRoutes, hospitalRoutes, publicSlugRoutes, publicBookingRoutes, hospitalBookingRoutes, scanRoutes, syncRoutes, internalRoutes, doctorRoutes];
 
 export function buildApp(d: AppDeps) {
   return createApp(d, modules);

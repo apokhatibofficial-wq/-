@@ -15,9 +15,9 @@ export const ROLE_LABELS: Record<Lang, [string[], string[]]> = {
   tr: [['Sahip', 'Destek', 'İzleyici'], ['Hastane yöneticisi', 'Kayıt birimi', 'QR tarayıcı', 'Doktor']],
 };
 export const COMPANY_PERMS: Record<Lang, [string, Mark[]][]> = {
-  ar: [['إنشاء وتعديل المستشفيات', ['Y', 'N', 'N']], ['إيقاف وإعادة تفعيل', ['Y', 'N', 'N']], ['استعادة وصول المسؤول', ['Y', 'Y', 'N']], ['عرض التقارير', ['Y', 'Y', 'Y']], ['عرض سجل العمليات', ['Y', 'O', 'N']]],
-  en: [['Create & edit hospitals', ['Y', 'N', 'N']], ['Suspend & reactivate', ['Y', 'N', 'N']], ['Recover admin access', ['Y', 'Y', 'N']], ['View reports', ['Y', 'Y', 'Y']], ['View audit log', ['Y', 'O', 'N']]],
-  tr: [['Hastane oluştur ve düzenle', ['Y', 'N', 'N']], ['Askıya al ve etkinleştir', ['Y', 'N', 'N']], ['Yönetici erişimini kurtar', ['Y', 'Y', 'N']], ['Raporları gör', ['Y', 'Y', 'Y']], ['Denetim kaydını gör', ['Y', 'O', 'N']]],
+  ar: [['إنشاء وتعديل المستشفيات', ['Y', 'N', 'N']], ['إيقاف وإعادة تفعيل', ['Y', 'N', 'N']], ['استعادة وصول المسؤول', ['Y', 'Y', 'N']], ['عرض التقارير', ['Y', 'Y', 'Y']], ['عرض سجل العمليات', ['Y', 'O', 'N']], ['إدارة صفحات الأطباء', ['Y', 'N', 'N']]],
+  en: [['Create & edit hospitals', ['Y', 'N', 'N']], ['Suspend & reactivate', ['Y', 'N', 'N']], ['Recover admin access', ['Y', 'Y', 'N']], ['View reports', ['Y', 'Y', 'Y']], ['View audit log', ['Y', 'O', 'N']], ['Manage doctor pages', ['Y', 'N', 'N']]],
+  tr: [['Hastane oluştur ve düzenle', ['Y', 'N', 'N']], ['Askıya al ve etkinleştir', ['Y', 'N', 'N']], ['Yönetici erişimini kurtar', ['Y', 'Y', 'N']], ['Raporları gör', ['Y', 'Y', 'Y']], ['Denetim kaydını gör', ['Y', 'O', 'N']], ['Doktor sayfalarını yönet', ['Y', 'N', 'N']]],
 };
 export const HOSPITAL_PERMS: Record<Lang, [string, Mark[]][]> = {
   ar: [['تعديل نموذج الحجز ونشره', ['Y', 'N', 'N', 'N']], ['إعدادات المستشفى ومهلة عدم الحضور', ['Y', 'N', 'N', 'N']], ['عرض الحجوزات والبحث', ['Y', 'Y', 'N', 'N']], ['تسجيل الحضور', ['Y', 'Y', 'Y', 'N']], ['تصحيح حالة الحضور', ['Y', 'Y', 'N', 'N']], ['إدارة مستخدمي المستشفى', ['Y', 'N', 'N', 'N']], ['عرض مواعيد قسمه فقط (بدون الهواتف)', ['N', 'N', 'N', 'Y']]],

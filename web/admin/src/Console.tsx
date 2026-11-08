@@ -6,10 +6,11 @@ import { UsersPanel } from '@medlink/shared/UsersPanel';
 import type { ManagedUser, PlatformSettings } from '@medlink/shared/api';
 import { cleanSlugInput, SLUG_RE, slugify } from '@medlink/shared/slug';
 import { LangPill } from '@medlink/shared/LangPill';
+import { D, DoctorsTab } from './Doctors';
 
 const BOOK_BASE = 'medlink.website/book/';
 type SlugState = '' | 'ok' | 'bad' | 'taken' | 'checking';
-type Tab = 0 | 1 | 2 | 3 | 4 | 5;
+type Tab = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 /** Used only until System settings have loaded; the real default comes from the server. */
 const DEFAULT_TZ = 'Asia/Damascus';
 
@@ -56,6 +57,8 @@ export function Console({ lang: L, onLang, me, onSignedOut }: Props) {
   const canAudit = can('ViewAuditFull') || can('ViewAuditHospitalOnly');
 
   const [tab, setTab] = useState<Tab>(0);
+  const [newDoctor, setNewDoctor] = useState(false);
+  const doneNewDoctor = useCallback(() => setNewDoctor(false), []);
   const [hs, setHs] = useState<Hospital[] | null>(null);
   const [loadErr, setLoadErr] = useState(false);
   const [q, setQ] = useState('');
@@ -214,9 +217,10 @@ export function Console({ lang: L, onLang, me, onSignedOut }: Props) {
     || h.id.toLowerCase().includes(ql) || (h.slug ?? '').includes(ql)), [hs, ql]);
   const rows = base.filter(h => sf === 'all' || h.status === sf);
 
-  const navLabels = [...t.nav, c.team, c.system];
-  const subs = [...t.subs, c.teamSub, c.systemSub];
-  const tabs: Tab[] = ([0, 1, 2, 3, 4, 5] as Tab[]).filter(i => (i !== 2 || canAudit) && (i !== 4 || can('ManageTeam')));
+  const navLabels = [...t.nav, c.team, c.system, D[L].tab];
+  const subs = [...t.subs, c.teamSub, c.systemSub, D[L].sub];
+  // Doctors (6) comes right after Hospitals.
+  const tabs: Tab[] = ([0, 6, 1, 2, 3, 4, 5] as Tab[]).filter(i => (i !== 2 || canAudit) && (i !== 4 || can('ManageTeam')));
   const roleLabel = me.roles.map(r => a.roleNames[r] ?? r).join(' · ');
 
   const nav = (cls: string) => (
@@ -264,6 +268,9 @@ export function Console({ lang: L, onLang, me, onSignedOut }: Props) {
             <LangPill lang={L} onLang={onLang} />
             {tab === 0 && can('HospitalsCreateEdit') && (
               <button type="button" className="btn btn-primary" onClick={() => openModal('create')}>+ {t.newHospital}</button>
+            )}
+            {tab === 6 && can('DoctorProfilesManage') && (
+              <button type="button" className="btn btn-primary" onClick={() => setNewDoctor(true)}>+ {D[L].add}</button>
             )}
           </div>
 
@@ -315,6 +322,7 @@ export function Console({ lang: L, onLang, me, onSignedOut }: Props) {
             </>
           )}
 
+          {tab === 6 && <DoctorsTab L={L} canEdit={can('DoctorProfilesManage')} flash={flash} creating={newDoctor} onCreateDone={doneNewDoctor} />}
           {tab === 1 && <ReportsTab L={L} />}
           {tab === 2 && canAudit && <AuditTab L={L} hospitals={hs ?? []} />}
           {tab === 3 && <RolesTab L={L} />}
